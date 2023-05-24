@@ -27,9 +27,9 @@ class HL_model:
             epochs=epochs,
             verbose=2,
         )
-        if save_file
+        if save_file:
             self.save(save_file)
-        
+            
     def save(self, filename):
         self.model.save(filename)
         
