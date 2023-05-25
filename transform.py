@@ -37,7 +37,8 @@ class HistNormTransform:
         super(HistNormTransform, obj).__init__()
         obj.borders = borders
         obj.sigma = sigma
-        obj.centers = (obj.borders[:, 1:] + obj.borders[:, :-1]) / 2.0
+        obj.centers = (obj.borders[1:] + obj.borders[:-1]) / 2.0
+        obj.n_bins = obj.centers.shape[0]
         return obj
 
     def get_centers(self):
@@ -131,6 +132,9 @@ def main():
     print(tf.math.reduce_mean(abs_err))
 
     print(ht)
+
+    ht2 = HistNormTransform.from_bins(y_train, 1)
+    print(ht2)
 
 if __name__ == "__main__":
     main()
