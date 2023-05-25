@@ -1,8 +1,10 @@
 import tensorflow as tf
 import os
 import matplotlib.pyplot as plt
+import pandas as pd
 
 class Dataset:
+    """Base dataset class."""
 
     def __init__(self) -> None:
         self.seed = 1
@@ -11,8 +13,34 @@ class Dataset:
     def load(self):
         pass
 
+    def normalize(self, train, test):
+        self.ds.map(lambda x: x)
+
     def get_split(self, test_ratio):
+        """Return a train-test split for the given test_ratio.
+        
+        Params:
+            self - the Dataset object
+            test_ratio - float in range [0,1] indicating the proportion of test samples
+
+        Returns: a tuple (train, test) of tf.data.Dataset
+        """
+
         return tf.keras.utils.split_dataset(self.ds, right_size=test_ratio, shuffle=True, seed=self.seed)
+
+
+class CSVDataset(Dataset):
+
+    def __init__(self, path, targets) -> None:
+        self.path = path
+        self.targets = targets
+        super().__init__()
+
+    def load(self):
+        df = pd.read_csv(self.path)
+        x = df.drop(self.targets, axis=1)
+        y = df[self.targets]
+        ds = tf.data.Dataset.from_tensor_slices((x, y))
 
 
 class ImageDataset(Dataset):
