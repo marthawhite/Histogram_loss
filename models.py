@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 from tensorflow.keras import layers
+from transform import HistNormTransform
 
 
 class HL_model:
@@ -12,16 +13,19 @@ class HL_model:
         x = layers.Dropout(0.5)(x)
         output = layers.Dense(np.size(bins), activation="softmax")(x)
         self.model = keras.Model(model_inputs, output)
+        y_min = 0
+        y_max = 100
+        self.transformer = HistNormTransform.from_bins(tf.linspace(y_min, y_max, bins), 1.0)
         
     def load(self, filename, bins):
         self.bins = bins
         self.model = keras.models.load_model(filename)
         
     def train(self, dataset, batch_size=256, epochs=1, learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-07, save_file=None):
-        dataset = dataset.batch(batch_size)
+        dataset = dataset.batch(batch_size).map(lambda x, y: (x, self.transformer.transform(y)))
         self.model.compile(
             optimizer=keras.optimizers.Adam(learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, epsilon=epsilon),
-            loss=keras.losses.SparseCategoricalCrossentropy()
+            loss=keras.losses.CategoricalCrossentropy()
                           )
         
         self.model.fit(
@@ -39,10 +43,7 @@ class HL_model:
     def validate(self, dataset):
         num_samples = dataset.cardinality().numpy()
         dataset = dataset.batch(num_samples)
-        targets = None
-        for data in dataset.as_numpy_iterator():
-            targets = data[1]
-        targets = np.transpose(targets)[0]
+        targets = dataset.map(lambda x, y: y)
         predictions = self.model.predict(dataset)
         regression = np.multiply(predictions, self.bins)
         regression = np.sum(regression, axis=1)
