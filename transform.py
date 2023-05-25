@@ -112,6 +112,34 @@ class HistNormTransform:
     def adjust_and_erf(self, a, mu, sig):
         """Compute the complex error function after standardizing."""
         return erf((a - mu)/(np.sqrt(2.0)*sig))
+    
+def adjust_and_erf(a, mu, sig):
+    return erf((a - mu)/(np.sqrt(2.0)*sig))
+
+def transform_normal(y_tv, y_test, y_min, y_max, n_bins=100, ker_par_ratio=1.0):
+    '''
+    n_bins: Number of centers
+    ker_par_ratio: The ratio between sig and bin size
+    '''
+    # Creating new labels
+    eps = 1e-7
+    bin_size = (y_max + eps - y_min)*1.0/n_bins
+    ker_par = bin_size * ker_par_ratio # Sigma for Gaussian
+
+    borders = np.linspace(y_min, y_max+eps, n_bins+1)
+    centers = borders[:-1] + bin_size/2.0
+
+    # Distribution
+    border_targets_tv = adjust_and_erf(borders[np.newaxis,:], y_tv[:,np.newaxis], ker_par)
+    two_z_tv = border_targets_tv[:,-1] - border_targets_tv[:,0]
+    y_tv_dist = (border_targets_tv[:,1:] - border_targets_tv[:,:-1])/two_z_tv[:,np.newaxis]
+
+    border_targets_test = adjust_and_erf(borders[np.newaxis,:], y_test[:,np.newaxis], ker_par)
+    two_z_test = border_targets_test[:,-1] - border_targets_test[:,0]
+    y_test_dist = (border_targets_test[:,1:] - border_targets_test[:,:-1])/two_z_test[:,np.newaxis]
+
+
+    return y_tv_dist, y_test_dist, centers
 
 
 def main():
@@ -119,16 +147,21 @@ def main():
 
     y_train = np.arange(0, 101, 1)
 
-    ht = HistNormTransform()
+    ht = HistNormTransform(100, 1, 0)
     yt_train = ht.fit_transform(y_train)
-    print(y_train.shape, yt_train.shape)
+
+    # Assert that all outputs are probability distributions
+    eps = 1e-3
+    sums = np.sum(yt_train, axis=1)
+    assert np.all(1 - eps < sums) and np.all(sums < 1 + eps)
+
+    # Check the mean absolute error when autoencoding
     centers = ht.get_centers()
     y_recreated = np.dot(yt_train, centers)
     abs_err = np.abs(y_train - y_recreated)
     print(abs_err.mean())
 
     print(ht)
-    
 
-
-main()
+if __name__ == "__main__":
+    main()
