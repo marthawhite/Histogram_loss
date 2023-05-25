@@ -1,50 +1,77 @@
-import tensorflow as tf
 import numpy as np
 from scipy.special import erf
 from sklearn.metrics import mean_absolute_error as mae
 from sklearn.metrics import mean_squared_error as mse
 
+class HistNormTransform:
+    
+    
+    def __init__(self, n_bins=100, sig_ratio=1.0, padding=0.1) -> None:
+        self.n_bins = n_bins
+        self.sig_ratio = sig_ratio
+        self.pad_ratio = padding
 
-def adjust_and_erf(a, mu, sig):
-    return erf((a - mu)/(np.sqrt(2.0)*sig))
+    @classmethod
+    def from_bins(cls, borders, sigma):
+        obj = cls.__new__(cls)
+        super(HistNormTransform, obj).__init__()
+        obj.borders = borders
+        obj.sigma = sigma
+        obj.centers = (obj.borders[:, 1:] + obj.borders[:, :-1]) / 2.0
+        return obj
 
-def transform_normal(y_tv, y_test, y_min, y_max, n_bins=100, ker_par_ratio=1.0):
-    '''
-    n_bins: Number of centers
-    ker_par_ratio: The ratio between sig and bin size
-    '''
-    # Creating new labels
-    eps = 1e-7
-    bin_size = (y_max + eps - y_min)*1.0/n_bins
-    ker_par = bin_size * ker_par_ratio # Sigma for Gaussian
+    def get_centers(self):
+        return self.centers
 
-    borders = np.linspace(y_min, y_max+eps, n_bins+1)
-    centers = borders[:-1] + bin_size/2.0
+    def get_min_max(self, x):
+        x_max = np.amax(x)
+        x_min = np.amin(x)
+        if self.pad_ratio >= 1:
+            bins = self.n_bins
+            self.n_bins += 2 * self.pad_ratio
+            self.pad_ratio = self.pad_ratio * 1.0 / bins
+        padding = (x_max - x_min) * self.pad_ratio
+        x_max += padding
+        x_min -= padding
+        return x_min, x_max
 
-    # Distribution
-    border_targets_tv = adjust_and_erf(borders[np.newaxis,:], y_tv[:,np.newaxis], ker_par)
-    two_z_tv = border_targets_tv[:,-1] - border_targets_tv[:,0]
-    y_tv_dist = (border_targets_tv[:,1:] - border_targets_tv[:,:-1])/two_z_tv[:,np.newaxis]
+    def fit(self, x):
+        x_min, x_max = self.get_min_max(x)
+        bin_size = (x_max - x_min) / self.n_bins
+        self.sigma = self.sig_ratio * bin_size
+        self.borders = np.linspace(x_min, x_max, self.n_bins + 1)
+        self.centers = self.borders[:-1] + bin_size / 2.0
 
-    border_targets_test = adjust_and_erf(borders[np.newaxis,:], y_test[:,np.newaxis], ker_par)
-    two_z_test = border_targets_test[:,-1] - border_targets_test[:,0]
-    y_test_dist = (border_targets_test[:,1:] - border_targets_test[:,:-1])/two_z_test[:,np.newaxis]
+    def transform(self, x):
+        border_targets = self.adjust_and_erf(self.borders[np.newaxis, :], x[:, np.newaxis], self.sigma)
+        two_z = border_targets[:,-1] - border_targets[:,0]
+        x_transformed = (border_targets[:, 1:] - border_targets[:, :-1]) / two_z[:,np.newaxis]
+        return x_transformed
 
+    def fit_transform(self, x):
+        self.fit(x)
+        return self.transform(x)
+    
+    def __str__(self) -> str:
+        return f"n_bins: {self.n_bins}, Borders: {self.borders}"
 
-    return y_tv_dist, y_test_dist, centers
+    def adjust_and_erf(self, a, mu, sig):
+        return erf((a - mu)/(np.sqrt(2.0)*sig))
+
 
 def main():
-    y_train = tf.random.uniform((100,), 0, 100)
-    y_test = tf.random.uniform((10,), 0, 100)
+    
 
-    y_min = 0
-    y_max = 100
+    y_train = np.arange(0, 101, 1)
 
-    train, test, centers = transform_normal(y_train, y_test, y_min, y_max)
+    ht = HistNormTransform()
+    yt_train = ht.fit_transform(y_train)
+    centers = ht.get_centers()
+    y_recreated = np.dot(yt_train, centers)
+    abs_err = np.abs(y_train - y_recreated)
+    print(abs_err.mean())
 
-    print(train.shape, test.shape, centers.shape)
-    y_recreated = tf.convert_to_tensor(np.dot(train, centers), dtype=tf.float32)
-    print(tf.math.reduce_mean(abs(y_train - y_recreated)))
+    print(ht)
     
 
 
