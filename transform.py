@@ -136,5 +136,13 @@ def main():
     ht2 = HistNormTransform.from_bins(y_train, 1)
     print(ht2)
 
+    x_data = tf.ones([101, 50])
+    data = tf.data.Dataset.from_tensor_slices((x_data, y_train))
+    print(data)
+
+    new_data = data.batch(101).map(lambda x, y : (x, ht2.transform(y)))
+    for x, y in new_data.unbatch().take(1):
+        print(x, y)
+
 if __name__ == "__main__":
     main()
