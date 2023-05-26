@@ -1,6 +1,5 @@
 import tensorflow as tf
 from tensorflow import keras
-import numpy as np
 from tensorflow.keras import layers
 from transform import HistNormTransform
 
@@ -11,7 +10,7 @@ class HL_model:
         model_inputs = keras.Input(shape=input_shape)
         x = model(model_inputs)
         x = layers.Dropout(0.5)(x)
-        output = layers.Dense(np.size(bins), activation="softmax")(x)
+        output = layers.Dense(tf.size(bins), activation="softmax")(x)
         self.model = keras.Model(model_inputs, output)
         y_min = 0
         y_max = 100
@@ -45,11 +44,11 @@ class HL_model:
         dataset = dataset.batch(num_samples)
         targets = dataset.map(lambda x, y: y)
         predictions = self.model.predict(dataset)
-        regression = np.multiply(predictions, self.bins)
-        regression = np.sum(regression, axis=1)
-        mse = np.subtract(regression, targets)
-        mse = np.square(mse)
-        mse = np.sum(mse)/num_samples
+        regression = tf.linalg.matvec(predictions, self.bins)
+        regression = tf.math.reduce_sum(regression, axis=1)
+        mse = regression - targets
+        mse = tf.math.square(mse)
+        mse = tf.math.reduce_sum(mse)/num_samples
         return mse
         
         
