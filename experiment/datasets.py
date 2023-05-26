@@ -14,7 +14,10 @@ class Dataset:
         pass
 
     def normalize(self, train, test):
-        self.ds.map(lambda x: x)
+        self.ds = self.ds.map(lambda x: x)
+
+    def input_shape(self):
+        return self.ds.element_spec[0].shape
 
     def get_split(self, test_ratio):
         """Return a train-test split for the given test_ratio.
@@ -40,7 +43,8 @@ class CSVDataset(Dataset):
         df = pd.read_csv(self.path)
         x = df.drop(self.targets, axis=1)
         y = df[self.targets]
-        ds = tf.data.Dataset.from_tensor_slices((x, y))
+        ds = tf.data.Dataset.from_tensor_slices((tf.convert_to_tensor(x, dtype=tf.float32),tf.convert_to_tensor(y, dtype=tf.float32)))
+        return ds
 
 
 class ImageDataset(Dataset):

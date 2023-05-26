@@ -6,15 +6,14 @@ from transform import HistNormTransform
 
 class HL_model:
     def __init__(self, model, bins, input_shape):
-        self.bins = bins #np.array
+        
         model_inputs = keras.Input(shape=input_shape)
         x = model(model_inputs)
-        x = layers.Dropout(0.5)(x)
-        output = layers.Dense(tf.size(bins), activation="softmax")(x)
+        #x = layers.Dropout(0.5)(x)
+        output = layers.Dense(tf.size(bins) - 1, activation="softmax")(x)
         self.model = keras.Model(model_inputs, output)
-        y_min = 0
-        y_max = 100
-        self.transformer = HistNormTransform.from_bins(tf.linspace(y_min, y_max, bins), 1.0)
+        self.transformer = HistNormTransform.from_bins(bins, 1.0)
+        self.bins = self.transformer.get_centers()
         
     def load(self, filename, bins):
         self.bins = bins
@@ -27,13 +26,14 @@ class HL_model:
             loss=keras.losses.CategoricalCrossentropy()
                           )
         
-        self.model.fit(
+        history = self.model.fit(
             x=dataset,
             epochs=epochs,
             verbose=1,
         )
         if save_file:
             self.save(save_file)
+        return history
             
     def save(self, filename):
         self.model.save(filename)
@@ -42,10 +42,9 @@ class HL_model:
     def validate(self, dataset):
         num_samples = dataset.cardinality().numpy()
         dataset = dataset.batch(num_samples)
-        targets = dataset.map(lambda x, y: y)
+        targets = dataset.map(lambda x, y: y).get_single_element()
         predictions = self.model.predict(dataset)
         regression = tf.linalg.matvec(predictions, self.bins)
-        regression = tf.math.reduce_sum(regression, axis=1)
         mse = regression - targets
         mse = tf.math.square(mse)
         mse = tf.math.reduce_sum(mse)/num_samples
@@ -56,7 +55,7 @@ class Regression:
     def __init__(self, model, input_shape):
         model_inputs = keras.Input(shape=input_shape)
         x = model(model_inputs)
-        x = layers.Dropout(0.5)(x)
+        #x = layers.Dropout(0.5)(x)
         output = layers.Dense(1)(x)
         self.model = keras.Model(model_inputs, output)
         
@@ -76,6 +75,7 @@ class Regression:
         )
         if save_file:
             self.save(save_file)
+        return history
         
     def save(self, filename):
         self.model.save(filename)
