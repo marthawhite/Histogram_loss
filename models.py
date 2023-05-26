@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
-from transform import HistNormTransform
+from transform import HistNormTransform, ClassTransform
 
 
 class HL_model:
@@ -86,3 +86,8 @@ class Regression:
         mse = self.model.evaluate(dataset)
         return mse
         
+
+class Classification(HL_model):
+    def __init__(self, model, bins, input_shape):
+        super().__init__(model, bins, input_shape)
+        self.transformer = ClassTransform.from_bins(bins, 1.0)
