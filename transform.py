@@ -34,7 +34,7 @@ class HistNormTransform:
         """
 
         obj = cls.__new__(cls)
-        super(HistNormTransform, obj).__init__()
+        super(cls, obj).__init__()
         obj.borders = borders
         obj.sigma = sigma
         obj.centers = (obj.borders[1:] + obj.borders[:-1]) / 2.0
@@ -110,6 +110,14 @@ class HistNormTransform:
     def adjust_and_erf(self, a, mu, sig):
         """Compute the complex error function after standardizing."""
         return tf.math.erf((a - mu)/(tf.math.sqrt(2.0)*sig))
+
+
+class ClassTransform(HistNormTransform):
+    def transform(self, x):
+        low = tf.reduce_min(self.borders)
+        bin_size = self.borders[1] - self.borders[0]
+        n_classes = self.borders.shape[0] - 1
+        return tf.one_hot(tf.cast((x - low) / bin_size, tf.int32), n_classes, dtype=tf.float32)
 
 
 def main():
