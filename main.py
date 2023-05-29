@@ -18,7 +18,7 @@ def get_model():
 
 
 def main(data_file):
-    n_epochs = 100
+    n_epochs = 50
     test_ratio = 0.2
     image_size = 128
     channels = 3
