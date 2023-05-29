@@ -9,7 +9,7 @@ class HL_model:
         
         model_inputs = keras.Input(shape=input_shape)
         x = model(model_inputs)
-        #x = layers.Dropout(0.5)(x)
+        x = layers.Dropout(0.5)(x)
         output = layers.Dense(tf.size(bins) - 1, activation="softmax")(x)
         self.model = keras.Model(model_inputs, output)
         self.transformer = HistNormTransform.from_bins(bins, 1.0)
@@ -55,7 +55,7 @@ class Regression:
     def __init__(self, model, input_shape):
         model_inputs = keras.Input(shape=input_shape)
         x = model(model_inputs)
-        #x = layers.Dropout(0.5)(x)
+        x = layers.Dropout(0.5)(x)
         output = layers.Dense(1)(x)
         self.model = keras.Model(model_inputs, output)
         
