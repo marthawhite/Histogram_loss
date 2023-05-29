@@ -18,38 +18,42 @@ def get_model():
 
 
 def main(data_file):
+    n_epochs = 5
+    test_ratio = 0.2
+    image_size = 128
+    channels = 3
+    batch_size = 128
     bins = tf.range(-10, 80, dtype=tf.float32)
-    #path = os.path.join("data", "FGNET", "images")
-    ds = FGNetDataset(data_file, size=128, channels=3)
-    train, test = ds.get_split(0.2)
+    ds = FGNetDataset(data_file, size=image_size, channels=channels)
+    train, test = ds.get_split(test_ratio)
 
-    base_model = get_model()
+    input_shape = (image_size, image_size, channels)
     
-    regress = Regression(base_model, (128,128,3))
-    regress_history = regress.train(train, batch_size=128, epochs=5, save_file="regression_model")
-    with open("regression_history.json", w) as file:
+    regress = Regression(get_model(), input_shape)
+    regress_history = regress.train(train, batch_size=batch_size, epochs=n_epochs, save_file="regression_model")
+    with open("regression_history.json", "w") as file:
         json.dump(regress_history.history, file)
     mse = regress.validate(test)
     with open("regression_mse.txt", mode='w') as file:
-        file.write(mse)
+        file.write(str(mse))
         
     
-    hl_model = HL_model(base_model, bins, (128,128,3))
-    hl_histroy = hl_model.train(train, batch_size=128, epochs=5, save_file="hl_model")
-    with open("hl_history.json", w) as file:
+    hl_model = HL_model(get_model(), bins, input_shape)
+    hl_history = hl_model.train(train, batch_size=batch_size, epochs=n_epochs, save_file="hl_model")
+    with open("hl_history.json", "w") as file:
         json.dump(hl_history.history, file)
     mse = hl_model.validate(test)
     with open("hl_mse.txt", mode='w') as file:
-        file.write(mse)
+        file.write(str(mse))
     
     
-    classification_model = Classification(base_model, bins, (128,128,3))
-    classification_history = classification_model.train(train, batch_size=128, epochs=5, save_file="classification_model")
-    with open("classification_history.json", w) as file:
+    classification_model = Classification(get_model(), bins, input_shape)
+    classification_history = classification_model.train(train, batch_size=batch_size, epochs=n_epochs, save_file="classification_model")
+    with open("classification_history.json", "w") as file:
         json.dump(classification_history.history, file)
     mse = classification_model.validate(test)
     with open("classification_mse.txt", mode='w') as file:
-        file.write(mse)
+        file.write(str(mse))
     
     
     return
