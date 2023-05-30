@@ -41,6 +41,17 @@ class HistMean(keras.layers.Layer):
         return tf.linalg.matvec(inputs, self.centers)
 
 
+class Regression(keras.Model):
+    def __init__(self, base):
+        super().__init__()
+        self.base = base
+        self.reg = keras.layers.Dense(1)
+
+    def call(self, inputs, training=None):
+        features = self.base(inputs, training=training)
+        return self.reg(features)
+
+
 class HistModel(keras.Model):
     def __init__(self, base, centers, transform, name="HistModel"):
         super().__init__(name=name)
@@ -51,7 +62,7 @@ class HistModel(keras.Model):
 
     def call(self, inputs, training=None):
         features = self.base(inputs, training)
-        hist = self.softmax(features, training)
+        hist = self.softmax(features, training=training)
         return self.mean(hist)
 
     def train_step(self, data):
