@@ -76,15 +76,15 @@ class MegaAgeDataset(ImageDataset):
     def load(self):
 
         train_glob = os.path.join(self.path, "train", "*")
-        train_ds = tf.data.Dataset.list_files(train_glob, shuffle=False)
+        train_ds = tf.data.Dataset.list_files(train_glob, shuffle=True)
 
         test_glob = os.path.join(self.path, "test", "*")
-        test_ds = tf.data.Dataset.list_files(test_glob, shuffle=False)
+        test_ds = tf.data.Dataset.list_files(test_glob, shuffle=True)
 
         y_train, y_test = self.load_labels(len(train_ds), len(test_ds))
 
-        self.train = train_ds.map(lambda x : self.parse_image(x, y_train))
-        self.test = test_ds.map(lambda x : self.parse_image(x, y_test))
+        self.train = train_ds.map(lambda x : self.parse_image(x, y_train), num_parallel_calls=tf.data.AUTOTUNE)
+        self.test = test_ds.map(lambda x : self.parse_image(x, y_test), num_parallel_calls=tf.data.AUTOTUNE)
 
     def get_split(self, test_ratio):
         return self.train, self.test

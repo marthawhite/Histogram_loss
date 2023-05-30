@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=FGNet-test
+#SBATCH --job-name=MegaAge-test
 #SBATCH --output=%x-%j.out
 #SBATCH --time=0-03:00:00
 #SBATCH --gres=gpu:1
@@ -17,4 +17,4 @@ pip install --no-index -r requirements.txt
 mkdir $SLURM_TMPDIR/data
 tar xf fgnet.tar -C $SLURM_TMPDIR/data
 
-python Histogram_loss/main.py $SLURM_TMPDIR/data/FGNET/images
+python Histogram_loss/main.py $SLURM_TMPDIR/data
