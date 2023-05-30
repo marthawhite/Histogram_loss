@@ -67,6 +67,54 @@ class ImageDataset(Dataset):
         pass
 
 
+class MegaAgeDataset(ImageDataset):
+    
+    def __init__(self, path, size, channels) -> None:
+        self.path = path
+        super().__init__(size, channels)
+
+    def load(self):
+
+        train_glob = os.path.join(self.path, "train", "*")
+        train_ds = tf.data.Dataset.list_files(train_glob, shuffle=False)
+
+        test_glob = os.path.join(self.path, "test", "*")
+        test_ds = tf.data.Dataset.list_files(test_glob, shuffle=False)
+
+        y_train, y_test = self.load_labels(len(train_ds), len(test_ds))
+
+        self.train = train_ds.map(lambda x : self.parse_image(x, y_train))
+        self.test = test_ds.map(lambda x : self.parse_image(x, y_test))
+
+    def get_split(self, test_ratio):
+        return self.train, self.test
+
+    def parse_label(self, filename, labels):
+        file = tf.strings.split(filename, os.sep)[-1]
+        index = tf.strings.to_number(tf.strings.split(file, ".")[0], out_type=tf.int32)
+        label = labels[index - 1]
+        return label
+
+    def load_labels(self, len_train, len_test):
+        path = os.path.join(self.path, "list", "train_age.txt")
+        train_ds = tf.data.TextLineDataset(path).batch(len_train)
+        train = tf.strings.to_number(train_ds.get_single_element())
+
+        path = os.path.join(self.path, "list", "test_age.txt")
+        test_ds = tf.data.TextLineDataset(path).batch(len_test)
+        test = tf.strings.to_number(test_ds.get_single_element())
+        return train, test
+    
+    def parse_image(self, filename, labels):
+        label = self.parse_label(filename, labels)
+
+        image = tf.io.read_file(filename)
+        image = tf.io.decode_jpeg(image, channels=self.channels)
+        image = tf.image.convert_image_dtype(image, tf.float32)
+        image = tf.image.resize(image, [self.size, self.size])
+        return image, label
+
+
 class FGNetDataset(ImageDataset):
 
     def __init__(self, path, size, channels) -> None:
