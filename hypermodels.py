@@ -5,7 +5,7 @@ import tensorflow as tf
 
 class HyperBase(kt.HyperModel):
 
-    def __init__(self, name="HyperBase", loss=None, metrics=["root_mean_squared_error", "mean_absolute_error"]):
+    def __init__(self, name="HyperBase", loss=None, metrics=None):
         super().__init__(name, True)
         self.loss = loss
         self.metrics = metrics
@@ -33,7 +33,7 @@ class HyperRegression(HyperBase):
         self.base = base
 
     def get_model(self, hp):
-        return Regression(self.base)
+        return Regression(self.base())
     
 class HyperHL(HyperBase):
 
@@ -68,7 +68,7 @@ class HyperHLGaussian(HyperHL):
         bins = self.get_bins(hp)
         bin_width = bins[1] - bins[0]
         sigma = sig_ratio * bin_width
-        return HLGaussian(self.base, bins, sigma)
+        return HLGaussian(self.base(), bins, sigma)
     
 class HyperHLOneBin(HyperHL):
 
@@ -78,4 +78,4 @@ class HyperHLOneBin(HyperHL):
 
     def get_model(self, hp):
         bins = self.get_bins(hp)
-        return HLOneBin(self.base, bins)
+        return HLOneBin(self.base(), bins)
