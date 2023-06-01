@@ -5,3 +5,5 @@ regress_model/
 test_model/
 .ipynb_checkpoints/
 UTKFace/
+scratch/
+hypers/
