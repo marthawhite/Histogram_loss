@@ -20,8 +20,10 @@ def get_model():
 
 
 
-def main(datafile):
-    n_epochs = 8
+def main(base_dir):
+    n_trials = 10
+    runs_per_trial = 1
+    n_epochs = 10
     test_ratio = 0.2
     image_size = 128
     channels = 3
@@ -29,17 +31,17 @@ def main(datafile):
     borders = tf.range(-10,80, 1, tf.float32)
     y_min = 0
     y_max = 70
-    directory = "hypermodels"
+    directory = os.path.join(base_dir, "hypers")
     
-    path = os.path.join(data_file, "megaage_asian", "megaage_asian")
-    ds = MegaAgeDataset(datafile, size=image_size, channels=channels)
+    path = os.path.join(base_dir, "data", "megaage_asian", "megaage_asian")
+    ds = MegaAgeDataset(path, size=image_size, channels=channels)
     train, test = ds.get_split(test_ratio)
-    train = train.batch(batch_size=batch_size)
-    test = test.batch(batch_size=batch_size)
-    
+    train = train.batch(batch_size=batch_size).prefetch(1)
+    test = test.batch(batch_size=batch_size).prefetch(1)
+    metrics = ["mse", "mae"]
     # tune regression
     hp = kt.HyperParameters()
-    regression = HyperRegression(get_model)
+    regression = HyperRegression(get_model, loss="mse", metrics=metrics)
     
     regression_tuner = kt.BayesianOptimization(
         hyperparameters=hp,
@@ -47,22 +49,46 @@ def main(datafile):
         objective = "val_mse", 
         directory=directory, 
         project_name="regression", 
-        tune_new_entries=True) 
+        overwrite=False,
+        tune_new_entries=True,
+        max_trials=n_trials, 
+        executions_per_trial=runs_per_trial
+    ) 
     regression_tuner.search(x=train, epochs=n_epochs, validation_data=test)
     
     
     # hl gaussian
-    hl_gaussian = HyperHLGaussian(get_model)
+    hl_gaussian = HyperHLGaussian(get_model, y_min, y_max, metrics=metrics)
     
-    hl_gaussian_tuner = kt.BayesianOptimization(hl_gaussian, objective="val_mse", overwrite=True, directory=directory, project_name="hl_gaussian")
+    hl_gaussian_tuner = kt.BayesianOptimization(
+        hyperparameters=hp,
+        hypermodel=hl_gaussian, 
+        objective = "val_mse", 
+        directory=directory, 
+        project_name="hl_gaussian", 
+        overwrite=False,
+        tune_new_entries=True,
+        max_trials=n_trials, 
+        executions_per_trial=runs_per_trial
+    )
     hl_gaussian_tuner.search(x=train, epochs=n_epochs, validation_data=test)
     
         
     
     # hl one bin
-    hl_one_bin = HyperHLOneBin(get_model)
+    hl_one_bin = HyperHLOneBin(get_model, y_min, y_max, metrics=metrics)
     
-    hl_one_bin_tuner = kt.BayesianOptimization(hl_one_bin, objective="val_mse", directory=directory, project_name="hl_one_bin")
+    hl_one_bin_tuner = kt.BayesianOptimization(
+        hypermodel=hl_one_bin,
+        hyperparameters=hp, 
+        objective="val_mse", 
+        directory=directory, 
+        project_name="hl_one_bin",
+        overwrite=False,
+        tune_new_entries=True,
+        max_trials=n_trials, 
+        executions_per_trial=runs_per_trial
+    )
     hl_one_bin_tuner.search(x=train, epochs=n_epochs, validation_data=test)
     
         
