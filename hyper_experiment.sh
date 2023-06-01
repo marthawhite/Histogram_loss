@@ -22,4 +22,4 @@ mkdir $SLURM_TMPDIR/hypers
 tar xf $DATA -C $SLURM_TMPDIR/data
 tar xf $HYPERS -C $SLURM_TMPDIR/hypers
 
-python Histogram_loss/main.py $SLURM_TMPDIR/data $SLURM_TMPDIR/hypers
+python Histogram_loss/main.py $SLURM_TMPDIR
