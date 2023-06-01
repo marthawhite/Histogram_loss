@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=MegaAge-test
+#SBATCH --job-name=MegaAge-hypers
 #SBATCH --output=%x-%j.out
-#SBATCH --time=0-03:00:00
+#SBATCH --time=0-12:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=3
 #SBATCH --mem=16000M
@@ -18,8 +18,9 @@ pip install --no-index --upgrade pip
 pip install --no-index -r requirements.txt
 
 mkdir $SLURM_TMPDIR/data
-mkdir $SLURM_TMPDIR/hypers
 tar xf $DATA -C $SLURM_TMPDIR/data
-tar xf $HYPERS -C $SLURM_TMPDIR/hypers
+tar xf $HYPERS -C $SLURM_TMPDIR
 
-python Histogram_loss/main.py $SLURM_TMPDIR
+python Histogram_loss/tuner.py $SLURM_TMPDIR
+
+tar cf hypers.tar $SLURM_TMPDIR/hypers
