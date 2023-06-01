@@ -47,7 +47,7 @@ class HyperHL(HyperBase):
 
     def get_bins(self, hp):
         padding = hp.Float("padding", default=0.1, min_value=0.025, max_value=0.1, step=2, sampling="log")
-        n_bins = hp.Int("n_bins", default=100, min_value=25, max_value=400, step=2, sampling="log")
+        n_bins = int(hp.Int("n_bins", default=100, min_value=25, max_value=400, step=2, sampling="log"))
         
         y_range = self.y_max - self.y_min
         new_min = self.y_min - padding * y_range
