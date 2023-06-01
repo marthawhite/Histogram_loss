@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import pickle
+import json
 import os
-import psutil
 import gc
 
 from sklearn.linear_model import LinearRegression
@@ -30,7 +30,7 @@ use_amsgrad = False
 # Error measures
 
 def rmse_mae(y_true, y_pred):
-    return np.array([np.sqrt(mse(y_true, y_pred)), mae(y_true, y_pred)])
+    return [np.sqrt(mse(y_true, y_pred)), mae(y_true, y_pred)]
 
 
 # Models
@@ -110,7 +110,7 @@ def get_data(dataset):
         y_min = 1922
         y_max = 2011
     else: # CT Scan
-        dat = pd.read_csv('slice_localization_data.csv').iloc[:,1:]
+        dat = pd.read_csv(os.path.join('data', 'slice_localization_data.csv')).iloc[:,1:]
         y_min = 0
         y_max = 100
 
@@ -120,7 +120,7 @@ def get_data(dataset):
 # Data train/test splits
 def get_split(dat, dataset, test_ratio=0.2, seed=42):
     # dataset = 'ctscan' #'yearpred' or 'ctscan'
-    process = psutil.Process(os.getpid())
+    #process = psutil.Process(os.getpid())
 
     if dataset == 'yearpred_fixed':
         tv = dat.iloc[:463715,:]
@@ -143,7 +143,7 @@ def get_split(dat, dataset, test_ratio=0.2, seed=42):
 
     print(dat.shape)
 
-    print('mem:', process.memory_info().rss)
+    #print('mem:', process.memory_info().rss)
 
     sc = StandardScaler()
     X_tv = sc.fit_transform(X_tv)
