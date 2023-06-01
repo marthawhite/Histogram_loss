@@ -6,6 +6,7 @@ from hypermodels import HyperRegression, HyperHLGaussian, HyperHLOneBin
 import os
 import sys
 import json
+from experiment.datasets import MegaAgeDataset
 
 
 def get_model():
@@ -26,6 +27,8 @@ def main(datafile):
     channels = 3
     batch_size = 32
     borders = tf.range(-10,80, 1, tf.float32)
+    y_min = 0
+    y_max = 70
     directory = "hypermodels"
     
     path = os.path.join(data_file, "megaage_asian", "megaage_asian")
@@ -35,15 +38,21 @@ def main(datafile):
     test = test.batch(batch_size=batch_size)
     
     # tune regression
-    #hp = kt.HyperParameters()
-    regression = HyperRegression(get_model())
+    hp = kt.HyperParameters()
+    regression = HyperRegression(get_model)
     
-    regression_tuner = kt.BayesianOptimization(regression, objective = "val_mse", directory=directory, project_name="regression") 
+    regression_tuner = kt.BayesianOptimization(
+        hyperparameters=hp,
+        hypermodel=regression, 
+        objective = "val_mse", 
+        directory=directory, 
+        project_name="regression", 
+        tune_new_entries=True) 
     regression_tuner.search(x=train, epochs=n_epochs, validation_data=test)
     
     
     # hl gaussian
-    hl_gaussian = HyperHLGaussian(get_model())
+    hl_gaussian = HyperHLGaussian(get_model)
     
     hl_gaussian_tuner = kt.BayesianOptimization(hl_gaussian, objective="val_mse", overwrite=True, directory=directory, project_name="hl_gaussian")
     hl_gaussian_tuner.search(x=train, epochs=n_epochs, validation_data=test)
@@ -51,7 +60,7 @@ def main(datafile):
         
     
     # hl one bin
-    hl_one_bin = HyperHLOneBin(get_model())
+    hl_one_bin = HyperHLOneBin(get_model)
     
     hl_one_bin_tuner = kt.BayesianOptimization(hl_one_bin, objective="val_mse", directory=directory, project_name="hl_one_bin")
     hl_one_bin_tuner.search(x=train, epochs=n_epochs, validation_data=test)
