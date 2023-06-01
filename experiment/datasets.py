@@ -31,6 +31,11 @@ class Dataset:
 
         return tf.keras.utils.split_dataset(self.ds, right_size=test_ratio, shuffle=True, seed=self.seed)
 
+    def three_split(self, val_ratio, test_ratio):
+        train, test = tf.keras.utils.split_dataset(self.ds, right_size=test_ratio, shuffle=True, seed=self.seed)
+        v_ratio = val_ratio / (1 - test_ratio)
+        train, val = tf.keras.utils.split_dataset(train, right_size=v_ratio, shuffle=True, seed=self.seed)
+        return train, val, test
 
 class CSVDataset(Dataset):
 

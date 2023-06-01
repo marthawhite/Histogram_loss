@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
-from models import HL_model, Regression, Classification
+from experiment.models import HL_model, Regression, Classification
 from experiment.datasets import FGNetDataset
 import os
 import sys
