@@ -23,4 +23,4 @@ tar xf $HYPERS -C $SLURM_TMPDIR
 
 python Histogram_loss/tuner.py $SLURM_TMPDIR
 
-tar cf hypers.tar $SLURM_TMPDIR/hypers
+tar cf $HYPERS -C $SLURM_TMPDIR hypers
