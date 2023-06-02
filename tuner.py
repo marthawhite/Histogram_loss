@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
-import keras_tuner as kt
+import kerastuner as kt
 from hypermodels import HyperRegression, HyperHLGaussian, HyperHLOneBin
 import os
 import sys

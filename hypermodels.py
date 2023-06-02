@@ -1,4 +1,4 @@
-import keras_tuner as kt
+import kerastuner as kt
 from new_models import Regression, HLGaussian, HLOneBin
 from tensorflow import keras
 import tensorflow as tf
@@ -16,7 +16,8 @@ class HyperBase(kt.HyperModel):
         return model
     
     def get_opt(self, hp):
-        lr = hp.Float("learning_rate", default=1e-3, min_value=1e-4, max_value=1e-2, step=10, sampling="log")
+        #lr = hp.Float("learning_rate", default=1e-3, min_value=1e-4, max_value=1e-2, step=10, sampling="log")
+        lr = hp.Choice("learning_rate", [1e-2, 1e-3, 1e-4])
         b1 = hp.Fixed("beta_1", 0.9)
         b2 = hp.Fixed("beta_2", 0.999)
         eps = hp.Fixed("epsilon", 1e-7)
@@ -46,8 +47,10 @@ class HyperHL(HyperBase):
         pass
 
     def get_bins(self, hp):
-        padding = hp.Float("padding", default=0.1, min_value=0.025, max_value=0.1, step=2, sampling="log")
-        n_bins = int(hp.Int("n_bins", default=100, min_value=25, max_value=400, step=2, sampling="log"))
+        #padding = hp.Float("padding", default=0.1, min_value=0.025, max_value=0.1, step=2, sampling="log")
+        padding = hp.Choice("padding", [0.025, 0.05, 0.1])
+        n_bins = int(hp.Choice("n_bins", [25, 50, 100, 200, 400]))
+        #n_bins = int(hp.Int("n_bins", default=100, min_value=25, max_value=400, step=2, sampling="log"))
         
         y_range = self.y_max - self.y_min
         new_min = self.y_min - padding * y_range
@@ -63,7 +66,8 @@ class HyperHLGaussian(HyperHL):
         self.base = base
 
     def get_model(self, hp):
-        sig_ratio = hp.Float("sig_ratio", default=1., min_value=0.5, max_value=2., step=2, sampling="log")
+        #sig_ratio = hp.Float("sig_ratio", default=1., min_value=0.5, max_value=2., step=2, sampling="log")
+        sig_ratio = hp.Choice("sig_ratio", [0.5, 1., 2.])
 
         bins = self.get_bins(hp)
         bin_width = bins[1] - bins[0]
