@@ -11,7 +11,7 @@
 DATA=megaage_asian.tar
 HYPERS=hypers.tar
 
-module load python/3.10 cuda cudnn 
+module load python/3.10 scipy-stack cuda cudnn 
 virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
 pip install --no-index --upgrade pip
@@ -23,4 +23,4 @@ tar xf $HYPERS -C $SLURM_TMPDIR
 
 python Histogram_loss/tuner.py $SLURM_TMPDIR
 
-tar cf hypers.tar $SLURM_TMPDIR/hypers
+tar cf $HYPERS -C $SLURM_TMPDIR hypers
