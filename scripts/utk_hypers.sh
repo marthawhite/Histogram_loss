@@ -9,7 +9,7 @@
 #SBATCH --mail-type=ALL
 
 DATA=UTKFace.tar.gz
-HYPERS=hypers.tar
+HYPERS=utk-hypers.tar
 TUNER=keras_tuner-1.3.5-py3-none-any.whl
 
 module load python/3.10 scipy-stack cuda cudnn 
@@ -23,6 +23,6 @@ mkdir $SLURM_TMPDIR/data
 tar xzf $DATA -C $SLURM_TMPDIR/data
 tar xf $HYPERS -C $SLURM_TMPDIR
 
-python Histogram_loss/tuner.py $SLURM_TMPDIR
+python Histogram_loss/tuner_UTK.py $SLURM_TMPDIR
 
 tar cf $HYPERS -C $SLURM_TMPDIR hypers
