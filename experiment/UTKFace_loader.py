@@ -21,13 +21,3 @@ class UTKFaceDataset(ImageDataset):
         images_ds = list_ds.map(lambda x : self.parse_image(x))
         return images_ds
     
-def main():
-    path = os.path.join("UTKFace", "Images")
-    ds = UTKFaceDataset(path, size=128, channels=3)
-    train, test = ds.get_split(0.05)
-    for element in test.as_numpy_iterator():
-        print(element)
-        break
-    
-main()
-    

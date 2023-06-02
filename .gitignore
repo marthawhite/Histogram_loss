@@ -4,6 +4,6 @@ Data/
 regress_model/
 test_model/
 .ipynb_checkpoints/
-UTKFace/
+Images/
 scratch/
 hypers/
