@@ -102,9 +102,10 @@ class Regression(keras.Model):
         base - the backbone model to learn features
     """
 
-    def __init__(self, base):
+    def __init__(self, base, dropout=0):
         super().__init__()
         self.base = base
+        self.dropout = keras.layers.Dropout(dropout)
         self.reg = keras.layers.Dense(1)
 
     def call(self, inputs, training=None):
@@ -118,6 +119,7 @@ class Regression(keras.Model):
             for the given inputs
         """
         features = self.base(inputs, training=training)
+        features = self.dropout(features, training=training)
         return self.reg(features)
 
 
@@ -133,9 +135,10 @@ class HistModel(keras.Model):
         name - the name of the model
     """
 
-    def __init__(self, base, centers, transform, name="HistModel"):
+    def __init__(self, base, centers, transform, name="HistModel", dropout=0):
         super().__init__(name=name)
         self.base = base
+        self.dropout = keras.layers.Dropout(dropout)
         self.softmax = keras.layers.Dense(tf.size(centers), activation="softmax")
         self.transform = transform
         self.mean = HistMean(centers)
@@ -152,6 +155,7 @@ class HistModel(keras.Model):
             values of the binned probability vectors obtained from the inputs
         """
         features = self.base(inputs, training)
+        features = self.dropout(features, training=training)
         hist = self.softmax(features, training=training)
         return self.mean(hist)
 
@@ -169,6 +173,7 @@ class HistModel(keras.Model):
 
         with tf.GradientTape() as tape:
             features = self.base(x, training=True)
+            features = self.dropout(features, training=True)
             hist = self.softmax(features, training=True)
             loss = keras.losses.categorical_crossentropy(y_transformed, hist)
         
@@ -193,10 +198,10 @@ class HLGaussian(HistModel):
         sigma - the sigma parameter of the truncated Gaussian distribution
     """
 
-    def __init__(self, base, borders, sigma):
+    def __init__(self, base, borders, sigma, dropout):
         centers = (borders[:-1] + borders[1:]) / 2
         transform = TruncGaussHistTransform(borders, sigma)
-        super().__init__(base, centers, transform, "HL-Gaussian")
+        super().__init__(base, centers, transform, "HL-Gaussian", dropout)
 
 
 class HLOneBin(HistModel):
@@ -208,10 +213,10 @@ class HLOneBin(HistModel):
         sigma - the sigma parameter of the truncated Gaussian distribution
     """
 
-    def __init__(self, base, borders):
+    def __init__(self, base, borders, dropout):
         centers = (borders[:-1] + borders[1:]) / 2
         transform = OneHotTransform(borders)
-        super().__init__(base, centers, transform, "HL-OneBin")
+        super().__init__(base, centers, transform, "HL-OneBin", dropout)
     
 
 def main():
