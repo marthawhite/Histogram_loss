@@ -64,7 +64,7 @@ class HyperRegression(HyperBase):
 
     def get_model(self, hp):
         """Return a regression model."""
-        dropout = hp.Choice("dropout", [0., 0.05, 0.2, 0.5])
+        dropout = hp.Choice("dropout", [0., 0.05, 0.2, 0.5], default=0.2)
         return Regression(self.base(), dropout)
     
 
@@ -126,7 +126,7 @@ class HyperHLGaussian(HyperHL):
             hp - the KerasTuner HyperParameter instance
         """
         sig_ratio = hp.Float("sig_ratio", default=1., min_value=0.5, max_value=2., step=2, sampling="log")
-        dropout = hp.Choice("dropout", [0., 0.05, 0.2, 0.5])
+        dropout = hp.Choice("dropout", [0., 0.05, 0.2, 0.5], default=0.2)
 
         # Calculate sigma as a multiple of the bin width
         bins = self.get_bins(hp)
@@ -145,7 +145,7 @@ class HyperHLOneBin(HyperHL):
         metrics - the metrics to compile the model with
     """
 
-    def __init__(self, base, min_y, max_y, metrics=None, dropout=0):
+    def __init__(self, base, min_y, max_y, metrics=None):
         super().__init__(min_y, max_y, "HyperHL-OneBin", metrics)
         self.base = base
 
@@ -155,6 +155,6 @@ class HyperHLOneBin(HyperHL):
         Params:
             hp - the KerasTuner HyperParameter instance
         """
-        dropout = hp.Choice("dropout", [0., 0.05, 0.2, 0.5])
+        dropout = hp.Choice("dropout", [0., 0.05, 0.2, 0.5], default=0.2)
         bins = self.get_bins(hp)
         return HLOneBin(self.base(), bins, dropout)
