@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=MegaAge-dist-reg
 #SBATCH --output=%x-%j.out
-#SBATCH --time=0-12:00:00
+#SBATCH --time=0-9:00:00
 #SBATCH --gres=gpu:2
 #SBATCH --cpus-per-task=3
 #SBATCH --mem=16000M
@@ -11,6 +11,7 @@
 DATA=megaage_asian.tar
 HYPERS=hypers.tar
 TUNER=keras_tuner-1.3.5-py3-none-any.whl
+N_WORKERS=2
 
 module load python/3.10 scipy-stack cuda cudnn 
 virtualenv --no-download $SLURM_TMPDIR/env
@@ -24,6 +25,4 @@ tar xf $DATA -C $SLURM_TMPDIR/data
 tar xf $HYPERS -C $SLURM_TMPDIR
 
 cd Histogram_loss
-source run.sh regression_tuner.py $SLURM_TMPDIR 2
-
-tar cf $HYPERS -C $SLURM_TMPDIR hypers
+source run.sh regression_tuner.py $SLURM_TMPDIR $N_WORKERS
