@@ -17,7 +17,7 @@ class LogGridSearch(kt.GridSearch):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.logs = {}
-        self.metric_list = []
+        self.metric_list = ["loss", "val_loss"]
         for key in self.metrics:
             self.metric_list.append(key)
             self.metric_list.append("val_" + key)
