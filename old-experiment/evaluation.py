@@ -4,7 +4,7 @@ error = rmse_mae
 
 
 # This means the results will be saved in res/evaluation
-res_dir = os.path.join('res')
+res_dir = os.path.join('old-experiment','res')
 
 # Data
 dataset = 'ctscan'
@@ -23,7 +23,7 @@ best_params['n_bins'] = 100 # number of bins
 best_params['ker_par'] = 1.0 # standard deviation of the Gaussian target distribution
 best_params['batch_size'] = 256 # batch size
 
-num_runs = 3
+num_runs = 1
 epochs = 100 # Change this to a small number like 10 to see interim performance.
 verbose = 0 # Change this to 1 to print all training details
 seeds = range(num_runs) # random seeds
@@ -125,13 +125,22 @@ for run in range(num_runs):
         print('---')
         results[key].append((train_error, test_error))
 
+print(results)
 
+with open(os.path.join(res_dir, 'history_'+dataset+'.json'), 'w') as f:
+    json.dump(history, f)
 
-with open(os.path.join(res_dir, 'history_'+dataset+'.pkl'), 'wb') as f:
-    pickle.dump(history, f, pickle.HIGHEST_PROTOCOL)
+with open(os.path.join(res_dir, 'res_'+dataset+'.json'), 'w') as f:
+    json.dump(results, f)
 
-with open(os.path.join(res_dir, 'res_'+dataset+'.pkl'), 'wb') as f:
-    pickle.dump(results, f, pickle.HIGHEST_PROTOCOL)
+with open(os.path.join(res_dir, 'meta_data_'+dataset+'_.json'), 'w') as f:
+    json.dump(meta_data, f)
 
-with open(os.path.join(res_dir, 'meta_data_'+dataset+'_.pkl'), 'wb') as f:
-    pickle.dump(meta_data, f, pickle.HIGHEST_PROTOCOL)
+# with open(os.path.join(res_dir, 'history_'+dataset+'.pkl'), 'wb') as f:
+#     pickle.dump(history, f, pickle.HIGHEST_PROTOCOL)
+
+# with open(os.path.join(res_dir, 'res_'+dataset+'.pkl'), 'wb') as f:
+#     pickle.dump(results, f, pickle.HIGHEST_PROTOCOL)
+
+# with open(os.path.join(res_dir, 'meta_data_'+dataset+'_.pkl'), 'wb') as f:
+#     pickle.dump(meta_data, f, pickle.HIGHEST_PROTOCOL)
