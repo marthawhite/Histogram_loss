@@ -7,6 +7,7 @@ import os
 import sys
 import json
 from experiment.datasets import MegaAgeDataset
+from experiment.logging import LogGridSearch
 
 def get_model():
     base_model = keras.applications.Xception(
@@ -41,9 +42,10 @@ def main(base_dir):
     
     hp = kt.HyperParameters()
     
-    regression = HyperRegression(get_model, loss="mse", metrics=metrics)
+    regression = HyperRegression(get_model, loss="mse")
     
-    regression_tuner = kt.BayesianOptimization(
+    regression_tuner = LogGridSearch(
+        metrics=metrics,
         hyperparameters=hp,
         hypermodel=regression, 
         objective = "val_mse", 
@@ -55,7 +57,15 @@ def main(base_dir):
         executions_per_trial=runs_per_trial,
         distribution_strategy=tf.distribute.MirroredStrategy()
     ) 
-    regression_tuner.search(x=train, epochs=n_epochs, validation_data=test)
+    regression_tuner.search(x=train, epochs=n_epochs, validation_data=test, verbose=2)
+    
+    data = regression_tuner.get_results()
+    model = "Regression"
+    results = {}
+    results[model] = data
+
+    with open("regression_results.json", "w") as out_file:
+        json.dump(results, out_file, indent=4)
     
     
 if __name__ == "__main__":

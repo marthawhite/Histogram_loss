@@ -7,6 +7,7 @@ import os
 import sys
 import json
 from experiment.datasets import MegaAgeDataset
+from experiment.logging import LogGridSearch
 
 def get_model():
     base_model = keras.applications.Xception(
@@ -39,9 +40,10 @@ def main(base_dir):
     # tune regression
     hp = kt.HyperParameters()
     
-    hl_gaussian = HyperHLGaussian(get_model, y_min, y_max, metrics=metrics)
+    hl_gaussian = HyperHLGaussian(get_model, y_min, y_max)
     
-    hl_gaussian_tuner = kt.BayesianOptimization(
+    hl_gaussian_tuner = LogGridSearch(
+        metrics=metrics,
         hyperparameters=hp,
         hypermodel=hl_gaussian, 
         objective = "val_mse", 
@@ -53,7 +55,15 @@ def main(base_dir):
         executions_per_trial=runs_per_trial,
         distribution_strategy=tf.distribute.MirroredStrategy()
     )
-    hl_gaussian_tuner.search(x=train, epochs=n_epochs, validation_data=test) 
+    hl_gaussian_tuner.search(x=train, epochs=n_epochs, validation_data=test, verbose=2) 
+
+    data = hl_gaussian_tuner.get_results()
+    model = "HL-Gaussian"
+    results = {}
+    results[model] = data
+
+    with open("hl_gaussian_results.json", "w") as out_file:
+        json.dump(results, out_file, indent=4)
     
 if __name__ == "__main__":
     data_file = sys.argv[1]

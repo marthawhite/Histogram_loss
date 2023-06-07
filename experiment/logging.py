@@ -45,3 +45,7 @@ class LogGridSearch(kt.GridSearch):
         super().on_batch_end(trial, model, epoch, logs)
         for key in self.metric_list:
             self.logs[trial.trial_id]["results"][key].append(logs.get(key, None))
+
+    def get_results(self):
+        """Return the results as a dictionary."""
+        return self.logs
