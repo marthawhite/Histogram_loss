@@ -15,14 +15,14 @@ class LogGridSearch(kt.GridSearch):
             ***Should contain metrics!
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, json_file="temp_results.json", **kwargs):
         super().__init__(**kwargs)
         self.logs = {}
         self.metric_list = ["loss", "val_loss"]
         for key in self.metrics:
             self.metric_list.append(key)
             self.metric_list.append("val_" + key)
-        self.out_file = kwargs.get("json_file", "temp_results.json")
+        self.out_file = json_file
 
     def on_trial_begin(self, trial):
         """Initialize the dict entry when the trial begins.

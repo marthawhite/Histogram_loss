@@ -22,7 +22,7 @@ def get_model():
 def main(base_dir, worker_num):
     n_trials = 8
     runs_per_trial = 1
-    n_epochs = 30
+    n_epochs = 1
     test_ratio = 0.2
     image_size = 128
     channels = 3
@@ -35,8 +35,8 @@ def main(base_dir, worker_num):
     path = os.path.join(base_dir, "data", "megaage_asian", "megaage_asian")
     ds = MegaAgeDataset(path, size=image_size, channels=channels)
     train, test = ds.get_split(test_ratio)
-    train = train.batch(batch_size=batch_size).prefetch(1)
-    test = test.batch(batch_size=batch_size).prefetch(1)
+    train = train.batch(batch_size=batch_size).take(5).prefetch(1)
+    test = test.batch(batch_size=batch_size).take(5).prefetch(1)
     metrics = ["mse", "mae"]
     
     
@@ -56,8 +56,8 @@ def main(base_dir, worker_num):
         tune_new_entries=False,
         max_trials=n_trials, 
         executions_per_trial=runs_per_trial,
-        distribution_strategy=tf.distribute.MirroredStrategy()
-        json_file = f"temp_regression_results{worker_num}.json",
+        distribution_strategy=tf.distribute.MirroredStrategy(),
+        json_file = f"temp_regression_results{worker_num}.json"
     ) 
     regression_tuner.search(x=train, epochs=n_epochs, validation_data=test, verbose=2)
     
