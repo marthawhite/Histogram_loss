@@ -4,6 +4,7 @@ LogGridSearch class.
 
 
 import keras_tuner as kt
+import json
 
 
 class LogGridSearch(kt.GridSearch):
@@ -21,6 +22,7 @@ class LogGridSearch(kt.GridSearch):
         for key in self.metrics:
             self.metric_list.append(key)
             self.metric_list.append("val_" + key)
+        self.out_file = kwargs.get("json_file", "temp_results.json")
 
     def on_trial_begin(self, trial):
         """Initialize the dict entry when the trial begins.
@@ -45,6 +47,14 @@ class LogGridSearch(kt.GridSearch):
         super().on_batch_end(trial, model, epoch, logs)
         for key in self.metric_list:
             self.logs[trial.trial_id]["results"][key].append(logs.get(key, None))
+
+    def on_trial_end(self, trial):
+        super().on_trial_end(trial)
+        self.save_results()
+
+    def save_results(self):
+        with open(self.out_file, "w") as out_file:
+            json.dump(self.logs, out_file)
 
     def get_results(self):
         """Return the results as a dictionary."""
