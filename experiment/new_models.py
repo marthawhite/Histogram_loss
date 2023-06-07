@@ -142,6 +142,7 @@ class HistModel(keras.Model):
         self.softmax = keras.layers.Dense(tf.size(centers), activation="softmax")
         self.transform = transform
         self.mean = HistMean(centers)
+        self.hist_loss = keras.metrics.Mean("loss")
 
     def call(self, inputs, training=None):
         """Perform regression on the inputs using the histogram loss model.
@@ -184,7 +185,30 @@ class HistModel(keras.Model):
 
         y_pred = self.mean(hist)
         self.compiled_metrics.update_state(y, y_pred)
+        self.hist_loss.update_state(loss)
 
+        return {m.name: m.result() for m in self.metrics}
+    
+    def test_step(self, data):
+        """Evaluate the data on a validation batch and compute the loss.
+        
+        Params:
+            data - a batch of data in the form (x, y)
+                typically a tf.data.Dataset where the elements are a tuple of tensors
+        """
+        x, y = data
+
+        y_transformed = self.transform(y)
+        features = self.base(x, training=False)
+        features = self.dropout(features, training=False)
+        hist = self.softmax(features, training=False)
+
+        loss = keras.losses.categorical_crossentropy(y_transformed, hist)
+        self.hist_loss.update_state(loss)
+
+        y_pred = self.mean(hist)
+        self.compiled_metrics.update_state(y, y_pred)
+        
         return {m.name: m.result() for m in self.metrics}
     
 
@@ -225,8 +249,6 @@ def main():
     hl = HLGaussian(base, borders, 1.)
     hl.compile()
     print(hl.summary())
-
-
 
 
 if __name__ == "__main__":
