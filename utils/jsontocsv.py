@@ -1,5 +1,8 @@
 """
 Utility module to convert experiment results.
+
+Run configuration:
+    python3 jsontocsv.py in_file1.json ... in_fileN.json out_file.csv
 """
 
 import pandas as pd
@@ -10,7 +13,7 @@ import sys
 class JSONCSVConverter:
     """Convert experiment results from JSON to CSV.
     
-    The JSON file should have the following structure:
+    The JSON files should have the following structure:
     {
         "model1": {
             "trial1": {
@@ -23,16 +26,20 @@ class JSONCSVConverter:
     }
     """
 
-    def convert(self, in_file, out_file, cols=None):
+    def convert(self, in_files, out_file, cols=None):
         """Create a CSV file from JSON results.
         
         Params:
-            in_file - the path to the JSON file
+            in_files - a list of paths to the JSON files
             out_file - the path to the CSV file to create
             cols - the list of column names to specify an order
         """
-        data = self.read(in_file)
-        df = self.transform(data)
+        dfs = []
+        for in_file in in_files:
+            data = self.read(in_file)
+            df = self.transform(data)
+            dfs.append(df)
+        df = pd.concat(dfs)
         if cols is not None:
             df = self.reorder(df, cols)
         self.write(out_file, df)
@@ -121,10 +128,11 @@ class JSONCSVConverter:
 
 
 def main():
-    in_file, out_file = sys.argv[1:3]
+    in_files = sys.argv[1:-1]
+    out_file = sys.argv[-1]
     conv = JSONCSVConverter()
     cols = ["model", "trial", "epoch"]
-    conv.convert(in_file, out_file, cols)
+    conv.convert(in_files, out_file, cols)
 
 
 if __name__ == "__main__":
