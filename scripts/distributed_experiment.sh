@@ -2,8 +2,10 @@
 #SBATCH --job-name=MegaAge-dist-reg
 #SBATCH --output=%x-%j.out
 #SBATCH --time=0-9:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks=3
 #SBATCH --gres=gpu:2
-#SBATCH --cpus-per-task=3
+#SBATCH --cpus-per-task=1
 #SBATCH --mem=16000M
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
@@ -24,5 +26,12 @@ mkdir $SLURM_TMPDIR/data
 tar xf $DATA -C $SLURM_TMPDIR/data
 tar xf $HYPERS -C $SLURM_TMPDIR
 
-cd Histogram_loss
-source run.sh regression_tuner.py $SLURM_TMPDIR $N_WORKERS
+PY_FILE=Histogram_loss/regression_tuner.py
+
+srun --ntasks=1 source Histogram_loss/chief.sh $PY_FILE $SLURM_TMPDIR &
+for i in $(seq 1 $N_WORKERS)
+do 
+    srun --ntasks=1 source Histogram_loss/worker.sh $PY_FILE $SLURM_TMPDIR $i &
+wait
+
+tar cf hypers.tar -C $SLURM_TMPDIR hypers
