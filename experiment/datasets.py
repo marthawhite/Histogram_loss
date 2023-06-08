@@ -6,15 +6,20 @@ import pandas as pd
 class Dataset:
     """Base dataset class."""
 
-    def __init__(self) -> None:
+    def __init__(self, batch_size=32, prefetch=1) -> None:
         self.seed = 1
-        self.ds = self.load()
+        self.batch_size = batch_size
+        self.prefetch = prefetch
+        self.load()
+
+    def prepare(self, *args):
+        return [x.batch(self.batch_size).prefetch(self.prefetch) for x in args]
 
     def load(self):
         pass
 
-    def normalize(self, train, test):
-        self.ds = self.ds.map(lambda x: x)
+    def get_data(self):
+        pass
 
     def input_shape(self):
         return self.ds.element_spec[0].shape
@@ -29,13 +34,18 @@ class Dataset:
         Returns: a tuple (train, test) of tf.data.Dataset
         """
 
-        return tf.keras.utils.split_dataset(self.ds, right_size=test_ratio, shuffle=True, seed=self.seed)
+        data = self.get_data()
+        test_len = int(len(data) * test_ratio)
+        return self.prepare(data.skip(test_len), data.take(test_len))
 
     def three_split(self, val_ratio, test_ratio):
-        train, test = tf.keras.utils.split_dataset(self.ds, right_size=test_ratio, shuffle=True, seed=self.seed)
-        v_ratio = val_ratio / (1 - test_ratio)
-        train, val = tf.keras.utils.split_dataset(train, right_size=v_ratio, shuffle=True, seed=self.seed)
-        return train, val, test
+        data = self.get_data()
+        test_len = int(len(data) * test_ratio)
+        val_len = int(len(data) * val_ratio)
+        train = data.skip(test_len + val_len)
+        val = data.skip(test_len).take(val_len)
+        test = data.take(test_len)
+        return self.prepare(train, val, test)
 
 class CSVDataset(Dataset):
 
@@ -49,15 +59,18 @@ class CSVDataset(Dataset):
         x = df.drop(self.targets, axis=1)
         y = df[self.targets]
         ds = tf.data.Dataset.from_tensor_slices((tf.convert_to_tensor(x, dtype=tf.float32),tf.convert_to_tensor(y, dtype=tf.float32)))
-        return ds
+        self.ds = ds
+
+    def get_data(self):
+        return self.ds
 
 
 class ImageDataset(Dataset):
 
-    def __init__(self, size, channels) -> None:
+    def __init__(self, size=128, channels=3, **kwargs) -> None:
         self.size = size
         self.channels = channels
-        super().__init__()
+        super().__init__(**kwargs)
 
     def parse_image(self, filename):
         label = self.parse_label(filename)
@@ -74,9 +87,9 @@ class ImageDataset(Dataset):
 
 class MegaAgeDataset(ImageDataset):
     
-    def __init__(self, path, size, channels) -> None:
+    def __init__(self, path, **kwargs) -> None:
         self.path = path
-        super().__init__(size, channels)
+        super().__init__(**kwargs)
 
     def load(self):
 
@@ -92,7 +105,13 @@ class MegaAgeDataset(ImageDataset):
         self.test = test_ds.map(lambda x : self.parse_image(x, y_test), num_parallel_calls=tf.data.AUTOTUNE)
 
     def get_split(self, test_ratio):
-        return self.train, self.test
+        if test_ratio is None:
+            return self.prepare(self.train, self.test)
+        else:
+            return super().get_split(test_ratio)
+        
+    def get_data(self):
+        return self.prepare(self.test.concatenate(self.train))
 
     def parse_label(self, filename, labels):
         file = tf.strings.split(filename, os.sep)[-1]
@@ -136,8 +155,10 @@ class FGNetDataset(ImageDataset):
         glob = os.path.join(self.path, "*")
         list_ds = tf.data.Dataset.list_files(glob, shuffle=False)
         images_ds = list_ds.map(lambda x : self.parse_image(x))
-        return images_ds
+        self.data = images_ds
     
+    def get_data(self):
+        return self.data
 
 def show(image, label):
     plt.figure()
