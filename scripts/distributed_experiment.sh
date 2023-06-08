@@ -28,10 +28,10 @@ tar xf $HYPERS -C $SLURM_TMPDIR
 
 PY_FILE=Histogram_loss/regression_tuner.py
 
-srun --ntasks=1 source Histogram_loss/chief.sh $PY_FILE $SLURM_TMPDIR &
+srun --ntasks=1 ./Histogram_loss/chief.sh $PY_FILE $SLURM_TMPDIR &
 for i in $(seq 1 $N_WORKERS)
 do 
-    srun --ntasks=1 source Histogram_loss/worker.sh $PY_FILE $SLURM_TMPDIR $i &
+    srun --ntasks=1 ./Histogram_loss/worker.sh $PY_FILE $SLURM_TMPDIR $i &
 wait
 
 tar cf hypers.tar -C $SLURM_TMPDIR hypers
