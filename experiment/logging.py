@@ -49,10 +49,12 @@ class LogGridSearch(kt.GridSearch):
             self.logs[trial.trial_id]["results"][key].append(logs.get(key, None))
 
     def on_trial_end(self, trial):
+        """Save intermediate results at the end of each trial."""
         super().on_trial_end(trial)
         self.save_results()
 
     def save_results(self):
+        """Save results to a json file."""
         with open(self.out_file, "w") as out_file:
             json.dump(self.logs, out_file)
 
