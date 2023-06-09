@@ -3,9 +3,9 @@
 #SBATCH --output=%x-%j.out
 #SBATCH --time=0-9:00:00
 #SBATCH --nodes=1
-#SBATCH --ntasks=3
+#SBATCH --ntasks=1
 #SBATCH --gres=gpu:2
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=3
 #SBATCH --mem=16000M
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
@@ -28,10 +28,11 @@ tar xf $HYPERS -C $SLURM_TMPDIR
 
 PY_FILE=Histogram_loss/regression_tuner.py
 
-srun --ntasks=1 ./Histogram_loss/chief.sh $PY_FILE $SLURM_TMPDIR &
+./Histogram_loss/chief.sh $PY_FILE $SLURM_TMPDIR &
 for i in $(seq 1 $N_WORKERS)
 do 
-    srun --ntasks=1 ./Histogram_loss/worker.sh $PY_FILE $SLURM_TMPDIR $i &
+    ./Histogram_loss/worker.sh $PY_FILE $SLURM_TMPDIR $i &
+done
 wait
 
 tar cf hypers.tar -C $SLURM_TMPDIR hypers
