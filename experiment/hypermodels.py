@@ -59,7 +59,7 @@ class HyperRegression(HyperBase):
     """
 
     def __init__(self, base, loss=None, metrics=None):
-        super().__init__("HyperBase", loss, metrics)
+        super().__init__("HyperReg", loss, metrics)
         self.base = base
 
     def get_model(self, hp):
