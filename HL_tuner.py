@@ -20,7 +20,7 @@ def get_model():
 
 def main(base_dir):
     seed = 1
-    n_trials = 6
+    n_trials = 18
     runs_per_trial = 1
     n_epochs = 30
     image_size = 128
@@ -39,6 +39,7 @@ def main(base_dir):
     # tune regression
     hp = kt.HyperParameters()
     hp.Choice("padding", [0.01, 0.025, 0.05, 0.1, 0.25, 0.5])
+    hp.Float("sig_ratio", min_value=1., max_value=4., step=2, sampling="log")
     
     hl_gaussian = HyperHLGaussian(get_model, y_min, y_max)
     
