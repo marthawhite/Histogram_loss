@@ -72,6 +72,37 @@ class OneHotTransform(keras.layers.Layer):
         return tf.one_hot(indices, self.n_classes, dtype=tf.float32)
     
 
+class UniformTransform(keras.layers.Layer):
+    """Transform the target using a mixture of Dirac delta and uniform distributions.
+    A target y is mapped to a binned probability vector with values epsilon if 
+    y is not in the bin and 1 - (k-1) * epsilon if y is in the bin.
+
+    Params:
+        borders - the borders of the histogram bins
+        eps - the uniform noise parameter
+    """
+
+    def __init__(self, borders, eps):
+        super().__init__(trainable=False, name="UniformTransform")
+        self.onehot = OneHotTransform(borders)
+        self.eps = eps
+        k = tf.size(borders) - 1
+        self.scale = 1 - k * self.eps
+
+    def call(self, inputs):
+        """Transform the input and return it.
+        
+        Params:
+            inputs - the tensor of targets to transform
+
+        Returns: 
+            a tensor of shape (len(inputs), len(borders) - 1) consisting of the
+            binned probability vectors
+        """
+        onehot = self.onehot(inputs)
+        return onehot * self.scale + self.eps
+
+
 class HistMean(keras.layers.Layer):
     """Layer that transforms a probability vector into its expected value.
     
@@ -234,13 +265,31 @@ class HLOneBin(HistModel):
     Params:
         base - the backbone model used to learn features
         borders - the borders of the histogram bins
-        sigma - the sigma parameter of the truncated Gaussian distribution
+        dropout - the dropout parameter for the histogram layer
     """
 
     def __init__(self, base, borders, dropout):
         centers = (borders[:-1] + borders[1:]) / 2
         transform = OneHotTransform(borders)
         super().__init__(base, centers, transform, "HL-OneBin", dropout)
+
+
+class HLUniform(HistModel):
+    """Keras model using a histogram loss with a mixture of a Dirac delta 
+    distribution with uniform noise on the targets.
+    
+    Params:
+        base - the backbone model used to learn features
+        borders - the borders of the histogram bins
+        dropout - the dropout parameter for the histogram layer
+        eps - the epsilon parameter for the uniform noise on the targets
+    """
+
+    def __init__(self, base, borders, dropout, eps):
+        centers = (borders[:-1] + borders[1:]) / 2
+        transform = UniformTransform(borders, eps)
+        super().__init__(base, centers, transform, "HL-Uniform", dropout)
+
     
 
 def main():
