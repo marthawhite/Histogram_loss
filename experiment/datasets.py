@@ -7,7 +7,6 @@ class Dataset:
     """Base dataset class."""
 
     def __init__(self, batch_size=32, prefetch=1) -> None:
-        self.seed = 1
         self.batch_size = batch_size
         self.prefetch = prefetch
         self.load()
@@ -111,7 +110,7 @@ class MegaAgeDataset(ImageDataset):
             return super().get_split(test_ratio)
         
     def get_data(self):
-        return self.prepare(self.test.concatenate(self.train))
+        return self.test.concatenate(self.train)
 
     def parse_label(self, filename, labels):
         file = tf.strings.split(filename, os.sep)[-1]
@@ -176,7 +175,6 @@ def main():
     print(train.cardinality(), test.cardinality())
     for image, label in train.take(1):
         show(image, label)
-
 
 
 if __name__ == "__main__":
