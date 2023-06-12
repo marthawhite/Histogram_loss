@@ -38,7 +38,7 @@ def main(base_dir):
     metrics = ["mse", "mae"]
     # tune regression
     hp = kt.HyperParameters()
-    hp.Float("sig_ratio", min_value=0.25, max_value=8., step=2, sampling="log")
+    hp.Choice("padding", [0.01, 0.025, 0.05, 0.1, 0.25, 0.5])
     
     hl_gaussian = HyperHLGaussian(get_model, y_min, y_max)
     
@@ -48,7 +48,7 @@ def main(base_dir):
         hypermodel=hl_gaussian, 
         objective = "val_mse", 
         directory=directory, 
-        project_name="hl_gaussian_sigma", 
+        project_name="hl_gaussian_padding", 
         overwrite=False,
         tune_new_entries=False,
         max_trials=n_trials, 
@@ -62,7 +62,7 @@ def main(base_dir):
     results = {}
     results[model] = data
 
-    with open("hl_gaussian_results.json", "w") as out_file:
+    with open("hlg_padding.json", "w") as out_file:
         json.dump(results, out_file, indent=4)
     
 if __name__ == "__main__":

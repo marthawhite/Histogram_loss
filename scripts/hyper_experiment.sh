@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=MegaAge-HLG
+#SBATCH --job-name=HLG-Padding
 #SBATCH --output=%x-%j.out
 #SBATCH --time=0-9:00:00
 #SBATCH --gres=gpu:1
@@ -9,7 +9,7 @@
 #SBATCH --mail-type=ALL
 
 DATA=megaage_asian.tar
-HYPERS=hypers.tar
+HYPERS=hypers_padding.tar
 TUNER=keras_tuner-1.3.5-py3-none-any.whl
 PY_FILE=Histogram_loss/HL_tuner.py
 
@@ -22,7 +22,7 @@ pip install --upgrade $TUNER
 
 mkdir $SLURM_TMPDIR/data
 tar xf $DATA -C $SLURM_TMPDIR/data
-tar xf $HYPERS -C $SLURM_TMPDIR
+mkdir $SLURM_TMPDIR/hypers
 
 python $PY_FILE $SLURM_TMPDIR
 
