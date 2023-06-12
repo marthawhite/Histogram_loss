@@ -38,7 +38,7 @@ def main(base_dir):
     metrics = ["mse", "mae"]
     # tune regression
     hp = kt.HyperParameters()
-    hp.Float("sig_ratio", min_value=0.25, max_value=8., step=2, sampling="log")
+    hp.Int("n_bins", min_value=35, max_value=280., step=2, sampling="log")
     
     hl_gaussian = HyperHLGaussian(get_model, y_min, y_max)
     
@@ -58,11 +58,11 @@ def main(base_dir):
     hl_gaussian_tuner.search(x=train, epochs=n_epochs, validation_data=test, verbose=2, callbacks=callbacks) 
 
     data = hl_gaussian_tuner.get_results()
-    model = "HL-Gaussian"
+    model = "HL-Gaussian_bin_size"
     results = {}
     results[model] = data
 
-    with open("hl_gaussian_results.json", "w") as out_file:
+    with open("hl_gaussian_bin_size_results.json", "w") as out_file:
         json.dump(results, out_file, indent=4)
     
 if __name__ == "__main__":
