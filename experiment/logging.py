@@ -56,7 +56,7 @@ class LogGridSearch(kt.GridSearch):
     def save_results(self):
         """Save results to a json file."""
         with open(self.out_file, "w") as out_file:
-            json.dump(self.logs, out_file)
+            json.dump(self.logs, out_file, indent=4)
 
     def get_results(self):
         """Return the results as a dictionary."""
