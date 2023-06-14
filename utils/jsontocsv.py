@@ -65,7 +65,12 @@ class JSONCSVConverter:
         
         Returns: a Pandas Dataframe containing rows for each epoch in the trial
         """
-        df = pd.DataFrame.from_dict(trial["results"])
+        dfs = []
+        for i, res in enumerate(trial["results"]):
+            df = pd.DataFrame.from_dict(res)
+            df['iteration'] = i + 1
+            dfs.append(df)
+        df = pd.concat(dfs)
         for hyper, hyper_val in trial["hypers"].items():
             df[hyper] = hyper_val
         df["trial"] = name
@@ -131,7 +136,7 @@ def main():
     in_files = sys.argv[1:-1]
     out_file = sys.argv[-1]
     conv = JSONCSVConverter()
-    cols = ["model", "trial", "epoch"]
+    cols = ["model", "trial", "iteration", "epoch"]
     conv.convert(in_files, out_file, cols)
 
 
