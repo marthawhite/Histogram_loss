@@ -1,0 +1,60 @@
+from mtcnn import MTCNN
+import cv2
+import os
+import numpy as np
+
+class FaceAligner:
+
+    def __init__(self, left_eye=(0.35, 0.35), width=256, height=None) -> None:
+        self.left_eye = left_eye
+        self.width = width
+        if height is None:
+            self.height = self.width
+        else:
+            self.height = height
+
+    def align(self, image, points):
+        left_center = points['left_eye']
+        right_center = points['right_eye']
+        dy = right_center[1] - left_center[1]
+        dx = right_center[0] - left_center[0]
+        angle = np.degrees(np.arctan2(dy, dx))
+
+        right_eye = 1 - self.left_eye[0]
+
+        dist = np.sqrt(dx ** 2 + dy ** 2)
+        desired_dist = (right_eye - self.left_eye[0])
+        desired_dist *= self.width
+        scale = desired_dist / dist
+
+        center = (left_center[0] + right_center[0]) // 2, (left_center[1] + right_center[1]) // 2
+        M = cv2.getRotationMatrix2D(center, angle, scale)
+
+        tx = self.width * 0.5
+        ty = self.height * self.left_eye[1]
+        M[0, 2] += (tx - center[0])
+        M[1, 2] += (ty - center[1])
+
+        w, h = self.width, self.height
+        output = cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_LINEAR)
+        return output
+    
+detector = MTCNN()
+fa = FaceAligner()
+
+path = os.path.join("data", "FGNET", "images")
+new_dir = os.path.join("data", "FGNET", "aligned")
+for i, img_path in enumerate(os.listdir(path)):
+    old_path = os.path.join(path, img_path)
+    image = cv2.cvtColor(cv2.imread(old_path), cv2.COLOR_BGR2RGB)
+    result = detector.detect_faces(image)
+
+    # Result is an array with all the bounding boxes detected. We know that for 'ivan.jpg' there is only one.
+    bounding_box = result[0]['box']
+    keypoints = result[0]['keypoints']
+
+    new_img = fa.align(image, keypoints)
+
+    new_path = os.path.join(new_dir, img_path)
+    cv2.imwrite(new_path, cv2.cvtColor(new_img, cv2.COLOR_RGB2BGR))
+    print(i)
