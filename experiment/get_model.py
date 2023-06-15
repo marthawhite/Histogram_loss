@@ -19,7 +19,7 @@ def get_model(model=None, pretrained=True, input_shape=(128, 128, 3)):
         )
         return base_model
     elif model.lower == "vgg16":
-        base_model = keras.applications.VGG16(
+        base_model = keras.applications.VGG16(  
             include_top=False,
             weights=weights,
             input_tensor=layers.Input(input_shape),

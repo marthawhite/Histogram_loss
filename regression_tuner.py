@@ -8,15 +8,9 @@ import sys
 import json
 from experiment.datasets import MegaAgeDataset
 from experiment.logging import LogGridSearch
+from experiment.get_model import get_model
 
-def get_model():
-    base_model = keras.applications.Xception(
-        include_top=False,
-        weights=None,
-        input_tensor=layers.Input(shape=(128,128,3)),
-        pooling="avg",
-    )
-    return base_model
+
 
 
 def main(base_dir, worker_num):
@@ -43,7 +37,7 @@ def main(base_dir, worker_num):
     hp = kt.HyperParameters()
     hp.Choice("learning_rate", [0.01, 0.005, 0.0025, 0.001, 0.0005, 0.00025, 0.0001, 0.00005])
     
-    regression = HyperRegression(get_model, loss="mse")
+    regression = HyperRegression(get_model(model="vgg16"), loss="mse")
     
     regression_tuner = LogGridSearch(
         metrics=metrics,

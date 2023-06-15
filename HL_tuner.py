@@ -8,15 +8,8 @@ import sys
 import json
 from experiment.datasets import MegaAgeDataset
 from experiment.logging import LogGridSearch
+from experiment.get_model import get_model
 
-def get_model():
-    base_model = keras.applications.Xception(
-        include_top=False,
-        weights=None,
-        input_tensor=layers.Input(shape=(128,128,3)),
-        pooling="avg",
-    )
-    return base_model
 
 def main(base_dir):
     n_trials = 10
@@ -40,7 +33,7 @@ def main(base_dir):
     # tune regression
     hp = kt.HyperParameters()
     
-    hl_gaussian = HyperHLGaussian(get_model, y_min, y_max)
+    hl_gaussian = HyperHLGaussian(get_model(model="vgg16"), y_min, y_max)
     
     hl_gaussian_tuner = LogGridSearch(
         metrics=metrics,
