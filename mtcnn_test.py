@@ -40,27 +40,34 @@ class FaceAligner:
         output = cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_LINEAR)
         return output
 
-def main(dir_path):
+def main(dir_path, n_cpus, index):
     detector = MTCNN()
     fa = FaceAligner()
 
     path = os.path.join(dir_path, "data", "FGNET", "images")
     new_dir = os.path.join(dir_path, "data", "FGNET", "aligned")
     for i, img_path in enumerate(os.listdir(path)):
-        old_path = os.path.join(path, img_path)
-        image = cv2.cvtColor(cv2.imread(old_path), cv2.COLOR_BGR2RGB)
-        result = detector.detect_faces(image)
+        if i % n_cpus == index:
+            old_path = os.path.join(path, img_path)
+            image = cv2.cvtColor(cv2.imread(old_path), cv2.COLOR_BGR2RGB)
+            result = detector.detect_faces(image)
 
-        # Result is an array with all the bounding boxes detected. We know that for 'ivan.jpg' there is only one.
-        bounding_box = result[0]['box']
-        keypoints = result[0]['keypoints']
+            # Result is an array with all the bounding boxes detected. We know that for 'ivan.jpg' there is only one.
+            if len(result) > 0:
+                bounding_box = result[0]['box']
+                keypoints = result[0]['keypoints']
 
-        new_img = fa.align(image, keypoints)
+                new_img = fa.align(image, keypoints)
 
-        new_path = os.path.join(new_dir, img_path)
-        cv2.imwrite(new_path, cv2.cvtColor(new_img, cv2.COLOR_RGB2BGR))
-        print(i)
+                new_path = os.path.join(new_dir, img_path)
+                cv2.imwrite(new_path, cv2.cvtColor(new_img, cv2.COLOR_RGB2BGR))
+                print(i)
+            else:
+                cv2.imwrite(new_path, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+                print(i, "No face detected!")
 
 if __name__ == "__main__":
     dir_path = sys.argv[1]
-    main(dir_path)
+    n_cpus = int(sys.argv[2])
+    index = int(sys.argv[3]) - 1
+    main(dir_path, n_cpus, index)

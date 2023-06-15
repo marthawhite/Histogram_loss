@@ -9,6 +9,7 @@
 
 DATA=FGNET.tar
 PY_FILE=Histogram_loss/mtcnn_test.py
+N_CPUS=5
 
 module load python/3.10 scipy-stack 
 virtualenv --no-download $SLURM_TMPDIR/env
@@ -18,7 +19,10 @@ pip install --no-index -r preproc_requirements.txt
 
 mkdir $SLURM_TMPDIR/data
 tar xf $DATA -C $SLURM_TMPDIR/data
-
-python $PY_FILE $SLURM_TMPDIR
+for i in $(seq 1 $N_CPUS)
+do
+python $PY_FILE $SLURM_TMPDIR $N_CPUS $i &
+done
+wait
 
 tar cf $DATA -C $SLURM_TMPDIR/data *
