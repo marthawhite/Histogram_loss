@@ -2,6 +2,7 @@ from mtcnn import MTCNN
 import cv2
 import os
 import numpy as np
+import sys
 
 class FaceAligner:
 
@@ -38,23 +39,28 @@ class FaceAligner:
         w, h = self.width, self.height
         output = cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_LINEAR)
         return output
-    
-detector = MTCNN()
-fa = FaceAligner()
 
-path = os.path.join("data", "FGNET", "images")
-new_dir = os.path.join("data", "FGNET", "aligned")
-for i, img_path in enumerate(os.listdir(path)):
-    old_path = os.path.join(path, img_path)
-    image = cv2.cvtColor(cv2.imread(old_path), cv2.COLOR_BGR2RGB)
-    result = detector.detect_faces(image)
+def main(dir_path):
+    detector = MTCNN()
+    fa = FaceAligner()
 
-    # Result is an array with all the bounding boxes detected. We know that for 'ivan.jpg' there is only one.
-    bounding_box = result[0]['box']
-    keypoints = result[0]['keypoints']
+    path = os.path.join(dir_path, "data", "FGNET", "images")
+    new_dir = os.path.join(dir_path, "data", "FGNET", "aligned")
+    for i, img_path in enumerate(os.listdir(path)):
+        old_path = os.path.join(path, img_path)
+        image = cv2.cvtColor(cv2.imread(old_path), cv2.COLOR_BGR2RGB)
+        result = detector.detect_faces(image)
 
-    new_img = fa.align(image, keypoints)
+        # Result is an array with all the bounding boxes detected. We know that for 'ivan.jpg' there is only one.
+        bounding_box = result[0]['box']
+        keypoints = result[0]['keypoints']
 
-    new_path = os.path.join(new_dir, img_path)
-    cv2.imwrite(new_path, cv2.cvtColor(new_img, cv2.COLOR_RGB2BGR))
-    print(i)
+        new_img = fa.align(image, keypoints)
+
+        new_path = os.path.join(new_dir, img_path)
+        cv2.imwrite(new_path, cv2.cvtColor(new_img, cv2.COLOR_RGB2BGR))
+        print(i)
+
+if __name__ == "__main__":
+    dir_path = sys.argv[1]
+    main(dir_path)
