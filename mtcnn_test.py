@@ -51,6 +51,7 @@ def main(dir_path, n_cpus, index):
             old_path = os.path.join(path, img_path)
             image = cv2.cvtColor(cv2.imread(old_path), cv2.COLOR_BGR2RGB)
             result = detector.detect_faces(image)
+            new_path = os.path.join(new_dir, img_path)
 
             # Result is an array with all the bounding boxes detected. We know that for 'ivan.jpg' there is only one.
             if len(result) > 0:
@@ -59,7 +60,6 @@ def main(dir_path, n_cpus, index):
 
                 new_img = fa.align(image, keypoints)
 
-                new_path = os.path.join(new_dir, img_path)
                 cv2.imwrite(new_path, cv2.cvtColor(new_img, cv2.COLOR_RGB2BGR))
                 print(i)
             else:
