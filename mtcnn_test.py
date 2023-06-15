@@ -46,12 +46,13 @@ def main(dir_path, n_cpus, index):
 
     path = os.path.join(dir_path, "data", "megaage_asian", "megaage_asian", "test")
     new_dir = os.path.join(dir_path, "data", "megaage_asian", "megaage_asian", "test_aligned")
+    completed = os.listdir(new_dir)
     for i, img_path in enumerate(os.listdir(path)):
-        if i % n_cpus == index:
+        if img_path not in completed:
+            new_path = os.path.join(new_dir, img_path)
             old_path = os.path.join(path, img_path)
             image = cv2.cvtColor(cv2.imread(old_path), cv2.COLOR_BGR2RGB)
             result = detector.detect_faces(image)
-            new_path = os.path.join(new_dir, img_path)
 
             # Result is an array with all the bounding boxes detected. We know that for 'ivan.jpg' there is only one.
             if len(result) > 0:
@@ -68,6 +69,6 @@ def main(dir_path, n_cpus, index):
 
 if __name__ == "__main__":
     dir_path = sys.argv[1]
-    n_cpus = int(sys.argv[2])
-    index = int(sys.argv[3]) - 1
-    main(dir_path, n_cpus, index)
+    # n_cpus = int(sys.argv[2])
+    # index = int(sys.argv[3]) - 1
+    main(dir_path, None, None)
