@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=MegaAge-Preproc
+#SBATCH --job-name=UTKFace-Preproc
 #SBATCH --output=%x-%j.out
 #SBATCH --time=0-12:00:00
 #SBATCH --cpus-per-task=5
@@ -7,7 +7,7 @@
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-DATA=megaage_asian.tar
+DATA=UTKFace.tar.gz
 PY_FILE=Histogram_loss/mtcnn_test.py
 N_CPUS=5
 
@@ -19,12 +19,12 @@ pip install --no-index -r preproc_requirements.txt
 pip install --no-index --no-deps mtcnn
 
 mkdir $SLURM_TMPDIR/data
-tar xf $DATA -C $SLURM_TMPDIR/data
-mkdir $SLURM_TMPDIR/data/megaage_asian/megaage_asian/train_aligned
+tar xzf $DATA -C $SLURM_TMPDIR/data
+mkdir $SLURM_TMPDIR/data/UTKFace/aligned
 for i in $(seq 1 $N_CPUS)
 do
     python $PY_FILE $SLURM_TMPDIR $N_CPUS $i &
 done
 wait
 
-tar cf $DATA -C $SLURM_TMPDIR/data megaage_asian
+tar czf $DATA -C $SLURM_TMPDIR/data UTKFace

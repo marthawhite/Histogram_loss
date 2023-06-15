@@ -44,8 +44,8 @@ def main(dir_path, n_cpus, index):
     detector = MTCNN()
     fa = FaceAligner()
 
-    path = os.path.join(dir_path, "data", "megaage_asian", "megaage_asian", "train")
-    new_dir = os.path.join(dir_path, "data", "megaage_asian", "megaage_asian", "train_aligned")
+    path = os.path.join(dir_path, "data", "UTKFace")
+    new_dir = os.path.join(dir_path, "data", "UTKFace", "aligned")
     for i, img_path in enumerate(os.listdir(path)):
         if i % n_cpus == index:
             old_path = os.path.join(path, img_path)
