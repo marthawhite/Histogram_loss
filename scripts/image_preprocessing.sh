@@ -20,8 +20,8 @@ pip install --no-index --no-deps mtcnn
 
 mkdir $SLURM_TMPDIR/data
 tar xf $DATA -C $SLURM_TMPDIR/data
-python $PY_FILE $SLURM_TMPDIR
 mkdir $SLURM_TMPDIR/data/megaage_asian/megaage_asian/test_aligned
+python $PY_FILE $SLURM_TMPDIR
 # for i in $(seq 1 $N_CPUS)
 # do
 #     python $PY_FILE $SLURM_TMPDIR $N_CPUS $i &
