@@ -15,8 +15,8 @@ module load python/3.10 scipy-stack
 virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
 pip install --no-index --upgrade pip
-pip install --no-index --no-deps mtcnn
 pip install --no-index -r preproc_requirements.txt
+pip install --no-index --no-deps mtcnn
 
 mkdir $SLURM_TMPDIR/data
 tar xf $DATA -C $SLURM_TMPDIR/data
