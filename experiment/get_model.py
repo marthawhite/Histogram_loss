@@ -18,7 +18,7 @@ def get_model(model=None, pretrained=True, input_shape=(128, 128, 3)):
             pooling="avg",
         )
         return base_model
-    elif model.lower == "vgg16":
+    elif model.lower() == "vgg16":
         base_model = keras.applications.VGG16(  
             include_top=False,
             weights=weights,
@@ -26,7 +26,7 @@ def get_model(model=None, pretrained=True, input_shape=(128, 128, 3)):
             pooling="avg",
         )
         return base_model
-    elif model.lower == "vgg19":
+    elif model.lower() == "vgg19":
         base_model = keras.applications.VGG19(
             include_top=False,
             weights=weights,
@@ -34,7 +34,7 @@ def get_model(model=None, pretrained=True, input_shape=(128, 128, 3)):
             pooling="avg",
         )
         return base_model
-    elif mode.lower == "resnet50":
+    elif model.lower() == "resnet50":
         base_model = keras.applications.ResNet50V2(
             include_top=False,
             weights=weights,
@@ -42,7 +42,7 @@ def get_model(model=None, pretrained=True, input_shape=(128, 128, 3)):
             pooling="avg",
         )
         return base_model
-    elif mode.lower == "resnet101":
+    elif model.lower() == "resnet101":
         base_model = keras.applications.ResNet101V2(
             include_top=False,
             weights=weights,
@@ -50,7 +50,7 @@ def get_model(model=None, pretrained=True, input_shape=(128, 128, 3)):
             pooling="avg",
         )
         return base_model
-    elif mode.lower == "resnet152":
+    elif model.lower() == "resnet152":
         base_model = keras.applications.ResNet152V2(
             include_top=False,
             weights=weights,
