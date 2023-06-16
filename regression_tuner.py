@@ -11,10 +11,10 @@ from experiment.logging import LogGridSearch
 from experiment.get_model import get_model
 
 
-def main(base_dir):
-    n_trials = 7
+def main(base_dir, index):
+    n_trials = 1
     runs_per_trial = 1
-    n_epochs = 30
+    n_epochs = 40
     test_ratio = 0.2
     image_size = 128
     channels = 3
@@ -31,9 +31,9 @@ def main(base_dir):
     test = test.batch(batch_size=batch_size).prefetch(1)
     metrics = ["mse", "mae"]
     
-    
+    lrs = [0.01, 0.005, 0.0025, 0.001, 0.0005, 0.00025, 0.0001, 0.00005]
     hp = kt.HyperParameters()
-    hp.Choice("learning_rate", [0.01, 0.005, 0.0025, 0.001, 0.0005, 0.00025, 0.0001])
+    hp.Fixed("learning_rate", lrs[index - 1])
     
     regression = HyperRegression(lambda : get_model(model="vgg16"), loss="mse")
     
@@ -43,7 +43,7 @@ def main(base_dir):
         hypermodel=regression, 
         objective = "val_mse", 
         directory=directory, 
-        project_name="regression_aligned", 
+        project_name=f"regression_aligned{index}", 
         overwrite=False,
         tune_new_entries=False,
         max_trials=n_trials, 
@@ -57,10 +57,11 @@ def main(base_dir):
     results = {}
     results[model] = data
 
-    with open(f"regression_aligned.json", "w") as out_file:
+    with open(f"regression_aligned{index}.json", "w") as out_file:
         json.dump(results, out_file, indent=4)
     
     
 if __name__ == "__main__":
     data_file = sys.argv[1]
-    main(data_file)
+    index = int(sys.argv[2])
+    main(data_file, index)
