@@ -40,7 +40,7 @@ class FaceAligner:
         output = cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_LINEAR)
         return output
 
-def main(dir_path):
+def main(dir_path, n_cpus, index):
     detector = MTCNN()
     fa = FaceAligner()
 
@@ -48,7 +48,7 @@ def main(dir_path):
     new_dir = os.path.join(dir_path, "data", "megaage_asian", "megaage_asian", "train_aligned")
     completed = os.listdir(new_dir)
     for i, img_path in enumerate(os.listdir(path)):
-        if img_path not in completed:
+        if i % n_cpus == index and img_path not in completed:
             new_path = os.path.join(new_dir, img_path)
             old_path = os.path.join(path, img_path)
             image = cv2.cvtColor(cv2.imread(old_path), cv2.COLOR_BGR2RGB)
@@ -67,6 +67,9 @@ def main(dir_path):
                 cv2.imwrite(new_path, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
                 print(i, "No face detected!")
 
+
 if __name__ == "__main__":
     dir_path = sys.argv[1]
-    main(dir_path)
+    n_cpus = int(sys.argv[2])
+    index = int(sys.argv[3]) - 1
+    main(dir_path, n_cpus, index)
