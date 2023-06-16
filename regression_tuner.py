@@ -11,10 +11,8 @@ from experiment.logging import LogGridSearch
 from experiment.get_model import get_model
 
 
-
-
-def main(base_dir, worker_num):
-    n_trials = 8
+def main(base_dir):
+    n_trials = 7
     runs_per_trial = 1
     n_epochs = 30
     test_ratio = 0.2
@@ -27,7 +25,7 @@ def main(base_dir, worker_num):
     directory = os.path.join(base_dir, "hypers")
     
     path = os.path.join(base_dir, "data", "megaage_asian", "megaage_asian")
-    ds = MegaAgeDataset(path, size=image_size, channels=channels)
+    ds = MegaAgeDataset(path, size=image_size, channels=channels, aligned=True)
     train, test = ds.get_split(test_ratio)
     train = train.batch(batch_size=batch_size).prefetch(1)
     test = test.batch(batch_size=batch_size).prefetch(1)
@@ -35,9 +33,9 @@ def main(base_dir, worker_num):
     
     
     hp = kt.HyperParameters()
-    hp.Choice("learning_rate", [0.01, 0.005, 0.0025, 0.001, 0.0005, 0.00025, 0.0001, 0.00005])
+    hp.Choice("learning_rate", [0.01, 0.005, 0.0025, 0.001, 0.0005, 0.00025, 0.0001])
     
-    regression = HyperRegression(get_model(model="vgg16"), loss="mse")
+    regression = HyperRegression(lambda : get_model(model="vgg16"), loss="mse")
     
     regression_tuner = LogGridSearch(
         metrics=metrics,
@@ -45,13 +43,11 @@ def main(base_dir, worker_num):
         hypermodel=regression, 
         objective = "val_mse", 
         directory=directory, 
-        project_name="regression_dist", 
+        project_name="regression_aligned", 
         overwrite=False,
         tune_new_entries=False,
         max_trials=n_trials, 
         executions_per_trial=runs_per_trial,
-        distribution_strategy=tf.distribute.MirroredStrategy(),
-        json_file = f"temp_regression_results{worker_num}.json"
     ) 
     callbacks = [keras.callbacks.EarlyStopping(patience=4)]
     regression_tuner.search(x=train, epochs=n_epochs, validation_data=test, verbose=2, callbacks=callbacks)
@@ -61,11 +57,10 @@ def main(base_dir, worker_num):
     results = {}
     results[model] = data
 
-    with open(f"regression_results{worker_num}.json", "w") as out_file:
+    with open(f"regression_aligned.json", "w") as out_file:
         json.dump(results, out_file, indent=4)
     
     
 if __name__ == "__main__":
     data_file = sys.argv[1]
-    worker_num = sys.argv[2]
-    main(data_file, worker_num)
+    main(data_file)
