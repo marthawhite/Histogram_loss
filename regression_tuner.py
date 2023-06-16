@@ -12,6 +12,7 @@ from experiment.get_model import get_model
 
 
 def main(base_dir, index):
+    keras.utils.set_random_seed(1)
     n_trials = 1
     runs_per_trial = 1
     n_epochs = 40
@@ -31,7 +32,7 @@ def main(base_dir, index):
     test = test.batch(batch_size=batch_size).prefetch(1)
     metrics = ["mse", "mae"]
     
-    lrs = [0.01, 0.005, 0.0025, 0.001, 0.0005, 0.00025, 0.0001, 0.00005]
+    lrs = [1e-3, 5e-4, 2.5e-4, 1e-4, 5e-5, 2.5e-5, 1e-5]
     hp = kt.HyperParameters()
     hp.Fixed("learning_rate", lrs[index - 1])
     
@@ -43,7 +44,7 @@ def main(base_dir, index):
         hypermodel=regression, 
         objective = "val_mse", 
         directory=directory, 
-        project_name=f"regression_aligned{index}", 
+        project_name=f"regression_aligned2{index}", 
         overwrite=False,
         tune_new_entries=False,
         max_trials=n_trials, 
@@ -57,7 +58,7 @@ def main(base_dir, index):
     results = {}
     results[model] = data
 
-    with open(f"regression_aligned{index}.json", "w") as out_file:
+    with open(f"regression_aligned2{index}.json", "w") as out_file:
         json.dump(results, out_file, indent=4)
     
     

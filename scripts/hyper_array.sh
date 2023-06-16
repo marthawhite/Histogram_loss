@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=Reg-Aligned
+#SBATCH --job-name=Reg-Aligned2
 #SBATCH --output=%x-%j-%a.out
-#SBATCH --array=1-8
+#SBATCH --array=1-7
 #SBATCH --time=0-12:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=1
@@ -10,7 +10,7 @@
 #SBATCH --mail-type=ALL
 
 DATA=megaage_asian.tgz
-HYPERS=reg_aligned_hypers${SLURM_ARRAY_TASK_ID}.tgz
+HYPERS=reg_aligned2_hypers${SLURM_ARRAY_TASK_ID}.tgz
 TUNER=keras_tuner-1.3.5-py3-none-any.whl
 PY_FILE=Histogram_loss/regression_tuner.py
 
