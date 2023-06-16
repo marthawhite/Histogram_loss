@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=Reg-Aligned2
-#SBATCH --output=%x-%j-%a.out
+#SBATCH --output=%x-%A-%a.out
 #SBATCH --array=1-7
 #SBATCH --time=0-12:00:00
 #SBATCH --gres=gpu:1
