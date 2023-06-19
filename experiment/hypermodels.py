@@ -2,7 +2,7 @@
 
 
 import keras_tuner as kt
-from experiment.new_models import Regression, HLGaussian, HLOneBin
+from experiment.new_models import Regression, HLGaussian, HLOneBin, HLUniform, HLProjected
 from tensorflow import keras
 import tensorflow as tf
 
@@ -59,7 +59,7 @@ class HyperRegression(HyperBase):
     """
 
     def __init__(self, base, loss=None, metrics=None):
-        super().__init__("HyperBase", loss, metrics)
+        super().__init__("HyperReg", loss, metrics)
         self.base = base
 
     def get_model(self, hp):
@@ -158,3 +158,54 @@ class HyperHLOneBin(HyperHL):
         dropout = hp.Choice("dropout", [0., 0.2, 0.5, 0.8], default=0.5)
         bins = self.get_bins(hp)
         return HLOneBin(self.base(), bins, dropout)
+    
+
+class HyperHLUniform(HyperHL):
+    """Histogram loss hypermodel using one-hot targets.
+    
+    Params:
+        base - the base Keras model
+        min_y - the minimum target value
+        max_y - the maximum target value
+        metrics - the metrics to compile the model with
+    """
+
+    def __init__(self, base, min_y, max_y, metrics=None):
+        super().__init__(min_y, max_y, "HyperHL-Uniform", metrics)
+        self.base = base
+
+    def get_model(self, hp):
+        """Return the HLUniform model according to the hyperparameters.
+        
+        Params:
+            hp - the KerasTuner HyperParameter instance
+        """
+        dropout = hp.Choice("dropout", [0., 0.05, 0.2, 0.5], default=0.2)
+        eps = hp.Fixed("eps", 1e-3)
+        bins = self.get_bins(hp)
+        return HLUniform(self.base(), bins, dropout, eps)
+
+
+class HyperHLProjected(HyperHL):
+    """Histogram loss hypermodel using projected targets.
+    
+    Params:
+        base - the base Keras model
+        min_y - the minimum target value
+        max_y - the maximum target value
+        metrics - the metrics to compile the model with
+    """
+
+    def __init__(self, base, min_y, max_y, metrics=None):
+        super().__init__(min_y, max_y, "HyperHL-Projected", metrics)
+        self.base = base
+
+    def get_model(self, hp):
+        """Return the HLUniform model according to the hyperparameters.
+        
+        Params:
+            hp - the KerasTuner HyperParameter instance
+        """
+        dropout = hp.Choice("dropout", [0., 0.05, 0.2, 0.5], default=0.2)
+        bins = self.get_bins(hp)
+        return HLProjected(self.base(), bins, dropout)

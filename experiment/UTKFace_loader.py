@@ -19,5 +19,8 @@ class UTKFaceDataset(ImageDataset):
         glob = os.path.join(self.path, "*")
         list_ds = tf.data.Dataset.list_files(glob, shuffle=False)
         images_ds = list_ds.map(lambda x : self.parse_image(x))
-        return images_ds
+        self.data = images_ds
+
+    def get_data(self):
+        return self.data
     

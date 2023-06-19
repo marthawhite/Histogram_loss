@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=HLG-Aligned
 #SBATCH --output=%x-%j.out
-#SBATCH --time=0-12:00:00
+#SBATCH --time=0-9:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8000M

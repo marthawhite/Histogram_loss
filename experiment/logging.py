@@ -33,9 +33,14 @@ class LogGridSearch(kt.GridSearch):
         super().on_trial_begin(trial)
         self.logs[trial.trial_id] = {}
         self.logs[trial.trial_id]["hypers"] = trial.hyperparameters.values
-        self.logs[trial.trial_id]["results"] = {}
+        self.logs[trial.trial_id]["results"] = []
+        self.ex_num = -1
+
+    def init_run(self):
+        empty = {}
         for key in self.metric_list:
-            self.logs[trial.trial_id]["results"][key] = []
+            empty[key] = []
+        return empty
 
     def on_epoch_end(self, trial, model, epoch, logs=None):
         """Update the logs when a batch completes.
@@ -45,16 +50,21 @@ class LogGridSearch(kt.GridSearch):
             logs - the results dict from model.fit()
         """
         super().on_batch_end(trial, model, epoch, logs)
+        if epoch == 0:
+            self.ex_num += 1
+            self.logs[trial.trial_id]["results"].append(self.init_run())
         for key in self.metric_list:
-            self.logs[trial.trial_id]["results"][key].append(logs.get(key, None))
+            self.logs[trial.trial_id]["results"][self.ex_num][key].append(logs.get(key, None))
 
     def on_trial_end(self, trial):
+        """Save intermediate results at the end of each trial."""
         super().on_trial_end(trial)
         self.save_results()
 
     def save_results(self):
+        """Save results to a json file."""
         with open(self.out_file, "w") as out_file:
-            json.dump(self.logs, out_file)
+            json.dump(self.logs, out_file, indent=4)
 
     def get_results(self):
         """Return the results as a dictionary."""

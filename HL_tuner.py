@@ -23,12 +23,12 @@ def main(base_dir):
     y_min = 0
     y_max = 70
     directory = os.path.join(base_dir, "hypers")
+
+    keras.utils.set_random_seed(seed)
     
     path = os.path.join(base_dir, "data", "megaage_asian", "megaage_asian")
-    ds = MegaAgeDataset(path, size=image_size, channels=channels, aligned=True)
-    train, test = ds.get_split(test_ratio)
-    train = train.batch(batch_size=batch_size).prefetch(1)
-    test = test.batch(batch_size=batch_size).prefetch(1)
+    ds = MegaAgeDataset(path, size=image_size, channels=channels, batch_size=batch_size, aligned=True)
+    train, test = ds.get_split(None)
     metrics = ["mse", "mae"]
 
     # tune hypers
