@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=Reg-Aligned
+#SBATCH --job-name=HLG-Aligned
 #SBATCH --output=%x-%j.out
 #SBATCH --time=0-12:00:00
 #SBATCH --gres=gpu:1
@@ -9,9 +9,9 @@
 #SBATCH --mail-type=ALL
 
 DATA=megaage_asian.tgz
-HYPERS=reg_aligned_hypers.tgz
+HYPERS=hlg_aligned_hypers.tgz
 TUNER=keras_tuner-1.3.5-py3-none-any.whl
-PY_FILE=Histogram_loss/regression_tuner.py
+PY_FILE=Histogram_loss/HL_tuner.py
 
 module load python/3.10 scipy-stack cuda cudnn 
 virtualenv --no-download $SLURM_TMPDIR/env
