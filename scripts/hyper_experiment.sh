@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=HLG-Aligned
+#SBATCH --job-name=HLG-nostop
 #SBATCH --output=%x-%j.out
-#SBATCH --time=0-9:00:00
+#SBATCH --time=0-12:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8000M
@@ -9,7 +9,7 @@
 #SBATCH --mail-type=ALL
 
 DATA=megaage_asian.tgz
-HYPERS=hlg_aligned_hypers.tgz
+HYPERS=hlg_nostop_hypers.tgz
 TUNER=keras_tuner-1.3.5-py3-none-any.whl
 PY_FILE=Histogram_loss/HL_tuner.py
 
