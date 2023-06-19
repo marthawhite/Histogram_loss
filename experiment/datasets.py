@@ -86,10 +86,10 @@ class ImageDataset(Dataset):
 
 class MegaAgeDataset(ImageDataset):
     
-    def __init__(self, path, size, channels, aligned=True) -> None:
+    def __init__(self, path, size, channels, batch_size=32, aligned=True) -> None:
         self.path = path
         self.aligned = aligned
-        super().__init__(size, channels)
+        super().__init__(size, channels, batch_size=batch_size)
 
     def load(self):
         if self.aligned:
