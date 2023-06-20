@@ -34,16 +34,16 @@ class Dataset:
         """
 
         data = self.get_data()
-        test_len = int(len(data) * test_ratio)
-        return self.prepare(data.skip(test_len), data.take(test_len))
+        train_len = int(len(data) * (1-test_ratio))
+        return self.prepare(data.take(train_len), data.skip(train_len))
 
     def three_split(self, val_ratio, test_ratio):
         data = self.get_data()
-        test_len = int(len(data) * test_ratio)
+        train_len = int(len(data) * (1 - test_ratio - val_ratio))
         val_len = int(len(data) * val_ratio)
-        train = data.skip(test_len + val_len)
-        val = data.skip(test_len).take(val_len)
-        test = data.take(test_len)
+        train = data.take(train_len)
+        val = data.skip(train_len).take(val_len)
+        test = data.skip(train_len + val_len)
         return self.prepare(train, val, test)
 
 class CSVDataset(Dataset):
@@ -59,6 +59,41 @@ class CSVDataset(Dataset):
         y = df[self.targets]
         ds = tf.data.Dataset.from_tensor_slices((tf.convert_to_tensor(x, dtype=tf.float32),tf.convert_to_tensor(y, dtype=tf.float32)))
         self.ds = ds
+
+    def get_data(self):
+        return self.ds
+    
+
+class TSDataset(Dataset):
+
+    def __init__(self, path, targets, seq_len, pred_len, mode='S', scale=True, overlap=0) -> None:
+        self.path = path
+        self.targets = targets
+        self.seq_len = seq_len
+        self.pred_len = pred_len
+        self.mode = mode
+        self.scale = scale
+        self.overlap = overlap
+        super().__init__()
+
+    def load(self):
+        df = pd.read_csv(self.path)
+        df = df.drop("date", axis=1)
+        if self.mode == 'S':
+            df = df[self.targets]
+        tensor = tf.convert_to_tensor(df, dtype=tf.float32)
+        if self.scale:
+            tensor = (tensor - tf.math.reduce_mean(tensor, axis=0)) / tf.math.reduce_std(tensor, axis=0)
+        base = tf.data.Dataset.from_tensor_slices(tensor)
+        x = base.window(self.seq_len, shift=1).flat_map(lambda x: x.batch(self.seq_len))
+        if self.mode == 'MS':
+            df = df[self.targets]
+            tensor = tf.convert_to_tensor(df, dtype=tf.float32)
+            if self.scale:
+                tensor = (tensor - tf.math.reduce_mean(tensor, axis=0)) / tf.math.reduce_std(tensor, axis=0)
+            base = tf.data.Dataset.from_tensor_slices(tensor)
+        y = base.skip(self.seq_len - self.overlap).window(self.pred_len, shift=1).flat_map(lambda x: x.batch(self.pred_len))
+        self.ds = tf.data.Dataset.zip((x, y))
 
     def get_data(self):
         return self.ds
