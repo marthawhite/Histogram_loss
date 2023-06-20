@@ -1,17 +1,18 @@
 #!/bin/bash
-#SBATCH --job-name=HLG-Aligned
-#SBATCH --output=%x-%j.out
-#SBATCH --time=0-9:00:00
+#SBATCH --job-name=Reg-Aligned2
+#SBATCH --output=%x-%A-%a.out
+#SBATCH --array=1-7
+#SBATCH --time=0-03:00:00
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=8000M
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=4000M
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
 DATA=megaage_asian.tgz
-HYPERS=hlg_aligned_hypers.tgz
+HYPERS=reg_aligned2_hypers${SLURM_ARRAY_TASK_ID}.tgz
 TUNER=keras_tuner-1.3.5-py3-none-any.whl
-PY_FILE=Histogram_loss/HL_tuner.py
+PY_FILE=Histogram_loss/regression_tuner.py
 
 module load python/3.10 scipy-stack cuda cudnn 
 virtualenv --no-download $SLURM_TMPDIR/env
@@ -24,6 +25,6 @@ mkdir $SLURM_TMPDIR/data
 tar -xzf $DATA -C $SLURM_TMPDIR/data
 mkdir $SLURM_TMPDIR/hypers
 
-python $PY_FILE $SLURM_TMPDIR
+python $PY_FILE $SLURM_TMPDIR $SLURM_ARRAY_TASK_ID
 
 tar -czf $HYPERS -C $SLURM_TMPDIR hypers

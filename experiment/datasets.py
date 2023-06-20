@@ -121,16 +121,21 @@ class ImageDataset(Dataset):
 
 class MegaAgeDataset(ImageDataset):
     
-    def __init__(self, path, **kwargs) -> None:
+    def __init__(self, path, size, channels, aligned=True) -> None:
         self.path = path
-        super().__init__(**kwargs)
+        self.aligned = aligned
+        super().__init__(size, channels)
 
     def load(self):
+        if self.aligned:
+            dirs = "train_aligned", "test_aligned"
+        else:
+            dirs = "train", "test"
+            
+        train_glob = os.path.join(self.path, dirs[0], "*")
+        test_glob = os.path.join(self.path, dirs[1], "*")
 
-        train_glob = os.path.join(self.path, "train", "*")
         train_ds = tf.data.Dataset.list_files(train_glob, shuffle=True)
-
-        test_glob = os.path.join(self.path, "test", "*")
         test_ds = tf.data.Dataset.list_files(test_glob, shuffle=True)
 
         y_train, y_test = self.load_labels(len(train_ds), len(test_ds))

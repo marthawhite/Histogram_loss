@@ -8,21 +8,14 @@ import sys
 import json
 from experiment.datasets import MegaAgeDataset
 from experiment.logging import LogGridSearch
-
-def get_model():
-    base_model = keras.applications.Xception(
-        include_top=False,
-        weights=None,
-        input_tensor=layers.Input(shape=(128,128,3)),
-        pooling="avg",
-    )
-    return base_model
+from experiment.get_model import get_model
 
 
-def main(base_dir, worker_num):
-    n_trials = 8
+def main(base_dir, index):
+    keras.utils.set_random_seed(1)
+    n_trials = 1
     runs_per_trial = 1
-    n_epochs = 30
+    n_epochs = 40
     test_ratio = 0.2
     image_size = 128
     channels = 3
@@ -33,17 +26,17 @@ def main(base_dir, worker_num):
     directory = os.path.join(base_dir, "hypers")
     
     path = os.path.join(base_dir, "data", "megaage_asian", "megaage_asian")
-    ds = MegaAgeDataset(path, size=image_size, channels=channels)
+    ds = MegaAgeDataset(path, size=image_size, channels=channels, aligned=True)
     train, test = ds.get_split(test_ratio)
     train = train.batch(batch_size=batch_size).prefetch(1)
     test = test.batch(batch_size=batch_size).prefetch(1)
     metrics = ["mse", "mae"]
     
-    
+    lrs = [1e-3, 5e-4, 2.5e-4, 1e-4, 5e-5, 2.5e-5, 1e-5]
     hp = kt.HyperParameters()
-    hp.Choice("learning_rate", [0.01, 0.005, 0.0025, 0.001, 0.0005, 0.00025, 0.0001, 0.00005])
+    hp.Fixed("learning_rate", lrs[index - 1])
     
-    regression = HyperRegression(get_model, loss="mse")
+    regression = HyperRegression(lambda : get_model(model="vgg16"), loss="mse")
     
     regression_tuner = LogGridSearch(
         metrics=metrics,
@@ -51,13 +44,11 @@ def main(base_dir, worker_num):
         hypermodel=regression, 
         objective = "val_mse", 
         directory=directory, 
-        project_name="regression_dist", 
+        project_name=f"regression_aligned2{index}", 
         overwrite=False,
         tune_new_entries=False,
         max_trials=n_trials, 
         executions_per_trial=runs_per_trial,
-        distribution_strategy=tf.distribute.MirroredStrategy(),
-        json_file = f"temp_regression_results{worker_num}.json"
     ) 
     callbacks = [keras.callbacks.EarlyStopping(patience=4)]
     regression_tuner.search(x=train, epochs=n_epochs, validation_data=test, verbose=2, callbacks=callbacks)
@@ -67,11 +58,11 @@ def main(base_dir, worker_num):
     results = {}
     results[model] = data
 
-    with open(f"regression_results{worker_num}.json", "w") as out_file:
+    with open(f"regression_aligned2{index}.json", "w") as out_file:
         json.dump(results, out_file, indent=4)
     
     
 if __name__ == "__main__":
     data_file = sys.argv[1]
-    worker_num = sys.argv[2]
-    main(data_file, worker_num)
+    index = int(sys.argv[2])
+    main(data_file, index)
