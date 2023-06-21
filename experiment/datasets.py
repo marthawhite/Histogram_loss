@@ -20,7 +20,7 @@ class Dataset:
     def get_data(self):
         pass
 
-    def size(self):
+    def __len__(self):
         return len(self.get_data())
 
     def input_shape(self):
@@ -37,13 +37,13 @@ class Dataset:
         """
 
         data = self.get_data()
-        train_len = int(self.size() * (1-test_ratio))
+        train_len = int(len(self) * (1-test_ratio))
         return self.prepare(data.take(train_len), data.skip(train_len))
 
     def three_split(self, val_ratio, test_ratio):
         data = self.get_data()
-        train_len = int(self.size() * (1 - test_ratio - val_ratio))
-        val_len = int(self.size() * val_ratio)
+        train_len = int(len(self) * (1 - test_ratio - val_ratio))
+        val_len = int(len(self) * val_ratio)
         train = data.take(train_len)
         val = data.skip(train_len).take(val_len)
         test = data.skip(train_len + val_len)
@@ -103,7 +103,7 @@ class TSDataset(Dataset):
     def get_data(self):
         return self.ds
     
-    def size(self):
+    def __len__(self):
         return self.n
 
 

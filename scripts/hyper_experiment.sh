@@ -1,15 +1,15 @@
 #!/bin/bash
-#SBATCH --job-name=reg-nostop
+#SBATCH --job-name=reg-utk
 #SBATCH --output=%x-%j.out
-#SBATCH --time=0-05:00:00
+#SBATCH --time=0-12:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=4000M
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-DATA=megaage_asian.tgz
-HYPERS=reg_nostop_hypers.tgz
+DATA=UTKFace.tar.gz
+HYPERS=reg_utk_hypers.tgz
 TUNER=keras_tuner-1.3.5-py3-none-any.whl
 PY_FILE=Histogram_loss/regression_tuner.py
 

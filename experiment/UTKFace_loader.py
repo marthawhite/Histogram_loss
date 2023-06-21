@@ -6,9 +6,9 @@ from experiment.datasets import ImageDataset, Dataset
 import numpy as np
 
 class UTKFaceDataset(ImageDataset):
-    def __init__(self, path, size, channels):
+    def __init__(self, path, size, channels, **kwargs):
         self.path = path
-        super().__init__(size, channels)
+        super().__init__(size, channels, **kwargs)
         
     def parse_label(self, filename):
         parts = tf.strings.split(filename, os.sep)
@@ -17,7 +17,7 @@ class UTKFaceDataset(ImageDataset):
     
     def load(self):
         glob = os.path.join(self.path, "*")
-        list_ds = tf.data.Dataset.list_files(glob, shuffle=False)
+        list_ds = tf.data.Dataset.list_files(glob, shuffle=True)
         images_ds = list_ds.map(lambda x : self.parse_image(x))
         self.data = images_ds
 
