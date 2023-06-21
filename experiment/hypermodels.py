@@ -58,14 +58,14 @@ class HyperRegression(HyperBase):
         metrics - the metrics to compile the model with
     """
 
-    def __init__(self, base, loss=None, metrics=None):
-        super().__init__("HyperReg", loss, metrics)
+    def __init__(self, base, loss=None, metrics=None, name="HyperReg"):
+        super().__init__(name, loss, metrics)
         self.base = base
 
     def get_model(self, hp):
         """Return a regression model."""
         dropout = hp.Choice("dropout", [0., 0.2, 0.5, 0.8], default=0.5)
-        return Regression(self.base(), dropout)
+        return Regression(self.base(), dropout, self.name)
     
 
 class HyperHL(HyperBase):

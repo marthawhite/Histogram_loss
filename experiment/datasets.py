@@ -25,8 +25,15 @@ class Dataset:
 
     def input_shape(self):
         return self.ds.element_spec[0].shape
+    
+    def get_bounds(self):
+        return self.min, self.max
+    
+    def set_bounds(self, low, high):
+        self.min = low
+        self.max = high
 
-    def get_split(self, test_ratio):
+    def get_split(self, test_ratio, shuffle=True):
         """Return a train-test split for the given test_ratio.
         
         Params:
@@ -37,11 +44,18 @@ class Dataset:
         """
 
         data = self.get_data()
+        if shuffle:
+            data = data.shuffle(len(self))
+
         train_len = int(len(self) * (1-test_ratio))
         return self.prepare(data.take(train_len), data.skip(train_len))
 
-    def three_split(self, val_ratio, test_ratio):
+    def three_split(self, val_ratio=0, test_ratio=0.2, shuffle=True):
         data = self.get_data()
+
+        if shuffle:
+            data = data.shuffle(len(self))
+
         train_len = int(len(self) * (1 - test_ratio - val_ratio))
         val_len = int(len(self) * val_ratio)
         train = data.take(train_len)
@@ -51,17 +65,18 @@ class Dataset:
 
 class CSVDataset(Dataset):
 
-    def __init__(self, path, targets) -> None:
+    def __init__(self, path, targets, drop=[],**kwargs) -> None:
         self.path = path
         self.targets = targets
-        super().__init__()
+        self.drop = drop
+        super().__init__(**kwargs)
 
     def load(self):
-        df = pd.read_csv(self.path)
+        df = pd.read_csv(self.path).drop(self.drop, axis=1)
         x = df.drop(self.targets, axis=1)
         y = df[self.targets]
         ds = tf.data.Dataset.from_tensor_slices((tf.convert_to_tensor(x, dtype=tf.float32),tf.convert_to_tensor(y, dtype=tf.float32)))
-        self.ds = ds
+        self.ds = ds#.shuffle(len(ds))
 
     def get_data(self):
         return self.ds
