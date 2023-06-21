@@ -20,6 +20,9 @@ class Dataset:
     def get_data(self):
         pass
 
+    def size(self):
+        return len(self.get_data())
+
     def input_shape(self):
         return self.ds.element_spec[0].shape
 
@@ -34,13 +37,13 @@ class Dataset:
         """
 
         data = self.get_data()
-        train_len = int(len(data) * (1-test_ratio))
+        train_len = int(self.size() * (1-test_ratio))
         return self.prepare(data.take(train_len), data.skip(train_len))
 
     def three_split(self, val_ratio, test_ratio):
         data = self.get_data()
-        train_len = int(len(data) * (1 - test_ratio - val_ratio))
-        val_len = int(len(data) * val_ratio)
+        train_len = int(self.size() * (1 - test_ratio - val_ratio))
+        val_len = int(self.size() * val_ratio)
         train = data.take(train_len)
         val = data.skip(train_len).take(val_len)
         test = data.skip(train_len + val_len)
@@ -79,13 +82,15 @@ class TSDataset(Dataset):
     def load(self):
         df = pd.read_csv(self.path)
         df = df.drop("date", axis=1)
+        self.n = len(df) - (self.seq_len + self.pred_len - self.overlap) + 1
         if self.mode == 'S':
             df = df[self.targets]
         tensor = tf.convert_to_tensor(df, dtype=tf.float32)
         if self.scale:
             tensor = (tensor - tf.math.reduce_mean(tensor, axis=0)) / tf.math.reduce_std(tensor, axis=0)
         base = tf.data.Dataset.from_tensor_slices(tensor)
-        x = base.window(self.seq_len, shift=1).flat_map(lambda x: x.batch(self.seq_len))
+        #print(tensor.shape)
+        x = base.window(self.seq_len, shift=1).flat_map(lambda x: x.batch(self.seq_len)).take(self.n)
         if self.mode == 'MS':
             df = df[self.targets]
             tensor = tf.convert_to_tensor(df, dtype=tf.float32)
@@ -97,6 +102,9 @@ class TSDataset(Dataset):
 
     def get_data(self):
         return self.ds
+    
+    def size(self):
+        return self.n
 
 
 class ImageDataset(Dataset):
