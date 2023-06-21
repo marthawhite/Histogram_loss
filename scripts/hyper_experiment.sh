@@ -1,17 +1,17 @@
 #!/bin/bash
-#SBATCH --job-name=HLG-Aligned
+#SBATCH --job-name=reg-nostop
 #SBATCH --output=%x-%j.out
-#SBATCH --time=0-9:00:00
+#SBATCH --time=0-05:00:00
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=8000M
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=4000M
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
 DATA=megaage_asian.tgz
-HYPERS=hlg_aligned_hypers.tgz
+HYPERS=reg_nostop_hypers.tgz
 TUNER=keras_tuner-1.3.5-py3-none-any.whl
-PY_FILE=Histogram_loss/HL_tuner.py
+PY_FILE=Histogram_loss/regression_tuner.py
 
 module load python/3.10 scipy-stack cuda cudnn 
 virtualenv --no-download $SLURM_TMPDIR/env

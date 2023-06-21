@@ -23,12 +23,10 @@ def main(base_dir):
     y_min = 0
     y_max = 70
     directory = os.path.join(base_dir, "hypers")
-
-    keras.utils.set_random_seed(seed)
     
     path = os.path.join(base_dir, "data", "megaage_asian", "megaage_asian")
     ds = MegaAgeDataset(path, size=image_size, channels=channels, batch_size=batch_size, aligned=True)
-    train, test = ds.get_split(None)
+    train, test = ds.get_split(test_ratio)
     metrics = ["mse", "mae"]
 
     # tune hypers
@@ -46,21 +44,21 @@ def main(base_dir):
         hypermodel=hl_gaussian, 
         objective = "val_mse", 
         directory=directory, 
-        project_name="hlg_aligned", 
+        project_name="hlg_nostop", 
         overwrite=False,
         tune_new_entries=False,
         max_trials=n_trials, 
         executions_per_trial=runs_per_trial,
     )
-    callbacks = [keras.callbacks.EarlyStopping(patience=4)]
-    hl_gaussian_tuner.search(x=train, epochs=n_epochs, validation_data=test, verbose=2, callbacks=callbacks) 
+    #callbacks = [keras.callbacks.EarlyStopping(patience=4)]
+    hl_gaussian_tuner.search(x=train, epochs=n_epochs, validation_data=test, verbose=2) 
 
     data = hl_gaussian_tuner.get_results()
     model = "HL-Gaussian"
     results = {}
     results[model] = data
 
-    with open("hlg_aligned.json", "w") as out_file:
+    with open("hlg_nostop.json", "w") as out_file:
         json.dump(results, out_file, indent=4)
 
 
