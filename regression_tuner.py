@@ -26,6 +26,13 @@ def main(base_dir):
     path = os.path.join(base_dir, "data", "UTKFace")
     ds = UTKFaceDataset(path, size=image_size, channels=channels, batch_size=batch_size)
     train, test = ds.get_split(test_ratio)
+
+    for x, y in train.take(1):
+        print(x[0], y[0])
+
+    for x, y in test.take(1):
+        print(x[0], y[0])
+
     metrics = ["mse", "mae"]
     
     hp = kt.HyperParameters()

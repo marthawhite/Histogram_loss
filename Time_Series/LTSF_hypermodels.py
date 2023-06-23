@@ -1,7 +1,7 @@
 import keras_tuner as kt
 from tensorflow import keras
 import tensorflow as tf
-from tensorflow.keras import layers
+from keras import layers
 import numpy as np
 
 
@@ -29,9 +29,11 @@ class TruncGaussHistTransform(keras.layers.Layer):
             x_transformed - a tensor of shape (len(inputs), len(borders) - 1)
             consisting of the probability vectors for each target
         """
-        border_targets = self.adjust_and_erf(self.borders, tf.expand_dims(inputs, 1), self.sigma)
+        print(self.borders.shape, inputs.shape)
+        border_targets = self.adjust_and_erf(self.borders, tf.expand_dims(inputs, -1), self.sigma)
         two_z = border_targets[:, -1] - border_targets[:, 0]
         x_transformed = (border_targets[:, 1:] - border_targets[:, :-1]) / tf.expand_dims(two_z, 1)
+        print(x_transformed.shape)
         return x_transformed
 
     def adjust_and_erf(self, a, mu, sig):
@@ -82,7 +84,7 @@ class HyperLinear_L2(kt.HyperModel):
         eps = hp.Fixed("epsilon", 1e-7)
         model.compile(
             loss=keras.losses.MeanSquaredError(),
-            optimizer = keras.optimizer.Adam(learning_rate = lr, beta_1=b1, beta_2=b2, epsilon=eps),
+            optimizer = keras.optimizers.Adam(learning_rate = lr, beta_1=b1, beta_2=b2, epsilon=eps),
             metrics=self.metrics
         )
         return model
@@ -93,10 +95,12 @@ class Linear_HL(keras.Model):
     def __init__(self, y_min, y_max, padding, n_bins, sigma, input_length, output_length, name="Linear_HL"):
         super().__init__()
         y_range = y_max-y_min
-        centers = tf.linspace(y_min-(y_range*padding), y_max+(y_range*padding), n_bins)
-        self.dense = layers.Dense(output_length*tf.size(centers))
-        self.transform = TruncGaussHistTransform(centers, sigma)
-        self.reshape = layers.Reshape((output_length, tf.size(centers)))
+        borders = tf.linspace(y_min-(y_range*padding), y_max+(y_range*padding), n_bins + 1)
+        centers = (borders[1:] + borders[:-1]) / 2
+        print(input_length, output_length, centers.shape[0])
+        self.dense = layers.Dense(output_length*tf.size(centers), input_shape=(input_length,))
+        self.transform = TruncGaussHistTransform(borders, sigma)
+        self.reshape = layers.Reshape((output_length, centers.shape[0]))
         self.softmax = layers.Softmax()
         self.mean = HistMean(centers)
         self.hist_loss = keras.metrics.Mean("loss")
@@ -109,7 +113,9 @@ class Linear_HL(keras.Model):
     
     def train_step(self, data):
         x, y = data
+        print(y.shape)
         y_transformed = self.transform(y)
+        print(y_transformed)
         
         with tf.GradientTape() as tape:
             features = self.dense(x, training=True)
@@ -165,7 +171,7 @@ class HyperLinear_HL(kt.HyperModel):
         eps = hp.Fixed("epsilon", 1e-7)
         model.compile(
             loss=keras.losses.CategoricalCrossentropy(),
-            optimizer = keras.optimizer.Adam(learning_rate = lr, beta_1=b1, beta_2=b2, epsilon=eps),
+            optimizer = keras.optimizers.Adam(learning_rate = lr, beta_1=b1, beta_2=b2, epsilon=eps),
             metrics=self.metrics
         )
         return model
@@ -198,8 +204,8 @@ class NLinear_L2(keras.Model):
         
         with tf.GradientTape as tape:
             features = x - seq_last
-            features = self.dense(x, training=training)
-            predictions = x + seq_last
+            features = self.dense(features, training=True)
+            predictions = features + seq_last
             loss = keras.losses.mean_squared_error(y, predictions)
             
         
@@ -219,8 +225,8 @@ class NLinear_L2(keras.Model):
         seq_last = x[:,-1].numpy()[:,np.newaxis]*np.ones(tf.size(x))
         
         features = x - seq_last
-        features = self.dense(x, training=training)
-        predictions = x + seq_last
+        features = self.dense(x, training=False)
+        predictions = features + seq_last
         
         loss = keras.losses.mean_squared_error(y, predictions)
         
@@ -233,7 +239,7 @@ class NLinear_L2(keras.Model):
     
     
 class HyperNLinear_L2(kt.HyperModel):
-    def __init__(self, name="HyperNLinear_L2", input_length=256. output_length=256, metrics=None):
+    def __init__(self, name="HyperNLinear_L2", input_length=256, output_length=256, metrics=None):
         super().__init__(name, True)
         self.input_length = input_length
         self.output_length = output_length
@@ -247,7 +253,7 @@ class HyperNLinear_L2(kt.HyperModel):
         eps = hp.Fixed("epsilon", 1e-7)
         model.compile(
             loss=keras.losses.CategoricalCrossentropy(),
-            optimizer = keras.optimizer.Adam(learning_rate = lr, beta_1=b1, beta_2=b2, epsilon=eps),
+            optimizer = keras.optimizers.Adam(learning_rate = lr, beta_1=b1, beta_2=b2, epsilon=eps),
             metrics=self.metrics
         )
         return model
@@ -344,7 +350,7 @@ class HyperNLinear_HL(kt.HyperModel):
         eps = hp.Fixed("epsilon", 1e-7)
         model.compile(
             loss=keras.losses.CategoricalCrossentropy(),
-            optimizer = keras.optimizer.Adam(learning_rate = lr, beta_1=b1, beta_2=b2, epsilon=eps),
+            optimizer = keras.optimizers.Adam(learning_rate = lr, beta_1=b1, beta_2=b2, epsilon=eps),
             metrics=self.metrics
         )
         return model

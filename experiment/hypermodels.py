@@ -100,7 +100,7 @@ class HyperHL(HyperBase):
         y_range = self.y_max - self.y_min
         new_min = self.y_min - padding * y_range
         new_max = self.y_max + padding * y_range
-        bins = tf.linspace(new_min, new_max, n_bins)
+        bins = tf.linspace(new_min, new_max, n_bins + 1)
         return bins
 
 

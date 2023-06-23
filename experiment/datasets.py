@@ -26,7 +26,7 @@ class Dataset:
     def input_shape(self):
         return self.ds.element_spec[0].shape
 
-    def get_split(self, test_ratio):
+    def get_split(self, test_ratio, shuffle=True):
         """Return a train-test split for the given test_ratio.
         
         Params:
@@ -37,8 +37,11 @@ class Dataset:
         """
 
         data = self.get_data()
+        if shuffle:
+            data = data.shuffle(len(self), reshuffle_each_iteration=False)
+
         train_len = int(len(self) * (1-test_ratio))
-        return self.prepare(data.take(train_len), data.skip(train_len))
+        return self.prepare(data.take(train_len).shuffle(train_len), data.skip(train_len).shuffle(len(self) - train_len))
 
     def three_split(self, val_ratio, test_ratio):
         data = self.get_data()
@@ -90,14 +93,14 @@ class TSDataset(Dataset):
             tensor = (tensor - tf.math.reduce_mean(tensor, axis=0)) / tf.math.reduce_std(tensor, axis=0)
         base = tf.data.Dataset.from_tensor_slices(tensor)
         #print(tensor.shape)
-        x = base.window(self.seq_len, shift=1).flat_map(lambda x: x.batch(self.seq_len)).take(self.n)
+        x = base.window(self.seq_len, shift=1).flat_map(lambda x:x.batch(self.seq_len, drop_remainder=True))#.take(self.n)
         if self.mode == 'MS':
             df = df[self.targets]
             tensor = tf.convert_to_tensor(df, dtype=tf.float32)
             if self.scale:
                 tensor = (tensor - tf.math.reduce_mean(tensor, axis=0)) / tf.math.reduce_std(tensor, axis=0)
             base = tf.data.Dataset.from_tensor_slices(tensor)
-        y = base.skip(self.seq_len - self.overlap).window(self.pred_len, shift=1).flat_map(lambda x: x.batch(self.pred_len))
+        y = base.skip(self.seq_len - self.overlap).window(self.pred_len, shift=1).flat_map(lambda x: x.batch(self.pred_len, drop_remainder=True))
         self.ds = tf.data.Dataset.zip((x, y))
 
     def get_data(self):
