@@ -51,9 +51,9 @@ for sigma in sigs:
     maes.append(mae)
     #print(mae)
 
-    if sigma > 1.4:
-        print(sigma, y_trans, y_new, dif, mae)
-        input()
+    # if sigma > 1.4:
+    #     print(sigma, y_trans, y_new, dif, mae)
+    #     input()
 
 
 
