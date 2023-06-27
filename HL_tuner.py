@@ -6,8 +6,7 @@ from experiment.hypermodels import HyperRegression, HyperHLGaussian, HyperHLOneB
 import os
 import sys
 import json
-from experiment.datasets import MegaAgeDataset
-from experiment.UTKFace_loader import UTKFaceDataset
+from experiment.datasets import MegaAgeDataset, UTKFaceDataset
 from experiment.logging import LogGridSearch
 from experiment.get_model import get_model
 

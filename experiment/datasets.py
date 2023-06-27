@@ -1,6 +1,5 @@
 import tensorflow as tf
 import os
-import matplotlib.pyplot as plt
 import pandas as pd
 
 class Dataset:
@@ -233,24 +232,24 @@ class FGNetDataset(ImageDataset):
     
     def get_data(self):
         return self.data
-
-def show(image, label):
-    plt.figure()
-    plt.imshow(image)
-    plt.title(label.numpy())
-    plt.axis('off')
-    plt.show()
     
 
-def main():
-    path = os.path.join("data", "FGNET", "images")
-    ds = FGNetDataset(path, size=128, channels=3)
-    train, test = ds.get_split(0.2)
-    print(train, test)
-    print(train.cardinality(), test.cardinality())
-    for image, label in train.take(1):
-        show(image, label)
+class UTKFaceDataset(ImageDataset):
+    def __init__(self, path, size, channels, **kwargs):
+        self.path = path
+        super().__init__(size, channels, **kwargs)
+        
+    def parse_label(self, filename):
+        parts = tf.strings.split(filename, os.sep)
+        label = tf.strings.to_number(tf.strings.split(parts[-1], "_")[0])
+        return label
+    
+    def load(self):
+        glob = os.path.join(self.path, "*")
+        list_ds = tf.data.Dataset.list_files(glob, shuffle=True)
+        images_ds = list_ds.map(lambda x : self.parse_image(x))
+        self.data = images_ds
 
-
-if __name__ == "__main__":
-    main()
+    def get_data(self):
+        return self.data
+    

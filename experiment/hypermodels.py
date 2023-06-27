@@ -2,7 +2,7 @@
 
 
 import keras_tuner as kt
-from experiment.new_models import Regression, HLGaussian, HLOneBin, HLUniform, HLProjected
+from experiment.models import Regression, HLGaussian, HLOneBin, HLUniform, HLProjected
 from tensorflow import keras
 import tensorflow as tf
 
