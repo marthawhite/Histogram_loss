@@ -17,6 +17,23 @@ class Dataset:
     def load(self):
         pass
 
+    def normalize(self, ds):
+        x, y = ds.batch(len(ds)).get_single_element()
+        mu = tf.math.reduce_mean(x, axis=0)
+        std = tf.math.reduce_std(x, axis=0)
+        sig = tf.where(tf.equal(std, 0), tf.ones_like(std), std)
+        x_norm = (x - mu) / sig
+        return tf.data.Dataset.from_tensor_slices(x_norm)
+
+    def scale_targets(self, ds):
+        x, y = ds.batch(len(ds)).get_single_element()
+        y_max = tf.math.reduce_max(y, axis=0)
+        y_min = tf.math.reduce_min(y, axis=0)
+        y_range = y_max - y_min
+        scale = tf.where(tf.equal(y_range, 0), tf.ones_like(y_range), y_range)
+        y_scaled = (y - y_min) / scale
+        return tf.data.Dataset.from_tensor_slices(y_scaled)
+
     def get_data(self):
         pass
 
