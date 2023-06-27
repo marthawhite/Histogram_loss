@@ -18,9 +18,9 @@ def adjust_and_erf(a, mu, sig):
 bin_width = 1.
 y_min = 0.
 y_max = 1.
-sigma = 1.
+sigma = 1.4
 
-pads = np.arange(1, 9, 1, np.float64)
+pads = np.arange(1, 21, 1, np.float64)
 
 steps = 101
 
@@ -43,7 +43,7 @@ for pad in pads:
 
     borders = np.arange(bins_min, bins_max + bin_width, bin_width)
     centers = (borders[1:] + borders[:-1]) / 2
-    #print(borders)
+    print(borders)
 
     # Total error
     y_trans = transform(y, borders, sigma)
@@ -52,18 +52,15 @@ for pad in pads:
     dif = y_new - y
     difs.append(dif)
 
-    two_z = adjust_and_erf(bins_max, y, sigma) - adjust_and_erf(bins_min, y, sigma)
-    bias = 2 * sigma * bin_width * (norm.pdf((bins_min - y) / sigma) - norm.pdf((bins_max - y) / sigma)) / two_z
-    print(difs - disc_diff, bias)
-    input()
-    # if pad == 10 or pad == 11:
-    #     print(dif - disc_diff)
+    #two_z = adjust_and_erf(bins_max, y, sigma) - adjust_and_erf(bins_min, y, sigma)
+    #bias = 2 * sigma * bin_width * (norm.pdf((bins_min - y) / sigma) - norm.pdf((bins_max - y) / sigma)) / two_z
 
 
 difs = np.stack(difs)
 total_maes = np.mean(np.abs(difs), axis=1)
 disc_maes = np.mean(np.abs(disc_diff))
 pad_maes = np.mean(np.abs(difs - disc_diff), axis=1)
+print(difs[0])
 
 #print(list(pad_maes))
 #print(difs[0:3])

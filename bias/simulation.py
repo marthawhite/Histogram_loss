@@ -21,10 +21,10 @@ padding_r = 10
 
 steps = 101
 
-borders = np.linspace(-50, 51, 102)
+borders = np.linspace(-100, 101, 202)
 centers = (borders[1:] + borders[:-1]) / 2
 
-sigs = np.exp(np.linspace(-4, 2, 101))[:72]
+sigs = np.exp(np.linspace(-4, 2, 101))
 difs = []
 maes = []
 for sigma in sigs:
@@ -51,16 +51,16 @@ for sigma in sigs:
     maes.append(mae)
     #print(mae)
 
-    # if sigma > 0.5 and sigma < 1:
-    #     print(sigma, dif, mae)
-    #     input()
+    if sigma > 1.4:
+        print(sigma, y_trans, y_new, dif, mae)
+        input()
 
 
 
 difs = np.stack(difs)
 maes = np.stack(maes)
-print(list(sigs))
-print(list(maes))
+#print(list(sigs))
+#print(list(maes))
 #print(np.where(sigs < 1.4, maes, 0))
 
 y, new_sigs = np.meshgrid(y - 0.5, np.log(sigs))
