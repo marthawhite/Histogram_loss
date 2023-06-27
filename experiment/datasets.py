@@ -12,7 +12,7 @@ class Dataset:
         self.load()
 
     def prepare(self, *args):
-        return [x.batch(self.batch_size).prefetch(self.prefetch) for x in args]
+        return [x.shuffle(len(x)).batch(self.batch_size).prefetch(self.prefetch) for x in args]
 
     def load(self):
         pass
@@ -26,7 +26,7 @@ class Dataset:
     def input_shape(self):
         return self.ds.element_spec[0].shape
 
-    def get_split(self, test_ratio):
+    def get_split(self, test_ratio, shuffle=True):
         """Return a train-test split for the given test_ratio.
         
         Params:
@@ -37,11 +37,17 @@ class Dataset:
         """
 
         data = self.get_data()
+        if shuffle:
+            data = data.shuffle(len(self), reshuffle_each_iteration=False)
+
         train_len = int(len(self) * (1-test_ratio))
         return self.prepare(data.take(train_len), data.skip(train_len))
 
-    def three_split(self, val_ratio, test_ratio):
+    def three_split(self, val_ratio, test_ratio, shuffle=True):
         data = self.get_data()
+        if shuffle:
+            data = data.shuffle(len(self), reshuffle_each_iteration=False)
+
         train_len = int(len(self) * (1 - test_ratio - val_ratio))
         val_len = int(len(self) * val_ratio)
         train = data.take(train_len)
@@ -90,14 +96,15 @@ class TSDataset(Dataset):
             tensor = (tensor - tf.math.reduce_mean(tensor, axis=0)) / tf.math.reduce_std(tensor, axis=0)
         base = tf.data.Dataset.from_tensor_slices(tensor)
         #print(tensor.shape)
-        x = base.window(self.seq_len, shift=1).flat_map(lambda x: x.batch(self.seq_len)).take(self.n)
+        x = base.window(self.seq_len, shift=1).flat_map(lambda x: x.batch(self.seq_len, drop_remainder=True)).take(self.n)
         if self.mode == 'MS':
             df = df[self.targets]
             tensor = tf.convert_to_tensor(df, dtype=tf.float32)
             if self.scale:
+                # PROBLEM!!!
                 tensor = (tensor - tf.math.reduce_mean(tensor, axis=0)) / tf.math.reduce_std(tensor, axis=0)
             base = tf.data.Dataset.from_tensor_slices(tensor)
-        y = base.skip(self.seq_len - self.overlap).window(self.pred_len, shift=1).flat_map(lambda x: x.batch(self.pred_len))
+        y = base.skip(self.seq_len - self.overlap).window(self.pred_len, shift=1).flat_map(lambda x: x.batch(self.pred_len, drop_remainder=True))
         self.ds = tf.data.Dataset.zip((x, y))
 
     def get_data(self):
@@ -143,8 +150,8 @@ class MegaAgeDataset(ImageDataset):
         train_glob = os.path.join(self.path, dirs[0], "*")
         test_glob = os.path.join(self.path, dirs[1], "*")
 
-        train_ds = tf.data.Dataset.list_files(train_glob, shuffle=True)
-        test_ds = tf.data.Dataset.list_files(test_glob, shuffle=True)
+        train_ds = tf.data.Dataset.list_files(train_glob, shuffle=False)
+        test_ds = tf.data.Dataset.list_files(test_glob, shuffle=False)
 
         y_train, y_test = self.load_labels(len(train_ds), len(test_ds))
 
