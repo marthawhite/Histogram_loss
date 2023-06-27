@@ -1,15 +1,14 @@
 import tensorflow as tf
-from tensorflow import keras
 from tensorflow.keras import layers
+from tensorflow import keras
 import keras_tuner as kt
 from experiment.hypermodels import HyperRegression, HyperHLGaussian, HyperHLOneBin
 import os
 import sys
 import json
-from experiment.datasets import MegaAgeDataset
+from experiment.datasets import MegaAgeDataset, UTKFaceDataset
 from experiment.logging import LogGridSearch
 from experiment.get_model import get_model
-from experiment.UTKFace_loader import UTKFaceDataset
 
 
 def main(base_dir):
