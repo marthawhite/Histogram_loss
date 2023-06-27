@@ -6,7 +6,7 @@ Includes HL Gaussian, HL OneBin, and Regression models.
 
 from tensorflow import keras
 import tensorflow as tf
-from transforms import *
+from experiment.transforms import *
 
 
 class Regression(keras.Model):

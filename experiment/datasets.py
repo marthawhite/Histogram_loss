@@ -5,15 +5,16 @@ import pandas as pd
 class Dataset:
     """Base dataset class."""
 
-    def __init__(self, norm=False, scale=False, batch_size=32, prefetch=1) -> None:
+    def __init__(self, buffer_size=100, norm=False, scale=False, batch_size=32, prefetch=1) -> None:
         self.batch_size = batch_size
         self.prefetch = prefetch
         self.norm = norm
         self.scale = scale
+        self.buf = buffer_size
         self.load()
 
     def prepare(self, *args):
-        return [x.shuffle(len(x)).batch(self.batch_size).prefetch(self.prefetch) for x in args]
+        return [x.shuffle(self.buf).batch(self.batch_size).prefetch(self.prefetch) for x in args]
 
     def load(self):
         pass
@@ -53,7 +54,7 @@ class Dataset:
     def input_shape(self):
         return self.ds.element_spec[0].shape
 
-    def get_split(self, test_ratio, shuffle=True):
+    def get_split(self, test_ratio):
         """Return a train-test split for the given test_ratio.
         
         Params:
@@ -64,16 +65,12 @@ class Dataset:
         """
 
         data = self.transform(self.get_data())
-        if shuffle:
-            data = data.shuffle(len(self), reshuffle_each_iteration=False)
 
         train_len = int(len(self) * (1-test_ratio))
         return self.prepare(data.take(train_len), data.skip(train_len))
 
-    def three_split(self, val_ratio, test_ratio, shuffle=True):
+    def three_split(self, val_ratio, test_ratio):
         data = self.transform(self.get_data())
-        if shuffle:
-            data = data.shuffle(len(self), reshuffle_each_iteration=False)
 
         train_len = int(len(self) * (1 - test_ratio - val_ratio))
         val_len = int(len(self) * val_ratio)
@@ -120,7 +117,7 @@ class TSDataset(Dataset):
 
         if self.mode == 'S':
             df = df[self.targets]
-            
+
         tensor = tf.convert_to_tensor(df, dtype=tf.float32)
         base = tf.data.Dataset.from_tensor_slices(tensor)
         x = base.window(self.seq_len, shift=1).flat_map(lambda x: x.batch(self.seq_len, drop_remainder=True)).take(self.n)
@@ -145,7 +142,7 @@ class ImageDataset(Dataset):
     def __init__(self, size=128, channels=3, **kwargs) -> None:
         self.size = size
         self.channels = channels
-        super().__init__(**kwargs)
+        super().__init__(norm=False, **kwargs)
 
     def parse_image(self, filename):
         label = self.parse_label(filename)
@@ -253,7 +250,8 @@ class UTKFaceDataset(ImageDataset):
     
     def load(self):
         glob = os.path.join(self.path, "*")
-        list_ds = tf.data.Dataset.list_files(glob, shuffle=True)
+        list_ds = tf.data.Dataset.list_files(glob, shuffle=False)
+        list_ds = list_ds.shuffle(len(list_ds), reshuffle_each_iteration=False)
         images_ds = list_ds.map(lambda x : self.parse_image(x))
         self.data = images_ds
 
