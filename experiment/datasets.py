@@ -5,9 +5,11 @@ import pandas as pd
 class Dataset:
     """Base dataset class."""
 
-    def __init__(self, batch_size=32, prefetch=1) -> None:
+    def __init__(self, norm=False, scale=False, batch_size=32, prefetch=1) -> None:
         self.batch_size = batch_size
         self.prefetch = prefetch
+        self.norm = norm
+        self.scale = scale
         self.load()
 
     def prepare(self, *args):
@@ -16,8 +18,14 @@ class Dataset:
     def load(self):
         pass
 
-    def transform(self):
-        pass
+    def transform(self, ds):
+        x = ds.map(lambda x, y: x)
+        y = ds.map(lambda x, y : y)
+        if self.norm:
+            x = self.normalize(x)
+        if self.scale:
+            y = self.scale_targets(y)
+        return tf.data.Dataset.zip((x, y))
 
     def normalize(self, ds):
         x = ds.batch(len(ds)).get_single_element()
@@ -55,7 +63,7 @@ class Dataset:
         Returns: a tuple (train, test) of tf.data.Dataset
         """
 
-        data = self.get_data()
+        data = self.transform(self.get_data())
         if shuffle:
             data = data.shuffle(len(self), reshuffle_each_iteration=False)
 
@@ -63,7 +71,7 @@ class Dataset:
         return self.prepare(data.take(train_len), data.skip(train_len))
 
     def three_split(self, val_ratio, test_ratio, shuffle=True):
-        data = self.get_data()
+        data = self.transform(self.get_data())
         if shuffle:
             data = data.shuffle(len(self), reshuffle_each_iteration=False)
 
@@ -76,10 +84,10 @@ class Dataset:
 
 class CSVDataset(Dataset):
 
-    def __init__(self, path, targets) -> None:
+    def __init__(self, path, targets, **kwargs) -> None:
         self.path = path
         self.targets = targets
-        super().__init__()
+        super().__init__(**kwargs)
 
     def load(self):
         df = pd.read_csv(self.path)
@@ -94,34 +102,28 @@ class CSVDataset(Dataset):
 
 class TSDataset(Dataset):
 
-    def __init__(self, path, targets, seq_len, pred_len, mode='S', scale=True, overlap=0) -> None:
+    def __init__(self, path, targets, seq_len, pred_len, drop_cols=[], mode='S', overlap=0, **kwargs) -> None:
         self.path = path
         self.targets = targets
         self.seq_len = seq_len
         self.pred_len = pred_len
         self.mode = mode
-        self.scale = scale
         self.overlap = overlap
-        super().__init__()
+        self.drop_cols = drop_cols
+        super().__init__(**kwargs)
 
     def load(self):
         df = pd.read_csv(self.path)
-        df = df.drop("date", axis=1)
+        df = df.drop(self.drop_cols, axis=1)
         self.n = len(df) - (self.seq_len + self.pred_len - self.overlap) + 1
         if self.mode == 'S':
             df = df[self.targets]
         tensor = tf.convert_to_tensor(df, dtype=tf.float32)
-        if self.scale:
-            tensor = (tensor - tf.math.reduce_mean(tensor, axis=0)) / tf.math.reduce_std(tensor, axis=0)
         base = tf.data.Dataset.from_tensor_slices(tensor)
-        #print(tensor.shape)
         x = base.window(self.seq_len, shift=1).flat_map(lambda x: x.batch(self.seq_len, drop_remainder=True)).take(self.n)
         if self.mode == 'MS':
             df = df[self.targets]
             tensor = tf.convert_to_tensor(df, dtype=tf.float32)
-            if self.scale:
-                # PROBLEM!!!
-                tensor = (tensor - tf.math.reduce_mean(tensor, axis=0)) / tf.math.reduce_std(tensor, axis=0)
             base = tf.data.Dataset.from_tensor_slices(tensor)
         y = base.skip(self.seq_len - self.overlap).window(self.pred_len, shift=1).flat_map(lambda x: x.batch(self.pred_len, drop_remainder=True))
         self.ds = tf.data.Dataset.zip((x, y))
@@ -155,10 +157,10 @@ class ImageDataset(Dataset):
 
 class MegaAgeDataset(ImageDataset):
     
-    def __init__(self, path, size, channels, batch_size=32, aligned=True) -> None:
+    def __init__(self, path, aligned=True, **kwargs) -> None:
         self.path = path
         self.aligned = aligned
-        super().__init__(size, channels, batch_size=batch_size)
+        super().__init__(**kwargs)
 
     def load(self):
         if self.aligned:
@@ -214,9 +216,9 @@ class MegaAgeDataset(ImageDataset):
 
 class FGNetDataset(ImageDataset):
 
-    def __init__(self, path, size, channels) -> None:
+    def __init__(self, path, **kwargs) -> None:
         self.path = path
-        super().__init__(size, channels)
+        super().__init__(**kwargs)
         
 
     def parse_label(self, filename):
@@ -235,9 +237,9 @@ class FGNetDataset(ImageDataset):
     
 
 class UTKFaceDataset(ImageDataset):
-    def __init__(self, path, size, channels, **kwargs):
+    def __init__(self, path, **kwargs):
         self.path = path
-        super().__init__(size, channels, **kwargs)
+        super().__init__(**kwargs)
         
     def parse_label(self, filename):
         parts = tf.strings.split(filename, os.sep)
