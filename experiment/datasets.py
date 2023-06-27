@@ -115,16 +115,21 @@ class TSDataset(Dataset):
     def load(self):
         df = pd.read_csv(self.path)
         df = df.drop(self.drop_cols, axis=1)
+
         self.n = len(df) - (self.seq_len + self.pred_len - self.overlap) + 1
+
         if self.mode == 'S':
             df = df[self.targets]
+            
         tensor = tf.convert_to_tensor(df, dtype=tf.float32)
         base = tf.data.Dataset.from_tensor_slices(tensor)
         x = base.window(self.seq_len, shift=1).flat_map(lambda x: x.batch(self.seq_len, drop_remainder=True)).take(self.n)
+        
         if self.mode == 'MS':
             df = df[self.targets]
             tensor = tf.convert_to_tensor(df, dtype=tf.float32)
             base = tf.data.Dataset.from_tensor_slices(tensor)
+
         y = base.skip(self.seq_len - self.overlap).window(self.pred_len, shift=1).flat_map(lambda x: x.batch(self.pred_len, drop_remainder=True))
         self.ds = tf.data.Dataset.zip((x, y))
 
