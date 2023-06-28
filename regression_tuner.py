@@ -1,21 +1,20 @@
 import tensorflow as tf
-from tensorflow import keras
 from tensorflow.keras import layers
+from tensorflow import keras
 import keras_tuner as kt
 from experiment.hypermodels import HyperRegression, HyperHLGaussian, HyperHLOneBin
 import os
 import sys
 import json
-from experiment.datasets import MegaAgeDataset
+from experiment.datasets import MegaAgeDataset, UTKFaceDataset
 from experiment.logging import LogGridSearch
 from experiment.get_model import get_model
-from experiment.UTKFace_loader import UTKFaceDataset
 
 
 def main(base_dir):
     keras.utils.set_random_seed(1)
     n_trials = 3
-    runs_per_trial = 3
+    runs_per_trial = 1
     n_epochs = 40
     test_ratio = 0.1
     image_size = 128

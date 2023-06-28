@@ -6,8 +6,7 @@ from experiment.hypermodels import HyperRegression, HyperHLGaussian, HyperHLOneB
 import os
 import sys
 import json
-from experiment.datasets import MegaAgeDataset
-from experiment.UTKFace_loader import UTKFaceDataset
+from experiment.datasets import MegaAgeDataset, UTKFaceDataset
 from experiment.logging import LogGridSearch
 from experiment.get_model import get_model
 
@@ -15,7 +14,7 @@ from experiment.get_model import get_model
 def main(base_dir):
     keras.utils.set_random_seed(1)
     n_trials = 3
-    runs_per_trial = 3
+    runs_per_trial = 1
     n_epochs = 40
     test_ratio = 0.1
     image_size = 128

@@ -6,7 +6,7 @@ from experiment.hypermodels import HyperRegression, HyperHLGaussian, HyperHLOneB
 import os
 import sys
 import json
-from experiment.UTKFace_loader import UTKFaceDataset
+from experiment.datasets import UTKFaceDataset
 
 
 def get_model():
