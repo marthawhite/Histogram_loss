@@ -5,10 +5,11 @@ import pandas as pd
 class Dataset:
     """Base dataset class."""
 
-    def __init__(self, buffer_size=None, batch_size=32, prefetch=1) -> None:
+    def __init__(self, buffer_size=None, batch_size=32, prefetch=1, name=None) -> None:
         self.batch_size = batch_size
         self.prefetch = prefetch
         self.buf = buffer_size
+        self.name = name
         self.load()
 
     def prepare(self, splits):
@@ -25,16 +26,19 @@ class Dataset:
 
     def shuffle(self, data, reshuffle=True):
         if self.buf is None:
-            buf = len(data)
+            buf = len(self)
         else:
             buf = self.buf
         return data.shuffle(buf, reshuffle_each_iteration=reshuffle)
 
-    def preprocess(self, x):
-        return x
+    def preprocess(self, *args):
+        return args
 
     def get_data(self):
         pass
+
+    def __len__(self):
+        return len(self.get_data())
 
     def get_split(self, val_ratio, test_ratio=None, shuffle=False):
         data = self.get_data()
@@ -53,22 +57,22 @@ class Dataset:
             return self.two_split(data, val_ratio)
     
     def two_split(self, data, test_ratio):
-        test_len = self.get_num(len(data), test_ratio)
-        train_len = len(data) - test_len
+        test_len = self.get_num(test_ratio)
+        train_len = len(self) - test_len
 
         train = data.take(train_len)
         test = data.skip(train_len).take(test_len)
         return train, test
 
-    def get_num(self, total, ratio):
+    def get_num(self, ratio):
         if ratio >= 1:
             return ratio
         else:
-            return int(total * ratio)
+            return int(len(self) * ratio)
 
     def three_split(self, data, val_ratio, test_ratio):
-        test_len = self.get_num(len(data), test_ratio)
-        val_len = self.get_num(len(data), val_ratio)
+        test_len = self.get_num(test_ratio)
+        val_len = self.get_num(val_ratio)
         train_len = len(data) - val_len - test_len
 
         train = data.take(train_len)
@@ -132,6 +136,9 @@ class TSDataset(Dataset):
 
     def get_data(self):
         return self.ds
+    
+    def __len__(self):
+        return self.n
 
 
 class ImageDataset(Dataset):
@@ -162,7 +169,7 @@ class MegaAgeDataset(ImageDataset):
     def __init__(self, path, aligned=True, **kwargs) -> None:
         self.path = path
         self.aligned = aligned
-        super().__init__(**kwargs)
+        super().__init__(name="MegaAge", **kwargs)
 
     def load(self):
         if self.aligned:
@@ -215,7 +222,7 @@ class FGNetDataset(ImageDataset):
 
     def __init__(self, path, **kwargs) -> None:
         self.path = path
-        super().__init__(**kwargs)
+        super().__init__(name="FGNet", **kwargs)
         
     def parse_label(self, filename):
         parts = tf.strings.split(filename, os.sep)
@@ -235,7 +242,7 @@ class UTKFaceDataset(ImageDataset):
 
     def __init__(self, path, **kwargs):
         self.path = path
-        super().__init__(**kwargs)
+        super().__init__(name="UTKFace", **kwargs)
         
     def parse_label(self, filename):
         parts = tf.strings.split(filename, os.sep)
