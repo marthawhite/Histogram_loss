@@ -22,7 +22,7 @@ pip install --no-index -r $BASE_DIR/requirements.txt
 pip install --upgrade $BASE_DIR/$TUNER
 
 mkdir $SLURM_TMPDIR/data
-tar -xzf $DATA -C $SLURM_TMPDIR/data
+tar -xzf $BASE_DIR/$DATA -C $SLURM_TMPDIR/data
 mkdir $SLURM_TMPDIR/hypers
 
 python $BASE_DIR/$PY_FILE $SLURM_TMPDIR
