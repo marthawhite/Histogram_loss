@@ -5,11 +5,10 @@ import pandas as pd
 class Dataset:
     """Base dataset class."""
 
-    def __init__(self, buffer_size=None, batch_size=32, prefetch=1, name=None) -> None:
+    def __init__(self, buffer_size=None, batch_size=32, prefetch=1) -> None:
         self.batch_size = batch_size
         self.prefetch = prefetch
         self.buf = buffer_size
-        self.name = name
         self.load()
 
     def prepare(self, splits):
@@ -169,7 +168,7 @@ class MegaAgeDataset(ImageDataset):
     def __init__(self, path, aligned=True, **kwargs) -> None:
         self.path = path
         self.aligned = aligned
-        super().__init__(name="MegaAge", **kwargs)
+        super().__init__(**kwargs)
 
     def load(self):
         if self.aligned:
@@ -222,7 +221,7 @@ class FGNetDataset(ImageDataset):
 
     def __init__(self, path, **kwargs) -> None:
         self.path = path
-        super().__init__(name="FGNet", **kwargs)
+        super().__init__(**kwargs)
         
     def parse_label(self, filename):
         parts = tf.strings.split(filename, os.sep)
@@ -242,7 +241,7 @@ class UTKFaceDataset(ImageDataset):
 
     def __init__(self, path, **kwargs):
         self.path = path
-        super().__init__(name="UTKFace", **kwargs)
+        super().__init__(**kwargs)
         
     def parse_label(self, filename):
         parts = tf.strings.split(filename, os.sep)

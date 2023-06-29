@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=reg-utk
+#SBATCH --job-name=fgnet
 #SBATCH --output=%x-%j.out
 #SBATCH --time=0-06:00:00
 #SBATCH --gres=gpu:1
@@ -8,10 +8,10 @@
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-DATA=data/UTKFace.tar.gz
-HYPERS=reg_utk_hypers.tgz
+DATA=data/fgnet.tar
+HYPERS=fgnet_hypers.tgz
 TUNER=keras_tuner-1.3.5-py3-none-any.whl
-PY_FILE=Histogram_loss/regression_tuner.py
+PY_FILE=Histogram_loss/fgnet.py
 BASE_DIR=~/scratch
 
 module load python/3.10 scipy-stack cuda cudnn
