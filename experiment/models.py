@@ -16,8 +16,8 @@ class Regression(keras.Model):
         base - the backbone model to learn features
     """
 
-    def __init__(self, base, dropout=0):
-        super().__init__()
+    def __init__(self, base, dropout=0, **kwargs):
+        super().__init__(**kwargs)
         self.base = base
         self.dropout = keras.layers.Dropout(dropout)
         self.reg = keras.layers.Dense(1)

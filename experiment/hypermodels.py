@@ -65,7 +65,7 @@ class HyperRegression(HyperBase):
     def get_model(self, hp):
         """Return a regression model."""
         dropout = hp.Choice("dropout", [0., 0.2, 0.5, 0.8], default=0.5)
-        return Regression(self.base(), dropout, self.name)
+        return Regression(self.base(), dropout, name=self.name)
     
 
 class HyperHL(HyperBase):

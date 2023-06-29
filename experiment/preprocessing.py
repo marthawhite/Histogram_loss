@@ -18,6 +18,10 @@ class Scaler:
         scale = tf.where(y_range == 0, tf.ones_like(y_range), y_range)
         return data.map(lambda x, y: (x, (y - self.y_min) / scale))
     
+    def fit_transform(self, data):
+        self.fit(data)
+        return self.transform(data)
+    
 
 class Normalizer:
 
@@ -33,3 +37,7 @@ class Normalizer:
         std = tf.cast(tf.math.sqrt(self.sc.var_), tf.float32)
         scale = tf.where(std == 0., tf.ones_like(std), std)
         return data.map(lambda x, y: ((x - mu) / scale, y))
+
+    def fit_transform(self, data):
+        self.fit(data)
+        return self.transform(data)

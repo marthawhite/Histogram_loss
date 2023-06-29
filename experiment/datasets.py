@@ -5,11 +5,10 @@ import pandas as pd
 class Dataset:
     """Base dataset class."""
 
-    def __init__(self, buffer_size=None, batch_size=32, prefetch=1, name=None) -> None:
+    def __init__(self, buffer_size=None, batch_size=32, prefetch=1) -> None:
         self.batch_size = batch_size
         self.prefetch = prefetch
         self.buf = buffer_size
-        self.name = name
         self.load()
 
     def prepare(self, splits):
@@ -83,19 +82,20 @@ class Dataset:
 
 class CSVDataset(Dataset):
 
-    def __init__(self, path, targets, drop_cols=[], **kwargs) -> None:
+    def __init__(self, path, targets, drop_cols=[], header="infer", **kwargs) -> None:
         self.path = path
         self.targets = targets
         self.drop_cols = drop_cols
+        self.header = header
         super().__init__(**kwargs)
 
     def load(self):
-        df = pd.read_csv(self.path)
+        df = pd.read_csv(self.path, header=self.header)
         df = df.drop(self.drop_cols, axis=1)
         x = df.drop(self.targets, axis=1)
         y = df[self.targets]
         ds = tf.data.Dataset.from_tensor_slices((tf.convert_to_tensor(x, dtype=tf.float32),tf.convert_to_tensor(y, dtype=tf.float32)))
-        self.ds = ds#.shuffle(len(ds))
+        self.ds = ds
 
     def get_data(self):
         return self.ds
