@@ -7,9 +7,7 @@
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-HYPERS=reg_utk_hypers.tgz
-TUNER=keras_tuner-1.3.5-py3-none-any.whl
-PY_FILE=Histogram_loss/regression_tuner.py
+PY_FILE=atari_prediction/precompute.py
 BASE_DIR=~/scratch/Histogram_loss
 
 module load python/3.10 scipy-stack
