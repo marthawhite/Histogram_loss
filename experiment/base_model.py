@@ -4,8 +4,8 @@ from tensorflow.keras import layers, models
 
 
 
-def get_base_model(image_size = (84,84,3), num_images=4, output_size=1, output_activation=None):
-    inputs = layers.Input(shape=((image_size[0], image_size[1], image_size[2]*num_images)))
+def get_base_model(image_size = (84,84), num_images=4, output_size=1, output_activation=None):
+    inputs = layers.Input(shape=((image_size[0], image_size[1], num_images)))
     x = layers.Conv2D(filters = 64, kernel_size=(3,3), padding="same", activation="relu")(inputs)
     x = layers.BatchNormalization(axis=[1,2,3])(x)
     x = layers.Conv2D(filters = 64, kernel_size=(3,3), padding="same", activation="relu")(x)
