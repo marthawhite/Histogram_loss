@@ -8,7 +8,7 @@ import json
 from experiment.RL_dataset import get_dataset
     
     
-def get_base_model(image_size = (1, 84, 84), num_images=4, output_size=1, output_activation=None):
+def get_model(image_size = (1, 84, 84), num_images=4, output_size=1, output_activation=None):
     inputs = layers.Input(shape=((image_size[0]*num_images, image_size[1], image_size[2])))
     x = layers.Conv2D(filters = 64, kernel_size=(3,3), padding="same", activation="relu")(inputs)
     x = layers.BatchNormalization(axis=[1,2,3])(x)
@@ -54,15 +54,15 @@ def main(returns_file):
     ds = get_dataset(returns_file).shuffle(batch_size*32).batch(batch_size).prefetch(1)
     
     train = ds.take(num_batches_train)
-    test = ds.skip(num_batches_train+32).take(num_batches_test)
+    test = ds.skip(num_batches_train).take(num_batches_test)
     
-    hl_gaussian = HLGaussian(get_model(), borders, 1.0, 0.0)
+    hl_gaussian = HLGaussian(get_model(output_size=128), borders, 1.0, 0.0)
     hl_gaussian.compile(optimizer=keras.optimizers.Adam(), metrics=[keras.metrics.RootMeanSquaredError(), keras.metrics.MeanAbsoluteError()])
     hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, validation_data=test)
     with open("hl_gaussian_history.json", "w") as file:
         json.dump(hl_gaussian_history.history, file)
         
-    regression = Regression(get_model())
+    regression = Regression(get_model(output_size=128))
     regression.compile(optimizer=keras.optimizers.Adam(), loss=keras.losses.MeanSquaredError(), metrics=[keras.metrics.RootMeanSquaredError(), keras.metrics.MeanAbsoluteError()])
     regression_history = regression.fit(x=train, epochs=n_epochs, validation_data=test)
     with open("regression_history.json", "w") as file:
