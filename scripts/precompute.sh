@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name=precompute
 #SBATCH --output=%x-%j.out
-#SBATCH --time=0-12:00:00
-#SBATCH --cpus-per-task=6
-#SBATCH --mem=24000M
+#SBATCH --time=1-00:00:00
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=32000M
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
