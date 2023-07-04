@@ -13,7 +13,7 @@ class Generator:
         env.seed(1)
         env = gym.wrappers.ResizeObservation(env, (84, 84))
         env = gym.wrappers.GrayScaleObservation(env)
-        sefl.env = gym.wrappers.FrameStack(env, 4)
+        self.env = gym.wrappers.FrameStack(env, 4)
         self.action_file = action_file
         self.file = open(self.action_file)
         
@@ -45,9 +45,9 @@ def get_dataset(returns_file):
         output_signature = tf.TensorSpec(shape=(4, 84, 84), dtype=tf.uint8)
     )
     
-    outputs = tf.data.Dataset.from_tensor(tf.convert_to_tensor(np.load(returns_file)))
+    outputs = tf.data.Dataset.from_tensor_slices(tf.convert_to_tensor(np.load(returns_file)))
     
-    ds = tf.data.Dataset.zip(inputs, ouputs)
+    ds = tf.data.Dataset.zip(inputs, outputs)
     return ds
     
 
