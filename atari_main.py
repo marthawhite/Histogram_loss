@@ -10,7 +10,8 @@ from experiment.RL_dataset import get_dataset
     
 def get_model(image_size = (1, 84, 84), num_images=4, output_size=1, output_activation=None):
     inputs = layers.Input(shape=((image_size[0]*num_images, image_size[1], image_size[2])))
-    x = layers.Conv2D(filters = 64, kernel_size=(3,3), padding="same", activation="relu")(inputs)
+    x = layers.Rescale(scale=1./255)(inputs)
+    x = layers.Conv2D(filters = 64, kernel_size=(3,3), padding="same", activation="relu")(x)
     x = layers.BatchNormalization(axis=[1,2,3])(x)
     x = layers.Conv2D(filters = 64, kernel_size=(3,3), padding="same", activation="relu")(x)
     x = layers.BatchNormalization(axis=[1,2,3])(x)
