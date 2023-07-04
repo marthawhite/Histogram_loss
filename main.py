@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
-from experiment.new_models import HLGaussian, HLOneBin, Regression
+from experiment.models import HLGaussian, HLOneBin, Regression
 from experiment.datasets import MegaAgeDataset
 import os
 import sys

@@ -1,14 +1,16 @@
 #!/bin/bash
 #SBATCH --job-name=precompute
 #SBATCH --output=%x-%j.out
-#SBATCH --time=0-12:00:00
-#SBATCH --cpus-per-task=3
-#SBATCH --mem=12000M
+#SBATCH --time=1-00:00:00
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=32000M
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-PY_FILE=atari_prediction/precompute.py
-BASE_DIR=~/scratch/Histogram_loss
+PY_FILE=Histogram_loss/atari_prediction/precompute.py
+BASE_DIR=~/scratch
+POLICY_DIR=$SLURM_TMPDIR/data/policies
+DATA=$BASE_DIR/data/policies.zip
 
 module load python/3.10 scipy-stack
 virtualenv --no-download $SLURM_TMPDIR/env
@@ -17,4 +19,6 @@ pip install --no-index --upgrade pip
 pip install --no-index -r precompute_requirements.txt
 pip install AutoROM-0.6.1-py3-none-any.whl AutoROM.accept-rom-license-0.6.1.tar.gz
 
-python $BASE_DIR/$PY_FILE $BASE_DIR
+mkdir $SLURM_TMPDIR/data
+unzip $DATA -d $SLURM_TMPDIR/data
+ls $POLICY_DIR | parallel python $BASE_DIR/$PY_FILE $POLICY_DIR {} returns
