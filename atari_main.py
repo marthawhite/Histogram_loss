@@ -51,10 +51,14 @@ def main(returns_file):
     num_batches_test = 100
     
     
-    ds = get_dataset(returns_file).shuffle(batch_size*32).batch(batch_size).prefetch(1)
+    ds = get_dataset(returns_file).shuffle(32).batch(batch_size).prefetch(1)
     
     train = ds.take(num_batches_train)
+<<<<<<< HEAD
     test = ds.skip(32).take(num_batches_test)
+=======
+    test = ds.take(num_batches_test)
+>>>>>>> 57f0a4a101a38ea7ad472dacecca18d31554bd81
     
     hl_gaussian = HLGaussian(get_model(output_size=128), borders, 1.0, 0.0)
     hl_gaussian.compile(optimizer=keras.optimizers.Adam(), metrics=[keras.metrics.RootMeanSquaredError(), keras.metrics.MeanAbsoluteError()])
@@ -62,6 +66,12 @@ def main(returns_file):
     with open("hl_gaussian_history.json", "w") as file:
         json.dump(hl_gaussian_history.history, file)
         
+    
+    ds = get_dataset(returns_file).shuffle(32).batch(batch_size).prefetch(1)
+    
+    train = ds.take(num_batches_train)
+    test = ds.take(num_batches_test)
+    
     regression = Regression(get_model(output_size=128))
     regression.compile(optimizer=keras.optimizers.Adam(), loss=keras.losses.MeanSquaredError(), metrics=[keras.metrics.RootMeanSquaredError(), keras.metrics.MeanAbsoluteError()])
     regression_history = regression.fit(x=train, epochs=n_epochs, validation_data=test)
