@@ -2,7 +2,6 @@ import sys
 sys.path.append('./')
 sys.path.append('../')
 import gym
-from tqdm import tqdm
 import numpy as np
 import os
 import sys
@@ -42,7 +41,6 @@ class PolicyPrecompute:
         rewards = []
         dones = []
         values = []
-        #pbar = tqdm(total = 10000000)
         i = 0
 
         with open(self.policy, "rb") as f:
@@ -60,10 +58,8 @@ class PolicyPrecompute:
                     dones.append(done)
                 i +=1
                 byte = f.read(1)
-                #pbar.update(1)
-                if i % 100000 == 0:
-                    print(self.game, i // 100000)
-                    break
+                if i % 1000000 == 0:
+                    print(self.game, i // 1000000)
 
         returns = self.compute_return(rewards,gamma,dones)
         return returns
