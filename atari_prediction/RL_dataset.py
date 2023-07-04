@@ -6,16 +6,21 @@ import os
 
 
 class Generator:
-    def __init__(self, action_file):
+    def __init__(self, action_file, size=100000000):
         game = "Pong" +"NoFrameskip-v4"
-        self.env = gym.make(game)
+        env = gym.make(game)
+        env.seed(1)
+        env = gym.wrappers.ResizeObservation(env, (84, 84))
+        env = gym.wrappers.GrayScaleObservation(env)
+        sefl.env = gym.wrappers.FrameStack(env, 4)
         self.action_file = action_file
+        self.file_length = min(os.stat(self.actions_file).st_size, size)
+        self.file = open(self.action_file)
+        
         
     def __call__(self):
-        f = open(self.action_file)
-        file_length = os.stat(self.actions_file).st_size
-        for i in range(file_length):
-            byte = f.read(1)
+        for i in range(self.file_length):
+            byte = self.file.read(1)
             val = int.from_bytes(byte, 'big')
             if(val==82):
                 obs, info = self.env.reset()
@@ -23,9 +28,11 @@ class Generator:
             else:
                 obs, r, done, _,_ = self.env.step(val - 97)
                 yield np.array(obs)
+        self.reset_file()
 
     
-    
+    def reset_file(self):
+        self.file.seek(0)
 
     
     
@@ -39,11 +46,10 @@ def get_dataset(returns_file):
     
     outputs = tf.data.Dataset.from_tensor(tf.convert_to_tensor(np.load(returns_file)))
     
-    ds = tf.data.Dataset.zip(inouts, ouputs)
+    ds = tf.data.Dataset.zip(inputs, ouputs)
     ds = ds.shuffle(1000).batch(32).prefetch(1)
     return ds
     
-
 
 
 
