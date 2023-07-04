@@ -6,6 +6,7 @@ from experiment.datasets import MegaAgeDataset
 import os
 import sys
 import json
+import cv2
 
 
 def get_model():
