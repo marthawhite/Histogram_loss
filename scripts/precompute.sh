@@ -2,8 +2,8 @@
 #SBATCH --job-name=precompute
 #SBATCH --output=%x-%j.out
 #SBATCH --time=1-00:00:00
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=32000M
+#SBATCH --cpus-per-task=7
+#SBATCH --mem=28000M
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
@@ -21,4 +21,5 @@ pip install AutoROM-0.6.1-py3-none-any.whl AutoROM.accept-rom-license-0.6.1.tar.
 
 mkdir $SLURM_TMPDIR/data
 unzip $DATA -d $SLURM_TMPDIR/data
-ls $POLICY_DIR | parallel python $BASE_DIR/$PY_FILE $POLICY_DIR {} returns
+rm $POLICY_DIR/PongNoFrameskip-v4.txt
+ls $POLICY_DIR | tail -n +9 | parallel python $BASE_DIR/$PY_FILE $POLICY_DIR {} returns

@@ -8,7 +8,7 @@ import cv2
 
 class Generator:
     def __init__(self, action_file):
-        game = action_file.split(".")[0]
+        game = action_file.split(os.sep)[-1].split(".")[0]
         env = gym.make(game)
         env.seed(1)
         env = gym.wrappers.ResizeObservation(env, (84, 84))
@@ -46,12 +46,5 @@ def get_dataset(action_file, returns_file):
     
     outputs = tf.data.Dataset.from_tensor_slices(tf.convert_to_tensor(np.load(returns_file)))
     
-    ds = tf.data.Dataset.zip(inputs, outputs)
+    ds = tf.data.Dataset.zip((inputs, outputs))
     return ds
-    
-
-
-
-
-    
-

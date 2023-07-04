@@ -1,15 +1,15 @@
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
-from experiment.new_models import HLGaussian, HLOneBin, Regression
+from keras import layers
+from experiment.models import HLGaussian, HLOneBin, Regression
 import os
 import sys
 import json
 from experiment.RL_dataset import get_dataset
     
     
-def get_model(image_size = (84, 84, 1), num_images=4, output_size=1, output_activation=None):
-    inputs = layers.Input(shape=((image_size[0], image_size[1], image_size[2]*num_images)))
+def get_model(image_size = (84, 84), num_images=4, output_size=1, output_activation=None):
+    inputs = layers.Input(shape=(num_images, image_size[0], image_size[1]))
     x = layers.Rescale(scale=1./255)(inputs)
     x = layers.Conv2D(filters = 64, kernel_size=(3,3), padding="same", activation="relu")(x)
     x = layers.BatchNormalization(axis=[1,2,3])(x)
