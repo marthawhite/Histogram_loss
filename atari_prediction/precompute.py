@@ -42,7 +42,7 @@ class PolicyPrecompute:
         rewards = []
         dones = []
         values = []
-        pbar = tqdm(total = 10000000)
+        #pbar = tqdm(total = 10000000)
         i = 0
 
         with open(self.policy, "rb") as f:
@@ -60,7 +60,10 @@ class PolicyPrecompute:
                     dones.append(done)
                 i +=1
                 byte = f.read(1)
-                pbar.update(1)
+                #pbar.update(1)
+                if i % 100000 == 0:
+                    print(self.game, i // 100000)
+                    break
 
         returns = self.compute_return(rewards,gamma,dones)
         return returns
@@ -70,13 +73,16 @@ class PolicyPrecompute:
         np.save(out_file, returns)
 
 
-def main(policies):
-    for policy in policies:
-        game = policy.split(".")[0]
-        precmp = PolicyPrecompute(policy, game)
-        precmp.save(game)
+def main(base_dir, policy, returns_dir):
+    game = policy.split(".")[0]
+    policy_path = os.path.join(base_dir, policy)
+    precmp = PolicyPrecompute(policy_path, game)
+    returns_path = os.path.join(returns_dir, game)
+    precmp.save(returns_path)
 
 
 if __name__ == "__main__":
-    policies = sys.argv[1:]
-    main(policies)
+    base_dir = sys.argv[1]
+    policy = sys.argv[2]
+    returns_dir = sys.argv[3]
+    main(base_dir, policy, returns_dir)
