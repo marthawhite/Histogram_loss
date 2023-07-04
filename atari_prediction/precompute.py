@@ -74,7 +74,7 @@ def main(policies):
     for policy in policies:
         game = policy.split(".")[0]
         precmp = PolicyPrecompute(policy, game)
-        precmp.save(policy)
+        precmp.save(game)
 
 
 if __name__ == "__main__":

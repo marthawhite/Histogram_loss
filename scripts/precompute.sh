@@ -2,8 +2,8 @@
 #SBATCH --job-name=precompute
 #SBATCH --output=%x-%j.out
 #SBATCH --time=0-12:00:00
-#SBATCH --cpus-per-task=3
-#SBATCH --mem=12000M
+#SBATCH --cpus-per-task=6
+#SBATCH --mem=24000M
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
@@ -17,4 +17,5 @@ pip install --no-index --upgrade pip
 pip install --no-index -r precompute_requirements.txt
 pip install AutoROM-0.6.1-py3-none-any.whl AutoROM.accept-rom-license-0.6.1.tar.gz
 
-python $BASE_DIR/$PY_FILE $BASE_DIR
+unzip data/policies.zip
+ls policies | parallel python $BASE_DIR/$PY_FILE {}
