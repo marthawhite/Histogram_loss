@@ -8,7 +8,7 @@ import cv2
 
 class Generator:
     def __init__(self, action_file):
-        game = "Pong" +"NoFrameskip-v4"
+        game = action_file.split(".")[0]
         env = gym.make(game)
         env.seed(1)
         env = gym.wrappers.ResizeObservation(env, (84, 84))
@@ -24,7 +24,6 @@ class Generator:
             val = int.from_bytes(byte, 'big')
             if(val==82):
                 obs, info = self.env.reset()
-                yield np.array(obs)
             else:
                 obs, r, done, _,_ = self.env.step(val - 97)
                 yield np.array(obs)
@@ -37,8 +36,8 @@ class Generator:
 
     
     
-def get_dataset(returns_file):
-    gen = Generator(action_file = "PongNoFrameskip-v4.txt")
+def get_dataset(action_file, returns_file):
+    gen = Generator(action_file)
     
     inputs = tf.data.Dataset.from_generator(
         gen,

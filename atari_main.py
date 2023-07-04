@@ -43,7 +43,7 @@ def get_model(image_size = (1, 84, 84), num_images=4, output_size=1, output_acti
     return model
     
     
-def main(returns_file):
+def main(action_file, returns_file):
     n_epochs = 8
     batch_size = 32
     borders = tf.range(-0.25,1.25, 0.015, tf.float32)
@@ -51,7 +51,7 @@ def main(returns_file):
     num_batches_test = 100
     
     
-    ds = get_dataset(returns_file).shuffle(32).batch(batch_size).prefetch(1)
+    ds = get_dataset(action_file, returns_file).shuffle(32).batch(batch_size).prefetch(1)
     
     train = ds.take(num_batches_train)
     test = ds.take(num_batches_test)
@@ -77,6 +77,7 @@ def main(returns_file):
     
     
 if __name__ == "__main__":
-    returns_file = sys.argv[1]
-    main(returns_file)
+    action_file = sys.argv[1]
+    returns_file = sys.argv[2]
+    main(action_file, returns_file)
     
