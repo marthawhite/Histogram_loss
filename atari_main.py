@@ -54,11 +54,7 @@ def main(returns_file):
     ds = get_dataset(returns_file).shuffle(32).batch(batch_size).prefetch(1)
     
     train = ds.take(num_batches_train)
-<<<<<<< HEAD
-    test = ds.skip(32).take(num_batches_test)
-=======
     test = ds.take(num_batches_test)
->>>>>>> 57f0a4a101a38ea7ad472dacecca18d31554bd81
     
     hl_gaussian = HLGaussian(get_model(output_size=128), borders, 1.0, 0.0)
     hl_gaussian.compile(optimizer=keras.optimizers.Adam(), metrics=[keras.metrics.RootMeanSquaredError(), keras.metrics.MeanAbsoluteError()])
