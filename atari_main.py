@@ -10,7 +10,7 @@ from experiment.RL_dataset import get_dataset
     
 def get_model(image_size = (84, 84), num_images=4, output_size=1, output_activation=None):
     inputs = layers.Input(shape=(num_images, image_size[0], image_size[1]))
-    x = layers.Rescale(scale=1./255)(inputs)
+    x = layers.Rescaling(scale=1./255)(inputs)
     x = layers.Conv2D(filters = 64, kernel_size=(3,3), padding="same", activation="relu")(x)
     x = layers.BatchNormalization(axis=[1,2,3])(x)
     x = layers.Conv2D(filters = 64, kernel_size=(3,3), padding="same", activation="relu")(x)
@@ -64,7 +64,7 @@ def main(action_file, returns_file):
         json.dump(hl_gaussian_history.history, file)
         
     
-    ds = get_dataset(returns_file).shuffle(32).batch(batch_size).prefetch(1)
+    ds = get_dataset(action_file, returns_file).shuffle(32).batch(batch_size).prefetch(1)
     
     train = ds.take(num_batches_train)
     test = ds.take(num_batches_test)
