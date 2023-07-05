@@ -13,7 +13,7 @@ BASE_DIR=~/scratch/Histogram_loss
 ACTION_FILE=$BASE_DIR/atari_prediction/policies/PongNoFrameskip-v4.txt
 RETURNS_FILE=returns_small.npy
 
-module load python/3.10 scipy-stack
+module load python/3.10 scipy-stack cuda cudnn
 virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
 pip install --no-index --upgrade pip
