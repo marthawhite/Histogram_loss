@@ -5,7 +5,6 @@ import os
 import cv2
 
 
-
 class Generator:
     def __init__(self, action_file):
         game = action_file.split(os.sep)[-1].split(".")[0]
@@ -15,7 +14,7 @@ class Generator:
         env = gym.wrappers.GrayScaleObservation(env)
         self.env = gym.wrappers.FrameStack(env, 4)
         self.action_file = action_file
-        self.file = open(self.action_file)
+        self.file = open(self.action_file, "rb")
         
         
     def __call__(self):
@@ -33,7 +32,6 @@ class Generator:
     
     def reset_file(self):
         self.file.seek(0)
-
     
     
 def get_dataset(action_file, returns_file):

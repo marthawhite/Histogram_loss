@@ -7,7 +7,19 @@ import sys
 import json
 from experiment.RL_dataset import get_dataset
     
-    
+
+def test_model():
+    return keras.models.Sequential([
+        layers.Permute((2, 3, 1)),
+        layers.Rescaling(1. / 255),
+        layers.Conv2D(32, 8, 4, activation="relu"),
+        layers.Conv2D(64, 4, 2, activation="relu"),
+        layers.Conv2D(64, 3, 1, activation="relu"),
+        layers.Flatten(),
+        layers.Dense(512, activation="relu")
+        ])
+
+
 def get_model(image_size = (84, 84), num_images=4, output_size=1, output_activation=None):
     inputs = layers.Input(shape=(num_images, image_size[0], image_size[1]))
     x = layers.Rescaling(scale=1./255)(inputs)
@@ -57,9 +69,9 @@ def main(action_file, returns_file):
     train = ds.take(num_batches_train)
     test = ds.take(num_batches_test)
     
-    hl_gaussian = HLGaussian(get_model(output_size=128), borders, 1.0, 0.0)
+    hl_gaussian = HLGaussian(test_model(), borders, 0.015, 0.0)
     hl_gaussian.compile(optimizer=keras.optimizers.Adam(), metrics=[keras.metrics.RootMeanSquaredError(), keras.metrics.MeanAbsoluteError()])
-    hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, validation_data=test)
+    hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
     with open("hl_gaussian_history.json", "w") as file:
         json.dump(hl_gaussian_history.history, file)
         
@@ -69,9 +81,9 @@ def main(action_file, returns_file):
     train = ds.take(num_batches_train)
     test = ds.take(num_batches_test)
     
-    regression = Regression(get_model(output_size=128))
+    regression = Regression(test_model())
     regression.compile(optimizer=keras.optimizers.Adam(), loss=keras.losses.MeanSquaredError(), metrics=[keras.metrics.RootMeanSquaredError(), keras.metrics.MeanAbsoluteError()])
-    regression_history = regression.fit(x=train, epochs=n_epochs, validation_data=test)
+    regression_history = regression.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
     with open("regression_history.json", "w") as file:
         json.dump(regression_history.history, file)
     
