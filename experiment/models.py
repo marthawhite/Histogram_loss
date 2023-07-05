@@ -73,6 +73,12 @@ class HistModel(keras.Model):
         features = self.dropout(features, training=training)
         hist = self.softmax(features, training=training)
         return self.mean(hist)
+    
+    def get_hist(self, inputs, training=None):
+        features = self.base(inputs, training)
+        features = self.dropout(features, training=training)
+        hist = self.softmax(features, training=training)
+        return hist
 
     def train_step(self, data):
         """Update the model weights and metrics based on a single batch of data.

@@ -6,7 +6,8 @@ import os
 import sys
 import json
 from experiment.RL_dataset import get_dataset
-    
+import matplotlib.pyplot as plt
+import numpy as np
 
 def test_model():
     return keras.models.Sequential([
@@ -61,9 +62,14 @@ def main(action_file, returns_file):
     keras.utils.set_random_seed(1)
     n_epochs = 8
     batch_size = 32
-    borders = tf.range(-0.25,1.25, 0.015, tf.float32)
-    num_batches_train = 100
-    num_batches_test = 10
+    bin_width = 0.015
+    borders = tf.range(-0.25,1.25, bin_width, tf.float32)
+    num_batches_train = 10000
+    num_batches_test = 1000
+    sig_ratio = 2.
+    dropout = 0.
+    learning_rate = 1e-4
+    metrics = ["mse", "mae"]
     
     
     ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(1)
@@ -71,12 +77,17 @@ def main(action_file, returns_file):
     train = ds.take(num_batches_train)
     test = ds.take(num_batches_test)
     
-    hl_gaussian = HLGaussian(get_model(output_size=128), borders, 0.015, 0.0)
-    hl_gaussian.compile(optimizer=keras.optimizers.Adam(), metrics=[keras.metrics.RootMeanSquaredError(), keras.metrics.MeanAbsoluteError()])
+    hl_gaussian = HLGaussian(get_model(output_size=128), borders, sig_ratio * bin_width, dropout)
+    hl_gaussian.compile(optimizer=keras.optimizers.Adam(learning_rate), metrics=metrics)
     hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
     with open("hl_gaussian_history.json", "w") as file:
         json.dump(hl_gaussian_history.history, file)
-        
+
+    # Save samples to examine after
+    for x, y in ds.take(1):
+        out = hl_gaussian.get_hist(x, training=False)
+        np.save("hists.npy", out.numpy())
+        np.save("y.npy", y.numpy())
     
     ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(1)
     
@@ -84,10 +95,11 @@ def main(action_file, returns_file):
     test = ds.take(num_batches_test)
     
     regression = Regression(get_model(output_size=128))
-    regression.compile(optimizer=keras.optimizers.Adam(), loss=keras.losses.MeanSquaredError(), metrics=[keras.metrics.RootMeanSquaredError(), keras.metrics.MeanAbsoluteError()])
+    regression.compile(optimizer=keras.optimizers.Adam(learning_rate), loss="mse", metrics=metrics)
     regression_history = regression.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
     with open("regression_history.json", "w") as file:
         json.dump(regression_history.history, file)
+    print(regression.predict(ds.take(1), verbose=2))
     
     
     
