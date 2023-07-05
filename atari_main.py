@@ -23,30 +23,31 @@ def test_model():
 def get_model(image_size = (84, 84), num_images=4, output_size=1, output_activation=None):
     inputs = layers.Input(shape=(num_images, image_size[0], image_size[1]))
     x = layers.Rescaling(scale=1./255)(inputs)
-    x = layers.Conv2D(filters = 64, kernel_size=(3,3), padding="same", activation="relu", data_format="channels_first")(x)
+    x = layers.Permute((2, 3, 1))(x)
+    x = layers.Conv2D(filters = 64, kernel_size=(3,3), padding="same", activation="relu")(x)
     x = layers.BatchNormalization(axis=[1,2,3])(x)
-    x = layers.Conv2D(filters = 64, kernel_size=(3,3), padding="valid", activation="relu", data_format="channels_first")(x)
+    x = layers.Conv2D(filters = 64, kernel_size=(3,3), padding="valid", activation="relu")(x)
     x = layers.BatchNormalization(axis=[1,2,3])(x)
-    x = layers.MaxPooling2D(pool_size=(2,2), strides=(2,2), data_format="channels_first")(x)
-    x = layers.Conv2D(filters=128, kernel_size=(3,3), padding="same", activation="relu", data_format="channels_first")(x)
+    x = layers.MaxPooling2D(pool_size=(2,2), strides=(2,2))(x)
+    x = layers.Conv2D(filters=128, kernel_size=(3,3), padding="same", activation="relu")(x)
     x = layers.BatchNormalization(axis=[1,2,3])(x)
-    x = layers.Conv2D(filters=128, kernel_size=(3,3), padding="valid", activation="relu", data_format="channels_first")(x)
+    x = layers.Conv2D(filters=128, kernel_size=(3,3), padding="valid", activation="relu")(x)
     x = layers.BatchNormalization(axis=[1,2,3])(x)
-    x = layers.MaxPooling2D(pool_size=(2,2), strides=(2,2), data_format="channels_first")(x)
-    x = layers.Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu", data_format="channels_first")(x)
+    x = layers.MaxPooling2D(pool_size=(2,2), strides=(2,2))(x)
+    x = layers.Conv2D(filters=256, kernel_size=(3,3), padding="same", activation="relu")(x)
     x = layers.BatchNormalization(axis=[1,2,3])(x)
-    x = layers.Conv2D(filters=256, kernel_size=(3,3), padding="valid", activation="relu", data_format="channels_first")(x)
+    x = layers.Conv2D(filters=256, kernel_size=(3,3), padding="valid", activation="relu")(x)
     x = layers.BatchNormalization(axis=[1,2,3])(x)
-    x = layers.Conv2D(filters=256, kernel_size=(3,3), padding="valid", activation="relu", data_format="channels_first")(x)
+    x = layers.Conv2D(filters=256, kernel_size=(3,3), padding="valid", activation="relu")(x)
     x = layers.BatchNormalization(axis=[1,2,3])(x)
-    x = layers.MaxPooling2D(pool_size=(2,2), strides=(2,2), data_format="channels_first")(x)
-    x = layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu", data_format="channels_first")(x)
+    x = layers.MaxPooling2D(pool_size=(2,2), strides=(2,2))(x)
+    x = layers.Conv2D(filters=512, kernel_size=(3,3), padding="same", activation="relu")(x)
     x = layers.BatchNormalization(axis=[1,2,3])(x)
-    x = layers.Conv2D(filters=512, kernel_size=(3,3), padding="valid", activation="relu", data_format="channels_first")(x)
+    x = layers.Conv2D(filters=512, kernel_size=(3,3), padding="valid", activation="relu")(x)
     x = layers.BatchNormalization(axis=[1,2,3])(x)
-    x = layers.Conv2D(filters=512, kernel_size=(3,3), padding="valid", activation="relu", data_format="channels_first")(x)
+    x = layers.Conv2D(filters=512, kernel_size=(3,3), padding="valid", activation="relu")(x)
     x = layers.BatchNormalization(axis=[1,2,3])(x)
-    x = layers.GlobalAveragePooling2D(data_format="channels_first")(x)
+    x = layers.GlobalAveragePooling2D()(x)
     x = layers.Dense(256, activation="relu")(x)
     x = layers.BatchNormalization(axis=1)(x)
     x = layers.Dense(128, activation="relu")(x)
@@ -57,31 +58,32 @@ def get_model(image_size = (84, 84), num_images=4, output_size=1, output_activat
     
     
 def main(action_file, returns_file):
+    keras.utils.set_random_seed(1)
     n_epochs = 8
     batch_size = 32
     borders = tf.range(-0.25,1.25, 0.015, tf.float32)
-    num_batches_train = 1000
-    num_batches_test = 100
+    num_batches_train = 100
+    num_batches_test = 10
     
     
-    ds = get_dataset(action_file, returns_file).shuffle(32).batch(batch_size).prefetch(1)
+    ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(1)
     
     train = ds.take(num_batches_train)
     test = ds.take(num_batches_test)
     
-    hl_gaussian = HLGaussian(test_model(), borders, 0.015, 0.0)
+    hl_gaussian = HLGaussian(get_model(output_size=128), borders, 0.015, 0.0)
     hl_gaussian.compile(optimizer=keras.optimizers.Adam(), metrics=[keras.metrics.RootMeanSquaredError(), keras.metrics.MeanAbsoluteError()])
     hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
     with open("hl_gaussian_history.json", "w") as file:
         json.dump(hl_gaussian_history.history, file)
         
     
-    ds = get_dataset(action_file, returns_file).shuffle(32).batch(batch_size).prefetch(1)
+    ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(1)
     
     train = ds.take(num_batches_train)
     test = ds.take(num_batches_test)
     
-    regression = Regression(test_model())
+    regression = Regression(get_model(output_size=128))
     regression.compile(optimizer=keras.optimizers.Adam(), loss=keras.losses.MeanSquaredError(), metrics=[keras.metrics.RootMeanSquaredError(), keras.metrics.MeanAbsoluteError()])
     regression_history = regression.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
     with open("regression_history.json", "w") as file:
