@@ -58,7 +58,7 @@ def get_model(image_size = (84, 84), num_images=4, output_size=1, output_activat
     
 def main(action_file, returns_file):
     keras.utils.set_random_seed(1)
-    n_epochs = 50
+    n_epochs = 20
     batch_size = 32
     bin_width = 0.015
     borders = tf.range(-0.25,1.25, bin_width, tf.float32)
@@ -74,7 +74,7 @@ def main(action_file, returns_file):
     train = ds.take(num_batches_train)
     test = ds.take(num_batches_test)
     
-    hl_gaussian = HLGaussian(test_model(), borders, sig_ratio * bin_width, dropout)
+    hl_gaussian = HLGaussian(get_model(output_size=128), borders, sig_ratio * bin_width, dropout)
     hl_gaussian.compile(optimizer=keras.optimizers.Adam(learning_rate), metrics=metrics)
     hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
     with open(f"hlg.json", "w") as file:
@@ -91,7 +91,7 @@ def main(action_file, returns_file):
     train = ds.take(num_batches_train)
     test = ds.take(num_batches_test)
     
-    regression = Regression(test_model())
+    regression = Regression(get_model(output_size=128))
     regression.compile(optimizer=keras.optimizers.Adam(learning_rate), loss="mse", metrics=metrics)
     regression_history = regression.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
     with open("reg.json", "w") as file:
