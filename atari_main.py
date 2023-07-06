@@ -64,7 +64,7 @@ def main(action_file, returns_file):
     n_epochs = 40
     batch_size = 32
     n_bins = 100
-    padding = 6.
+    padding = 4.
     sig_ratio = 2.
     bin_width = 1 / (n_bins - 2 * sig_ratio * padding)
     pad_width = sig_ratio * padding * bin_width

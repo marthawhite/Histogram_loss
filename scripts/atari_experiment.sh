@@ -9,9 +9,9 @@
 #SBATCH --mail-type=ALL
 
 GAME=PongNoFrameskip-v4
-PY_FILE=atari_main.py
-BASE_DIR=~/scratch/Histogram_loss
-RETURNS_FILE=returns/$GAME.npy
+PY_FILE=Histogram_loss/atari_main.py
+BASE_DIR=~/scratch
+RETURNS_FILE=../returns/$GAME.npy
 OUT_DIR=$GAME
 
 POLICY_DIR=$SLURM_TMPDIR/data/policies
@@ -24,7 +24,7 @@ virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
 pip install --no-index --upgrade pip
 pip install --no-index -r atari_requirements.txt
-pip install --upgrade AutoROM-0.6.1-py3-none-any.whl AutoROM.accept-rom-license-0.6.1.tar.gz ../keras_tuner-1.3.5-py3-none-any.whl
+pip install AutoROM-0.6.1-py3-none-any.whl AutoROM.accept-rom-license-0.6.1.tar.gz ../keras_tuner-1.3.5-py3-none-any.whl
 
 mkdir $SLURM_TMPDIR/data
 unzip $DATA -d $SLURM_TMPDIR/data
