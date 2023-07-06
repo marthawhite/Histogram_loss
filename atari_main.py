@@ -66,10 +66,10 @@ def main(action_file, returns_file):
     num_batches_test = 1000
     sig_ratio = 2.
     dropout = 0.5
-    learning_rate = 1e-3
+    learning_rate = 1e-4
     metrics = ["mse", "mae"]
     
-    ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(1)
+    ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(tf.data.AUTOTUNE)
     
     train = ds.take(num_batches_train)
     test = ds.take(num_batches_test)
@@ -86,7 +86,7 @@ def main(action_file, returns_file):
         np.save(f"hists.npy", out.numpy())
         np.save(f"y.npy", y.numpy())
     
-    ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(1)
+    ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(tf.data.AUTOTUNE)
     
     train = ds.take(num_batches_train)
     test = ds.take(num_batches_test)
