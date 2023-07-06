@@ -6,7 +6,7 @@ import cv2
 
 
 class Generator:
-    def __init__(self, action_file):
+    def __init__(self, action_file, returns_file):
         game = action_file.split(os.sep)[-1].split(".")[0]
         env = gym.make(game)
         env.seed(1)
@@ -15,6 +15,8 @@ class Generator:
         self.env = gym.wrappers.FrameStack(env, 4)
         self.action_file = action_file
         self.file = open(self.action_file, "rb")
+        self.outputs = np.load(returns_file)
+        self.i = -1
         
         
     def __call__(self):
@@ -25,24 +27,24 @@ class Generator:
                 obs, info = self.env.reset()
             else:
                 obs, r, done, _,_ = self.env.step(val - 97)
-                yield np.array(obs)
+                self.i += 1
+                yield np.array(obs), self.outputs[self.i]
             byte = self.file.read(1)
         self.reset_file()
 
     
     def reset_file(self):
         self.file.seek(0)
-    
+        self.i = 0
     
 def get_dataset(action_file, returns_file):
-    gen = Generator(action_file)
+    gen = Generator(action_file, returns_file)
     
     inputs = tf.data.Dataset.from_generator(
         gen,
-        output_signature = tf.TensorSpec(shape=(4, 84, 84), dtype=tf.uint8)
+        output_signature = (tf.TensorSpec(shape=(4, 84, 84), dtype=tf.uint8), tf.TensorSpec(shape=(), dtype=tf.float32))
     )
     
-    outputs = tf.data.Dataset.from_tensor_slices(tf.convert_to_tensor(np.load(returns_file)))
     
-    ds = tf.data.Dataset.zip((inputs, outputs))
-    return ds
+    #ds = tf.data.Dataset.zip((inputs, outputs))
+    return inputs
