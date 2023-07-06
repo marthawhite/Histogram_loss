@@ -49,10 +49,13 @@ def get_model(image_size = (84, 84), num_images=4, output_size=1, output_activat
     x = layers.Conv2D(filters=512, kernel_size=(3,3), padding="valid", activation="relu")(x)
     x = layers.BatchNormalization(axis=[1,2,3])(x)
     x = layers.GlobalAveragePooling2D()(x)
+    x = layers.Dropout(0.5)(x)
     x = layers.Dense(256, activation="relu")(x)
     x = layers.BatchNormalization(axis=1)(x)
+    x = layers.Dropout(0.5)(x)
     x = layers.Dense(128, activation="relu")(x)
     x = layers.BatchNormalization(axis=1)(x)
+    x = layers.Dropout(0.5)(x)
     outputs = layers.Dense(units = output_size, activation = output_activation)(x)
     model = keras.Model(inputs=inputs, outputs = outputs)
     return model
