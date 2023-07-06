@@ -15,7 +15,7 @@ class Generator:
         self.env = gym.wrappers.FrameStack(env, 4)
         self.action_file = action_file
         self.file = open(self.action_file, "rb")
-        self.outputs = np.load(returns_file)
+        self.get_returns(returns_file)
         self.i = -1
         
         
@@ -31,11 +31,21 @@ class Generator:
                 yield np.array(obs), self.outputs[self.i]
             byte = self.file.read(1)
         self.reset_file()
+        return
 
     
     def reset_file(self):
         self.file.seek(0)
         self.i = -1
+
+    def get_returns(self, returns_file):
+        data = np.load(returns_file)
+        self.max, self.min = np.max(data), np.min(data)
+        scale = self.max - self.min
+        if scale == 0.:
+            scale = 1.
+        self.outputs = (data - self.min) / scale
+
     
 def get_dataset(action_file, returns_file):
     gen = Generator(action_file, returns_file)

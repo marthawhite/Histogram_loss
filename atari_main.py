@@ -61,22 +61,27 @@ def get_model(image_size = (84, 84), num_images=4, output_size=1, output_activat
     
 def main(action_file, returns_file):
     keras.utils.set_random_seed(1)
-    n_epochs = 20
+    n_epochs = 40
     batch_size = 32
-    bin_width = 0.015
-    borders = tf.range(-0.25,1.25, bin_width, tf.float32)
+    n_bins = 100
+    padding = 6.
+    sig_ratio = 2.
+    bin_width = 1 / (n_bins - 2 * sig_ratio * padding)
+    pad_width = sig_ratio * padding * bin_width
+    borders = tf.linspace(-pad_width, 1 + pad_width, n_bins + 1)
     train_steps = 10000
     val_steps = 1000
-    sig_ratio = 2.
-    dropout = 0.5
-    learning_rate = 1e-4
+    dropout = 0.
+    learning_rate = 1e-3
     metrics = ["mse", "mae"]
     
     ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(tf.data.AUTOTUNE)
+    train = ds.take(train_steps)
+    val = ds.take(val_steps)
     
-    hl_gaussian = HLGaussian(get_model(output_size=128), borders, sig_ratio * bin_width, dropout)
+    hl_gaussian = HLGaussian(test_model(), borders, sig_ratio * bin_width, dropout)
     hl_gaussian.compile(optimizer=keras.optimizers.Adam(learning_rate), metrics=metrics)
-    hl_gaussian_history = hl_gaussian.fit(x=ds, epochs=n_epochs, steps_per_epoch=train_steps, validation_data=ds, validation_steps=val_steps, verbose=2)
+    hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, validation_data=val, verbose=2)
     with open(f"hlg.json", "w") as file:
         json.dump(hl_gaussian_history.history, file)
 
@@ -87,10 +92,12 @@ def main(action_file, returns_file):
         np.save(f"y.npy", y.numpy())
     
     ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(tf.data.AUTOTUNE)
-    
-    regression = Regression(get_model(output_size=128))
+    train = ds.take(train_steps)
+    val = ds.take(val_steps)
+
+    regression = Regression(test_model())
     regression.compile(optimizer=keras.optimizers.Adam(learning_rate), loss="mse", metrics=metrics)
-    regression_history = regression.fit(x=ds, epochs=n_epochs, steps_per_epoch=train_steps, validation_data=ds, validation_steps=val_steps, verbose=2)
+    regression_history = regression.fit(x=train, epochs=n_epochs, validation_data=val, verbose=2)
     with open("reg.json", "w") as file:
         json.dump(regression_history.history, file)
     print(regression.predict(ds.take(1), verbose=2))
