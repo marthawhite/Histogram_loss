@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=atari
+#SBATCH --job-name=atari-drop
 #SBATCH --output=%x-%j.out
 #SBATCH --time=0-12:00:00
 #SBATCH --cpus-per-task=1
@@ -12,7 +12,7 @@ PY_FILE=atari_main.py
 BASE_DIR=~/scratch/Histogram_loss
 ACTION_FILE=$BASE_DIR/atari_prediction/policies/PongNoFrameskip-v4.txt
 RETURNS_FILE=../returns_small.npy
-OUT_DIR=small-fixed
+OUT_DIR=full_drop
 
 module load python/3.10 scipy-stack cuda cudnn
 virtualenv --no-download $SLURM_TMPDIR/env
