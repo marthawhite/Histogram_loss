@@ -45,6 +45,4 @@ def get_dataset(action_file, returns_file):
         output_signature = (tf.TensorSpec(shape=(4, 84, 84), dtype=tf.uint8), tf.TensorSpec(shape=(), dtype=tf.float32))
     )
     
-    
-    #ds = tf.data.Dataset.zip((inputs, outputs))
     return inputs

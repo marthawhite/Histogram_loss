@@ -58,12 +58,12 @@ def get_model(image_size = (84, 84), num_images=4, output_size=1, output_activat
     
 def main(action_file, returns_file):
     keras.utils.set_random_seed(1)
-    n_epochs = 2
-    batch_size = 5
+    n_epochs = 20
+    batch_size = 32
     bin_width = 0.015
     borders = tf.range(-0.25,1.25, bin_width, tf.float32)
-    train_steps = 10
-    val_steps = 1
+    train_steps = 10000
+    val_steps = 1000
     sig_ratio = 2.
     dropout = 0.5
     learning_rate = 1e-4
