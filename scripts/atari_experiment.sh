@@ -12,7 +12,7 @@ PY_FILE=atari_main.py
 BASE_DIR=~/scratch/Histogram_loss
 ACTION_FILE=$BASE_DIR/atari_prediction/policies/PongNoFrameskip-v4.txt
 RETURNS_FILE=../returns_small.npy
-OUT_DIR=full_fixed
+OUT_DIR=small-fixed
 
 module load python/3.10 scipy-stack cuda cudnn
 virtualenv --no-download $SLURM_TMPDIR/env
