@@ -35,7 +35,7 @@ class Generator:
     
     def reset_file(self):
         self.file.seek(0)
-        self.i = 0
+        self.i = -1
     
 def get_dataset(action_file, returns_file):
     gen = Generator(action_file, returns_file)
