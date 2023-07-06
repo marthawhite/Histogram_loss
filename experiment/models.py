@@ -75,7 +75,7 @@ class HistModel(keras.Model):
         return self.mean(hist)
     
     def get_hist(self, inputs, training=None):
-        features = self.base(inputs, training)
+        features = self.base(inputs, training=training)
         features = self.dropout(features, training=training)
         hist = self.softmax(features, training=training)
         return hist

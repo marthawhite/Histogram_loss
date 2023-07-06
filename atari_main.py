@@ -1,12 +1,10 @@
 import tensorflow as tf
 from tensorflow import keras
 from keras import layers
-from experiment.models import HLGaussian, HLOneBin, Regression
-import os
+from experiment.models import HLGaussian, Regression
 import sys
 import json
 from experiment.RL_dataset import get_dataset
-import matplotlib.pyplot as plt
 import numpy as np
 
 def test_model():
@@ -63,47 +61,39 @@ def get_model(image_size = (84, 84), num_images=4, output_size=1, output_activat
     
 def main(action_file, returns_file):
     keras.utils.set_random_seed(1)
-    n_epochs = 8
-    batch_size = 32
+    n_epochs = 2
+    batch_size = 5
     bin_width = 0.015
     borders = tf.range(-0.25,1.25, bin_width, tf.float32)
-    num_batches_train = 10000
-    num_batches_test = 1000
+    train_steps = 10
+    val_steps = 1
     sig_ratio = 2.
-    dropout = 0.
+    dropout = 0.5
     learning_rate = 1e-4
     metrics = ["mse", "mae"]
     
-    
-    ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(1)
-    
-    train = ds.take(num_batches_train)
-    test = ds.take(num_batches_test)
+    ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(tf.data.AUTOTUNE)
     
     hl_gaussian = HLGaussian(get_model(output_size=128), borders, sig_ratio * bin_width, dropout)
     hl_gaussian.compile(optimizer=keras.optimizers.Adam(learning_rate), metrics=metrics)
-    hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
-    with open("hl_gaussian_history.json", "w") as file:
+    hl_gaussian_history = hl_gaussian.fit(x=ds, epochs=n_epochs, steps_per_epoch=train_steps, validation_data=ds, validation_steps=val_steps, verbose=2)
+    with open(f"hlg.json", "w") as file:
         json.dump(hl_gaussian_history.history, file)
 
     # Save samples to examine after
     for x, y in ds.take(1):
         out = hl_gaussian.get_hist(x, training=False)
-        np.save("hists.npy", out.numpy())
-        np.save("y.npy", y.numpy())
+        np.save(f"hists.npy", out.numpy())
+        np.save(f"y.npy", y.numpy())
     
-    ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(1)
-    
-    train = ds.take(num_batches_train)
-    test = ds.take(num_batches_test)
+    ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(tf.data.AUTOTUNE)
     
     regression = Regression(get_model(output_size=128))
     regression.compile(optimizer=keras.optimizers.Adam(learning_rate), loss="mse", metrics=metrics)
-    regression_history = regression.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
-    with open("regression_history.json", "w") as file:
+    regression_history = regression.fit(x=ds, epochs=n_epochs, steps_per_epoch=train_steps, validation_data=ds, validation_steps=val_steps, verbose=2)
+    with open("reg.json", "w") as file:
         json.dump(regression_history.history, file)
     print(regression.predict(ds.take(1), verbose=2))
-    
     
     
 if __name__ == "__main__":
