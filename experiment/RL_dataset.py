@@ -20,19 +20,18 @@ class Generator:
         
         
     def __call__(self):
-        byte = self.file.read(1)
-        while byte != b"":
-            val = int.from_bytes(byte, 'big')
-            if(val==82):
-                obs, info = self.env.reset()
-            else:
-                obs, r, done, _,_ = self.env.step(val - 97)
-                self.i += 1
-                yield np.array(obs), self.outputs[self.i]
+        while True:
             byte = self.file.read(1)
-        self.reset_file()
-        return
-
+            while byte != b"":
+                val = int.from_bytes(byte, 'big')
+                if(val==82):
+                    obs, info = self.env.reset()
+                else:
+                    obs, r, done, _,_ = self.env.step(val - 97)
+                    self.i += 1
+                    yield np.array(obs), self.outputs[self.i]
+                byte = self.file.read(1)
+            self.reset_file()
     
     def reset_file(self):
         self.file.seek(0)

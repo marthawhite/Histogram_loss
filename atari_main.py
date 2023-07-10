@@ -75,7 +75,7 @@ def main(action_file, returns_file):
     learning_rate = 1e-3
     metrics = ["mse", "mae"]
     
-    ds = get_dataset(action_file, returns_file).shuffle(32*32).repeat().batch(batch_size).prefetch(tf.data.AUTOTUNE)
+    ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(tf.data.AUTOTUNE)
     train = ds.take(train_steps)
     val = ds.take(val_steps)
     
@@ -91,7 +91,7 @@ def main(action_file, returns_file):
         np.save(f"hists.npy", out.numpy())
         np.save(f"y.npy", y.numpy())
     
-    ds = get_dataset(action_file, returns_file).shuffle(32*32).repeat().batch(batch_size).prefetch(tf.data.AUTOTUNE)
+    ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(tf.data.AUTOTUNE)
     train = ds.take(train_steps)
     val = ds.take(val_steps)
 
