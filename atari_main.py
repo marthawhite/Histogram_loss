@@ -61,7 +61,7 @@ def get_model(image_size = (84, 84), num_images=4, output_size=1, output_activat
     
 def main(action_file, returns_file):
     keras.utils.set_random_seed(1)
-    n_epochs = 40
+    n_epochs = 50
     batch_size = 32
     n_bins = 100
     padding = 4.
@@ -75,7 +75,7 @@ def main(action_file, returns_file):
     learning_rate = 1e-3
     metrics = ["mse", "mae"]
     
-    ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(tf.data.AUTOTUNE)
+    ds = get_dataset(action_file, returns_file).shuffle(32*32).repeat().batch(batch_size).prefetch(tf.data.AUTOTUNE)
     train = ds.take(train_steps)
     val = ds.take(val_steps)
     
@@ -91,7 +91,7 @@ def main(action_file, returns_file):
         np.save(f"hists.npy", out.numpy())
         np.save(f"y.npy", y.numpy())
     
-    ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(tf.data.AUTOTUNE)
+    ds = get_dataset(action_file, returns_file).shuffle(32*32).repeat().batch(batch_size).prefetch(tf.data.AUTOTUNE)
     train = ds.take(train_steps)
     val = ds.take(val_steps)
 
