@@ -30,7 +30,7 @@ class Dataset:
         data = []
         for x in splits:
             x = self.shuffle(x)
-            x = x.map(self.preprocess, num_parallel_calls=tf.data.AUTOTUNE)
+            x = self.preprocess(x)
             x = x.batch(self.batch_size).prefetch(self.prefetch)
             data.append(x)
         return data
@@ -54,13 +54,13 @@ class Dataset:
             buf = self.buf
         return data.shuffle(buf, reshuffle_each_iteration=reshuffle)
 
-    def preprocess(self, *args):
+    def preprocess(self, ds):
         """Preprocess the data.
         
         Params:
             args - one unpacked element of the dataset
         """
-        return args
+        return ds
 
     def get_data(self):
         """Return the data that has been loaded."""
@@ -273,7 +273,7 @@ class ImageDataset(Dataset):
 
         Returns: a tuple of the image tensor and label
         """
-        return self.parse_image(x)
+        return x.map(lambda x: self.parse_image(x))
 
     def parse_image(self, filename):
         """Read the image from a file and convert to a tensor and determine the label.

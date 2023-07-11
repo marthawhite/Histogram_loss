@@ -1,15 +1,15 @@
 #!/bin/bash
 #SBATCH --job-name=atari-array
 #SBATCH --output=%x-%A-%a.out
-#SBATCH --array=0-5
-#SBATCH --time=0-12:00:00
+#SBATCH --array=0-0
+#SBATCH --time=1-00:00:00
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=8000M
 #SBATCH --gres=gpu:1
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-GAMES=(Centipede Qbert SpaceInvaders IceHockey Riverraid Skiing)
+GAMES=(AirRaid)
 GAME_NAME=${GAMES[$SLURM_ARRAY_TASK_ID]}
 
 GAME=${GAME_NAME}NoFrameskip-v4

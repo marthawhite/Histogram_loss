@@ -4,7 +4,7 @@ from keras import layers
 from experiment.models import HLGaussian, Regression
 import sys
 import json
-from experiment.RL_dataset import get_dataset
+from experiment.atari_dataset import RLDataset
 import numpy as np
 
 def test_model():
@@ -61,7 +61,7 @@ def get_model(image_size = (84, 84), num_images=4, output_size=1, output_activat
     
 def main(action_file, returns_file):
     keras.utils.set_random_seed(1)
-    n_epochs = 50
+    n_epochs = 2
     batch_size = 32
     n_bins = 100
     padding = 4.
@@ -69,38 +69,32 @@ def main(action_file, returns_file):
     bin_width = 1 / (n_bins - 2 * sig_ratio * padding)
     pad_width = sig_ratio * padding * bin_width
     borders = tf.linspace(-pad_width, 1 + pad_width, n_bins + 1)
-    train_steps = 10000
-    val_steps = 1000
     dropout = 0.
     learning_rate = 1e-3
+    val_ratio = 0.1
     metrics = ["mse", "mae"]
     
-    ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(tf.data.AUTOTUNE)
-    train = ds.take(train_steps)
-    val = ds.take(val_steps)
-    
+    ds = RLDataset(action_file, returns_file, "PongNoFrameskip-v4", buffer_size=1000, batch_size=batch_size)
+    train, val = ds.get_split(val_ratio)
+
     hl_gaussian = HLGaussian(test_model(), borders, sig_ratio * bin_width, dropout)
     hl_gaussian.compile(optimizer=keras.optimizers.Adam(learning_rate), metrics=metrics)
     hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, validation_data=val, verbose=2)
     with open(f"hlg.json", "w") as file:
         json.dump(hl_gaussian_history.history, file)
 
-    # Save samples to examine after
-    for x, y in ds.take(1):
-        out = hl_gaussian.get_hist(x, training=False)
-        np.save(f"hists.npy", out.numpy())
-        np.save(f"y.npy", y.numpy())
-    
-    ds = get_dataset(action_file, returns_file).shuffle(32*32).batch(batch_size).prefetch(tf.data.AUTOTUNE)
-    train = ds.take(train_steps)
-    val = ds.take(val_steps)
-
     regression = Regression(test_model())
     regression.compile(optimizer=keras.optimizers.Adam(learning_rate), loss="mse", metrics=metrics)
     regression_history = regression.fit(x=train, epochs=n_epochs, validation_data=val, verbose=2)
     with open("reg.json", "w") as file:
         json.dump(regression_history.history, file)
-    print(regression.predict(ds.take(1), verbose=2))
+
+    # Save samples to examine after
+    for x, y in train.take(1):
+        out = hl_gaussian.get_hist(x, training=False)
+        np.save(f"hists.npy", out.numpy())
+        np.save(f"y.npy", y.numpy())
+        np.save(f"reg.npy", regression(x, training=False).numpy())
     
     
 if __name__ == "__main__":
