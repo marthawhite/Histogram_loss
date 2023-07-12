@@ -74,7 +74,7 @@ def main(action_file, returns_file):
     val_ratio = 0.1
     metrics = ["mse", "mae"]
     
-    ds = RLDataset(action_file, returns_file, "PongNoFrameskip-v4", buffer_size=1000, batch_size=batch_size)
+    ds = RLDataset(action_file, returns_file, buffer_size=1000, batch_size=batch_size)
     train, val = ds.get_split(val_ratio)
 
     hl_gaussian = HLGaussian(test_model(), borders, sig_ratio * bin_width, dropout)
