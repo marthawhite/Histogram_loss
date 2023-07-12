@@ -9,7 +9,7 @@
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-GAMES=(Alien Amidar Assault Asterix Atlantis BankHeist BattleZone BeamRider Berzerk Bowling)
+GAMES=(Boxing Carnival ChopperCommand CrazyClimber DemonAttack DoubleDunk Enduro FishingDerby Freeway Frostbite)
 GAME_NAME=${GAMES[$SLURM_ARRAY_TASK_ID]}
 
 GAME=${GAME_NAME}NoFrameskip-v4
