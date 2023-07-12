@@ -1,3 +1,5 @@
+"""Dataset classes that produce Tensorflow datasets ready to use in Keras models."""
+
 import tensorflow as tf
 import os
 import pandas as pd
