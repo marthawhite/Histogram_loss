@@ -78,21 +78,25 @@ class PolicyPrecompute:
         values = []
         i = 0
 
+        # Step through actions from file
         with open(self.policy, "rb") as f:
             byte = f.read(1)
             ep_reward = 0
             while byte != b"":
                 val = int.from_bytes(byte, 'big')
-                if(val==82):
+                if val == 82:
+                    # Reset environment
                     env.reset()
                     ep_reward = 0
                 else:
+                    # Make step
                     obs, r, done, _,_ = env.step(val - 97)
                     ep_reward += r
                     rewards.append(r)
                     dones.append(done)
-                i +=1
+                i += 1
                 byte = f.read(1)
+
                 if i % 1000000 == 0:
                     print(self.game, i // 1000000)
 
