@@ -1,6 +1,5 @@
-import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
+from keras import layers
 
 
 def get_model(model=None, pretrained=True, input_shape=(128, 128, 3)):

@@ -1,12 +1,11 @@
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
+from keras import layers
 import keras_tuner as kt
 from experiment.hypermodels import HyperRegression, HyperHLGaussian, HyperHLOneBin
 import os
 import sys
-import json
-from experiment.datasets import MegaAgeDataset
+from age_estimation.datasets import UTKFaceDataset
 
 
 def get_model():
@@ -33,8 +32,8 @@ def main(base_dir):
     y_max = 70
     directory = os.path.join(base_dir, "hypers")
     
-    path = os.path.join(base_dir, "data", "megaage_asian", "megaage_asian")
-    ds = MegaAgeDataset(path, size=image_size, channels=channels)
+    path = os.path.join(base_dir, "data", "UTKFace")
+    ds = UTKFaceDataset(path, size=image_size, channels=channels)
     train, test = ds.get_split(test_ratio)
     train = train.batch(batch_size=batch_size).prefetch(1)
     test = test.batch(batch_size=batch_size).prefetch(1)
@@ -48,7 +47,7 @@ def main(base_dir):
         hypermodel=regression, 
         objective = "val_mse", 
         directory=directory, 
-        project_name="regression", 
+        project_name="utk-regression", 
         overwrite=False,
         tune_new_entries=True,
         max_trials=n_trials, 
@@ -65,7 +64,7 @@ def main(base_dir):
         hypermodel=hl_gaussian, 
         objective = "val_mse", 
         directory=directory, 
-        project_name="hl_gaussian", 
+        project_name="utk-hl_gaussian", 
         overwrite=False,
         tune_new_entries=True,
         max_trials=n_trials, 
@@ -83,7 +82,7 @@ def main(base_dir):
         hyperparameters=hp, 
         objective="val_mse", 
         directory=directory, 
-        project_name="hl_one_bin",
+        project_name="utk-hl_one_bin",
         overwrite=False,
         tune_new_entries=True,
         max_trials=n_trials, 

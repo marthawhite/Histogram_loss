@@ -1,7 +1,5 @@
-import tensorflow as tf 
 from tensorflow import keras
-from tensorflow.keras import layers, models
-
+from keras import layers
 
 
 def get_base_model(image_size = (84,84), num_images=4, output_size=1, output_activation=None):
@@ -37,4 +35,3 @@ def get_base_model(image_size = (84,84), num_images=4, output_size=1, output_act
     outputs = layers.Dense(units = output_size, activation = output_activation)(x)
     model = keras.Model(inputs=inputs, outputs = outputs)
     return model
-
