@@ -61,7 +61,7 @@ def get_model(image_size = (84, 84), num_images=4, output_size=1, output_activat
     
 def main(action_file, returns_file):
     keras.utils.set_random_seed(1)
-    n_epochs = 2
+    n_epochs = 3
     batch_size = 32
     n_bins = 100
     padding = 4.

@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=atari-array
+#SBATCH --job-name=atari
 #SBATCH --output=%x-%A-%a.out
-#SBATCH --array=0-0
+#SBATCH --array=0-9
 #SBATCH --time=1-00:00:00
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=8000M
@@ -9,7 +9,7 @@
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-GAMES=(AirRaid)
+GAMES=(Alien Amidar Assault Asterix Atlantis BankHeist BattleZone BeamRider Berzerk Bowling)
 GAME_NAME=${GAMES[$SLURM_ARRAY_TASK_ID]}
 
 GAME=${GAME_NAME}NoFrameskip-v4
