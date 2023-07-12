@@ -1,8 +1,15 @@
+"""Base models for the atari prediction problem."""
+
 from tensorflow import keras
 from keras import layers
 
 
 def value_network():
+    """Small convolutional value network.
+    Based on the example from sample_test.py
+
+    Returns: a keras model that accepts stacked image inputs and outputs a feature layer.
+    """
     return keras.models.Sequential([
         layers.Permute((2, 3, 1)),
         layers.Rescaling(1. / 255),
@@ -15,6 +22,17 @@ def value_network():
 
 
 def large_model(image_size = (84, 84), num_images=4, output_size=1, output_activation=None, dropout=0.5):
+    """Larger convolutional neural network.
+
+    Params:
+        image_size - the image dimensions (w, h)
+        num_images - the number of images in each stack
+        output_size - the size of the output layer
+        output_activation - the activation for the output layer
+        dropout - the dropout used before each of the final three dense layers
+    
+    Returns: a keras model that accepts stacked image inputs with configurable outputs
+    """
     inputs = layers.Input(shape=(num_images, image_size[0], image_size[1]))
     x = layers.Rescaling(scale=1./255)(inputs)
     x = layers.Permute((2, 3, 1))(x)
