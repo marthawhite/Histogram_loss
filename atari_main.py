@@ -1,6 +1,14 @@
+"""Module containing code for running atari prediction experiments.
+
+Usage: python atari_main.py actions_file returns_file
+
+Params:
+        action_file - the path to the file containing the agent's actions
+        returns_file - the path to the file containing the precomputed returns
+"""
+
 import tensorflow as tf
 from tensorflow import keras
-from keras import layers
 from experiment.models import HLGaussian, Regression
 import sys
 import json
@@ -29,14 +37,22 @@ def get_bins(n_bins, pad_ratio, sig_ratio):
 
     
 def main(action_file, returns_file):
-    keras.utils.set_random_seed(1)
+    """Run the atari experiment.
     
+    Params:
+        action_file - the path to the file containing the agent's actions
+        returns_file - the path to the file containing the precomputed returns
+    """
+    
+    # Model params
     n_bins = 100
     pad_ratio = 4.
     sig_ratio = 2.
     dropout = 0.
     learning_rate = 1e-3
 
+    # Training params
+    seed = 1
     n_epochs = 3
     buffer_size = 1000
     batch_size = 32
@@ -44,6 +60,7 @@ def main(action_file, returns_file):
     metrics = ["mse", "mae"]
     base_model = value_network
 
+    keras.utils.set_random_seed(seed)
     borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio)
     
     ds = RLDataset(action_file, returns_file, buffer_size=buffer_size, batch_size=batch_size)
