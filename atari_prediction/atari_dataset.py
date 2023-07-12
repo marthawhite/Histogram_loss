@@ -1,7 +1,7 @@
 """Class for atari prediction RL datasets."""
 
 import tensorflow as tf
-from experiment.datasets import Dataset
+from experiment.dataset import Dataset
 import numpy as np
 import os
 import gym

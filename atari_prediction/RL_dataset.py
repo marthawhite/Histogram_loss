@@ -2,7 +2,6 @@ import tensorflow as tf
 import numpy as np
 import gym
 import os
-import cv2
 
 
 class Generator:

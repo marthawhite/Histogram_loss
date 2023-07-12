@@ -1,5 +1,4 @@
 from experiment.logging import LogGridSearch
-from tensorflow import keras
 import json
 
 

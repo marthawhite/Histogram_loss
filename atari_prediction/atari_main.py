@@ -12,9 +12,9 @@ from tensorflow import keras
 from experiment.models import HLGaussian, Regression
 import sys
 import json
-from experiment.atari_dataset import RLDataset
+from atari_prediction.atari_dataset import RLDataset
 import numpy as np
-from experiment.base_models import value_network, large_model
+from atari_prediction.base_models import value_network, large_model
 
 
 def get_bins(n_bins, pad_ratio, sig_ratio):
