@@ -53,10 +53,10 @@ def main(action_file, returns_file):
 
     # Training params
     seed = 1
-    n_epochs = 3
+    n_epochs = 1
     buffer_size = 1000
     batch_size = 32
-    val_ratio = 0.1
+    val_ratio = 0.05
     metrics = ["mse", "mae"]
     base_model = value_network
 
