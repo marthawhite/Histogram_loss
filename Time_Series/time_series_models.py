@@ -68,8 +68,8 @@ class TimeSerriesHL(keras.Model):
         
         for i in range(self.num_timesteps_predicted-1):
             x = tf.indentity(predictions[-1])
-            x = layers.TimeDistributed(self.dense1)(x)
-            x = layers.TimeDistributed(self.dense2)(x)
+            x = self.dense1(x)
+            x = self.dense2(x)
             x = self.rnn_block(x)
 
 
@@ -137,8 +137,8 @@ class TimeSerriesHL(keras.Model):
         
         for i in range(self.num_timesteps_predicted-1):
             x = tf.indentity(predictions[-1])
-            x = layers.TimeDistributed(self.dense1)(x)
-            x = layers.TimeDistributed(self.dense2)(x)
+            x = self.dense1(x)
+            x = self.dense2(x)
             x = self.rnn_block(x)
 
 
