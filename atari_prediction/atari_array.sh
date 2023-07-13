@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=atari
 #SBATCH --output=%x-%A-%a.out
-#SBATCH --array=0-9
+#SBATCH --array=0-26%10
 #SBATCH --time=0-12:00:00
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=4000M
@@ -9,7 +9,7 @@
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-GAMES=(Gopher Hero JamesBond JourneyEscape Kangaroo Krull KungFuMaster MontezumaRevenge MsPacman Phoenix)
+GAMES=(Gopher Hero JamesBond JourneyEscape Kangaroo Krull KungFuMaster MontezumaRevenge MsPacman Phoenix Pitfall Pooyan PrivateEye RoadRunner Robotank Seaquest Solaris StarGunner Tennis TimePilot Tutankham UpNDown Venture VideoPinball WizardOfWor YarsRevenge Zaxxon)
 GAME_NAME=${GAMES[$SLURM_ARRAY_TASK_ID]}
 
 GAME=${GAME_NAME}NoFrameskip-v4
