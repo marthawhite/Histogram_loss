@@ -9,7 +9,7 @@
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-GAMES=(Boxing Carnival ChopperCommand CrazyClimber DemonAttack DoubleDunk Enduro FishingDerby Freeway Frostbite)
+GAMES=(Gopher Hero JamesBond JourneyEscape Kangaroo Krull KungFuMaster MontezumaRevenge MsPacman Phoenix)
 GAME_NAME=${GAMES[$SLURM_ARRAY_TASK_ID]}
 
 GAME=${GAME_NAME}NoFrameskip-v4
