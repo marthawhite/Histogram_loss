@@ -1,7 +1,7 @@
 import keras_tuner as kt
 from tensorflow import keras
 import tensorflow as tf
-from tensorflow.keras import layers
+from keras import layers
 import numpy as np
 
 
@@ -198,7 +198,7 @@ class NLinear_L2(keras.Model):
         
         with tf.GradientTape as tape:
             features = x - seq_last
-            features = self.dense(x, training=training)
+            features = self.dense(x, training=True)
             predictions = x + seq_last
             loss = keras.losses.mean_squared_error(y, predictions)
             
@@ -219,7 +219,7 @@ class NLinear_L2(keras.Model):
         seq_last = x[:,-1].numpy()[:,np.newaxis]*np.ones(tf.size(x))
         
         features = x - seq_last
-        features = self.dense(x, training=training)
+        features = self.dense(x, training=False)
         predictions = x + seq_last
         
         loss = keras.losses.mean_squared_error(y, predictions)
@@ -233,7 +233,7 @@ class NLinear_L2(keras.Model):
     
     
 class HyperNLinear_L2(kt.HyperModel):
-    def __init__(self, name="HyperNLinear_L2", input_length=256. output_length=256, metrics=None):
+    def __init__(self, name="HyperNLinear_L2", input_length=256, output_length=256, metrics=None):
         super().__init__(name, True)
         self.input_length = input_length
         self.output_length = output_length
