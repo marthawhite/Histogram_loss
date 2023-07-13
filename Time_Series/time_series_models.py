@@ -1,11 +1,11 @@
 import tensorflow as tf 
 from tensorflow import keras
-from tensorflow.keras import layers
+from keras import layers
 import numpy as np
 import pandas as pd
 
 class MultivariateHistTransform(keras.layers.Layer):
-     """Layer that transforms a scalar target into a binned probability vector 
+    """Layer that transforms a scalar target into a binned probability vector 
     that approximates a truncated Gaussian distribution with the target as the mean.
     
     Params:
@@ -18,6 +18,15 @@ class MultivariateHistTransform(keras.layers.Layer):
         self.sigma = sigma
         
     def call(self, inputs):
+        k = tf.rank(self.borders)
+        perm_in = list(range(k - 1)) + [k-1]
+        perm_out = list(range(1, k+1)) + [0]
+        borders_t = tf.expand_dims(tf.transpose(self.borders, perm_in), 1)
+        border_targets = self.adjust_and_erf(borders_t, inputs, self.sigma)
+        
+        two_z = border_targets[-1] - border_targets[0]
+        x_transformed = (border_targets[1:] - border_targets[:-1]) / two_z
+        return tf.transpose(x_transformed, perm_out)
         
         
 
@@ -33,7 +42,7 @@ class HistMean(keras.layers.Layer):
 
 
 class TimeSerriesHL(keras.Model):
-     def __init__(self, units, borders, sigma, num_timesteps_predicted=1):
+    def __init__(self, units, borders, sigma, num_timesteps_predicted=1):
         super().__init__()
         centers = (borders[:,:-1] + borders[:,1:]) / 2
         self.num_timesteps_predicted = num_timesteps_predicted
@@ -101,7 +110,7 @@ class TimeSerriesHL(keras.Model):
             x = self.softmax(x)
             predictions = self.hist_mean(x)
             
-            loss = keras.losses.categorical_crossentropy(targets, predict)
+            loss = keras.losses.categorical_crossentropy(targets, x)
             
         trainable_vars = self.trainable_variables
         gradients = tape.gradient(loss, trainable_vars)
@@ -112,7 +121,7 @@ class TimeSerriesHL(keras.Model):
             if metric.name == "loss":
                 metric.update_state(loss)
             else:
-                metric.update_state(y, y_pred)
+                metric.update_state(y, predictions)
         # Return a dict mapping metric names to current value
         return {m.name: m.result() for m in self.metrics} 
     
