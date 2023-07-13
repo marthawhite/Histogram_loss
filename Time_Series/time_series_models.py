@@ -70,7 +70,7 @@ class TimeSerriesHL(keras.Model):
             x = tf.indentity(predictions[-1])
             x = self.dense1(x)
             x = self.dense2(x)
-            x = self.rnn_block(x)
+            x = self.rnn_block(x, initial_state=hiden_and_cell)
 
 
             hiden_state = x[0]
@@ -139,7 +139,7 @@ class TimeSerriesHL(keras.Model):
             x = tf.indentity(predictions[-1])
             x = self.dense1(x)
             x = self.dense2(x)
-            x = self.rnn_block(x)
+            x = self.rnn_block(x, initial_state=hiden_and_cell)
 
 
             hiden_state = x[0]
