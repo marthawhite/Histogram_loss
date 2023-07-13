@@ -2,7 +2,7 @@
 #SBATCH --job-name=atari
 #SBATCH --output=%x-%A-%a.out
 #SBATCH --array=0-9
-#SBATCH --time=1-00:00:00
+#SBATCH --time=0-12:00:00
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=4000M
 #SBATCH --gres=gpu:1
