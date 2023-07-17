@@ -69,7 +69,7 @@ class HistModel(keras.Model):
             a tensor of shape (len(inputs), len(centers)) consisting of the expected 
             values of the binned probability vectors obtained from the inputs
         """
-        features = self.base(inputs, training)
+        features = self.base(inputs, training=training)
         features = self.dropout(features, training=training)
         hist = self.softmax(features, training=training)
         return self.mean(hist)
@@ -142,7 +142,7 @@ class HLGaussian(HistModel):
         sigma - the sigma parameter of the truncated Gaussian distribution
     """
 
-    def __init__(self, base, borders, sigma, dropout):
+    def __init__(self, base, borders, sigma, dropout=0):
         centers = (borders[:-1] + borders[1:]) / 2
         transform = TruncGaussHistTransform(borders, sigma)
         super().__init__(base, centers, transform, "HL-Gaussian", dropout)
