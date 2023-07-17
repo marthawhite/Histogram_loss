@@ -6,6 +6,9 @@ import tensorflow as tf
 from experiment.models import HLGaussian
 from experiment.transforms import TruncGaussHistTransform
 import os
+import json
+from scipy.stats import entropy
+import pandas as pd
 
 
 def get_bins(n_bins, pad_ratio, sig_ratio):
@@ -27,43 +30,79 @@ def get_bins(n_bins, pad_ratio, sig_ratio):
     return borders, sigma
 
 
+def get_json(filename):
+    with open(filename, "r") as in_file:
+        data = json.load(in_file)
+    return data
+
+
+def get_results(data_dir):
+    results = {}
+    files = ["reg", "hlg"]
+    for file in files:
+        path = os.path.join(data_dir, f"{file}.json")
+        data = get_json(path)
+        for k, v in data.items():
+            key = f"{file}_{k}"
+            results[key] = v[-1]
+    return results
+        
+def hist_sd(hists, centers, means):
+    
+
+    difs = centers - np.expand_dims(means, -1)
+    sq_difs = np.square(difs)
+    prods = hists * sq_difs
+    totals = np.sum(prods, axis=1)
+    return np.sqrt(totals)
+
 def main():
     """Display histograms and predicted vs true values for an Atari experiment."""
     base_dir = os.path.join("data", "results")
-    for game in ["BankHeist", "MontezumaRevenge", "PrivateEye", "Skiing"]:
+    res = []
+    for game in ["Jamesbond"]:#os.listdir(base_dir):
+        
         data_dir = os.path.join(base_dir, game)
         n_bins = 100
         pad_ratio = 4.
         sig_ratio = 2.
         
+
+
+        data = get_results(data_dir)
+        data["game"] = game
+
+
         hists = np.load(os.path.join(data_dir, "hists.npy"))
         y = np.load(os.path.join(data_dir, "y.npy"))
         reg = np.load(os.path.join(data_dir, "reg.npy"))
 
-        borders, sig = get_bins(n_bins, pad_ratio, sig_ratio)
+        data["y_sd"] = np.std(y)
+        data["reg_sd"] = np.std(reg)
+
+        if game != "Pong":
+            borders, sig = get_bins(n_bins, pad_ratio, sig_ratio)
+        else:
+            borders = tf.linspace(-0.25, 1.25, 100)
+            sig = 0.03
         centers = (borders[:-1] + borders[1:]) / 2.
 
         tght = TruncGaussHistTransform(borders, sig)
         y_trans = tght(y)
-
-        fig, ax = plt.subplots(4, 8, figsize=(16, 10), layout="constrained", sharey=True, sharex=True)
-
-        for i in range(hists.shape[0]):
-            ax[i // 8, i % 8].plot(centers, hists[i], color='blue', alpha=1)
-            ax[i // 8, i % 8].plot(centers, y_trans[i], color='orange', alpha=1)
-        fig.suptitle(f"{game} Histograms")
-        plt.show()
+        y_trans += 1e-7
 
         y_pred = np.dot(hists, centers)
 
-        plt.plot(y_pred, label="HL-Gaussian")
-        plt.plot(y, label="True")
-        plt.plot(reg, label="Regression")
-        plt.legend()
-        plt.title(f"{game} Predicted vs True Returns")
-        plt.show()
-
-        print(np.max(y), np.min(y), np.std(y), np.mean(y))
+        data["hlg_sd"] = np.std(y_pred)
+        kld = entropy(y_trans, hists, axis=1)
+        kld = np.where(np.isfinite(kld), kld, 5)
+        data["kl_mean"] = np.mean(kld)
+        data["kl_sd"] = np.std(kld)
+        data["hist_sd"] = np.mean(hist_sd(hists, centers, y_pred))
+        res.append(data)
+    df = pd.DataFrame(res)
+    df.head()
+    df.to_csv("atari_james.tsv", sep="\t")
 
 
 if __name__ == "__main__":
