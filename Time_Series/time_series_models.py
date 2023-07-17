@@ -3,15 +3,13 @@ from tensorflow import keras
 from keras import layers
 import numpy as np
 import pandas as pd
+import sys
+import json
+
+
 
 class MultivariateHistTransform(keras.layers.Layer):
-    """Layer that transforms a scalar target into a binned probability vector 
-    that approximates a truncated Gaussian distribution with the target as the mean.
     
-    Params:
-        borders - the borders of the histogram bins as a 2d array of size (dimensions, borders)
-        sigma - the sigma parameter of the truncated Gaussian distribution
-    """
     def __init__(self, borders, sigma):
         super().__init__(trainable=False, name="MultivariateHistTransform")
         self.borders = borders
@@ -27,8 +25,12 @@ class MultivariateHistTransform(keras.layers.Layer):
         two_z = border_targets[-1] - border_targets[0]
         x_transformed = (border_targets[1:] - border_targets[:-1]) / two_z
         return tf.transpose(x_transformed, perm_out)
-        
-        
+
+
+
+
+
+
 
 class HistMean(keras.layers.Layer):
     def __init__(self, centers):
@@ -42,16 +44,26 @@ class HistMean(keras.layers.Layer):
 
 
 class TimeSerriesHL(keras.Model):
-    def __init__(self, units, borders, sigma, num_timesteps_predicted=1):
+    def __init__(self, units, data_min, data_max, bins, num_timesteps_predicted=1):
         super().__init__()
-        centers = (borders[:,:-1] + borders[:,1:]) / 2
+        if bins < 10:
+            bins = 10
+        data_range = data_max-data_min
+        sigma = 4*(data_range)/(5*bins - 48)
+        true_min = data_min - 6*sigma
+        true_max = data_max + 6*sigma
+        borders = tf.linspace(true_min, true_max, bins+1)
+        centers = tf.transpose(borders, [1,0])
+        centers = (centers[:,:-1] + centers[:,1:]) / 2
+        
+        
         self.num_timesteps_predicted = num_timesteps_predicted
         self.dense1 = layers.Dense(64, activation="relu")
         self.dense2 = layers.Dense(64, activation="relu")
         self.rnn_block = layers.LSTM(64, return_state=True)
         self.dense3 = layers.Dense(64, activation="relu")
-        self.dense4 = layers.Dense(np.size(centers))
-        self.reshape = layers.Reshape(np.shape(centers))
+        self.dense4 = layers.Dense(units*bins)
+        self.reshape = layers.Reshape((units, bins))
         
         self.loss = keras.metrics.Mean("loss")
         self.hist_transform = MultivariateHistTransform(borders, sigma)
@@ -99,7 +111,7 @@ class TimeSerriesHL(keras.Model):
     def train_step(self, data):
         x, y = data # y should be data from one time step 
         # y (batchsize, value)
-        targets = self.MultivariateHistTransform(y)
+        targets = self.hist_transform(y)
         with tf.GradientTape() as tape:
             x = layers.TimeDistributed(self.dense1)(x)
             x = layers.TimeDistributed(self.dense2)(x)
@@ -288,6 +300,11 @@ def get_time_series_dataset(filename, drop=[], seq_len=10, pred_len=10, test_siz
     # test_size is the portion of the dataset to use as test data must be between 0 and 1
     df = pd.read_csv(filename)
     df = df.drop(drop, axis = 1)
+    mean = df.mean()
+    std = df.std()
+    df = (df-mean)/std
+    data_max = df.max(axis=0).values
+    data_min = df.min(axis=0).values
     n = df.shape[0] 
     split = round((1-test_size)*n)
     data = df.values
@@ -302,19 +319,37 @@ def get_time_series_dataset(filename, drop=[], seq_len=10, pred_len=10, test_siz
     y = keras.utils.timeseries_dataset_from_array(targets, None, pred_len, batch_size=None)
     ds_test = tf.data.Dataset.zip((x,y)).batch(batch_size)
     
-    return ds_train, ds_test
+    return ds_train, ds_test, data_max, data_min
         
 def main():
-
-    train, test = get_time_series_dataset("ETTh1.csv", "date", batch_size=64)
-    
-    model = TimeSerriesRegression(7,10)
+    n_epochs = 20
+    learning_rate = 1e-4
+    metrics = ["mse", "mae"]
+    train, test, data_max, data_min= get_time_series_dataset("ETTm2.csv", drop="date", seq_len=100, pred_len=50, test_size=0.2, batch_size=128)
+    model = TimeSerriesHL(units=7, data_min=data_min, data_max=data_max, bins=100, num_timesteps_predicted=50)
     model.compile(
-        optimizer="Adam"
+        optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
+        metrics = metrics
     )
-    history = model.fit(train)
-    print(history.history)
-    print(model.evaluate(test))
+    TimeSerriesHLHistory =  model.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
+    with open("TSregression.json", "w") as file:
+        json.dump(TimeSerriesHLHistory.history, file)
+        
+        
+    train, test, data_max, data_min= get_time_series_dataset("ETTm2.csv", drop="date", seq_len=100, pred_len=50, test_size=0.2, batch_size=128)
+    model = TimeSerriesRegression(units=7, num_timesteps_predicted=50)
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
+        metrics = metrics
+    )
+    TimeSerriesRegressionHistory =  model.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
+    with open("TSregression.json", "w") as file:
+        json.dump(TimeSerriesRegressionHistory.history, file)
+
+    
+
+    
+
     
         
 if __name__ == "__main__":
