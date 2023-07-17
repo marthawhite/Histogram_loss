@@ -8,28 +8,41 @@ import json
 
 
 
-class MultivariateHistTransform(keras.layers.Layer):
+class TruncGaussHistTransform(keras.layers.Layer):
+    """Layer that transforms a scalar target into a binned probability vector 
+    that approximates a truncated Gaussian distribution with the target as the mean.
     
+    Params:
+        borders - the borders of the histogram bins
+        sigma - the sigma parameter of the truncated Gaussian distribution
+    """
+
     def __init__(self, borders, sigma):
-        super().__init__(trainable=False, name="MultivariateHistTransform")
+        super().__init__(trainable=False, name="TruncGaussHistTransform")
         self.borders = borders
         self.sigma = sigma
-        
+        k = len(self.borders.shape)
+        self.perm_out = list(range(1, k+1)) + [0]
+
     def call(self, inputs):
-        k = tf.rank(self.borders)
-        perm_in = list(range(k - 1)) + [k-1]
-        perm_out = list(range(1, k+1)) + [0]
-        borders_t = tf.expand_dims(tf.transpose(self.borders, perm_in), 1)
-        border_targets = self.adjust_and_erf(borders_t, inputs, self.sigma)
+        """Transform the input and return it.
         
+        Params:
+            inputs - the tensor of targets to transform
+
+        Returns:
+            x_transformed - a tensor of shape (len(inputs), len(borders) - 1)
+            consisting of the probability vectors for each target
+        """
+        
+        border_targets = self.adjust_and_erf(tf.expand_dims(self.borders, 1), inputs, self.sigma)
         two_z = border_targets[-1] - border_targets[0]
         x_transformed = (border_targets[1:] - border_targets[:-1]) / two_z
-        return tf.transpose(x_transformed, perm_out)
-
-
-
-
-
+        return tf.transpose(x_transformed, self.perm_out)
+    
+    def adjust_and_erf(self, a, mu, sig):
+        """Calculate the erf of a after standardizing and dividing by sqrt(2)."""
+        return tf.math.erf((a - mu)/(tf.math.sqrt(2.0)*sig))
 
 
 class HistMean(keras.layers.Layer):
