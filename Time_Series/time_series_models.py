@@ -8,7 +8,7 @@ import json
 
 
 
-class TruncGaussHistTransform(keras.layers.Layer):
+class MultivariateHistTransform(keras.layers.Layer):
     """Layer that transforms a scalar target into a binned probability vector 
     that approximates a truncated Gaussian distribution with the target as the mean.
     
@@ -155,7 +155,7 @@ class TimeSerriesHL(keras.Model):
         x, y = data
         predictions = []
         
-        x = layers.TimeDistributed(self.dense1)(inputs)
+        x = layers.TimeDistributed(self.dense1)(x)
         x = layers.TimeDistributed(self.dense2)(x)
         x = self.rnn_block(x)
         
@@ -194,7 +194,7 @@ class TimeSerriesHL(keras.Model):
             if metric.name == "loss":
                 metric.update_state(loss)
             else:
-                metric.update_state(y, y_pred)
+                metric.update_state(y, predictions)
         # Return a dict mapping metric names to current value
         return {m.name: m.result() for m in self.metrics}
     
@@ -264,7 +264,7 @@ class TimeSerriesRegression(keras.Model):
             if metric.name == "loss":
                 metric.update_state(loss)
             else:
-                metric.update_state(y, y_pred)
+                metric.update_state(y, predict)
         # Return a dict mapping metric names to current value
         return {m.name: m.result() for m in self.metrics}
     
@@ -302,7 +302,7 @@ class TimeSerriesRegression(keras.Model):
             if metric.name == "loss":
                 metric.update_state(loss)
             else:
-                metric.update_state(y, y_pred)
+                metric.update_state(y, predictions)
         # Return a dict mapping metric names to current value
         return {m.name: m.result() for m in self.metrics}
 
