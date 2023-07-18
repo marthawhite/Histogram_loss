@@ -1,9 +1,7 @@
 """Module for visualizing the results of an Atari experiment."""
 
-import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-from experiment.models import HLGaussian
 from experiment.transforms import TruncGaussHistTransform
 import os
 import json
@@ -31,12 +29,26 @@ def get_bins(n_bins, pad_ratio, sig_ratio):
 
 
 def get_json(filename):
+    """Load the data from a JSON file.
+    
+    Params:
+        filename - the path to the JSON file to read
+    
+    Returns: a dict with the JSON data
+    """
     with open(filename, "r") as in_file:
         data = json.load(in_file)
     return data
 
 
 def get_results(data_dir):
+    """Get the results for each model.
+    
+    Params:
+        data_dir - the directory containing the JSON files for each model
+
+    Returns: results - a dict with the results for all metrics for each model
+    """
     results = {}
     files = ["reg", "hlg"]
     for file in files:
@@ -48,8 +60,15 @@ def get_results(data_dir):
     return results
         
 def hist_sd(hists, centers, means):
+    """Compute the standard deviation from a histogram.
     
+    Params:
+        hists - a tensor of histograms
+        centers - the centers of the histogram bins
+        means - the mean of each histogram
 
+    Returns: the standard deviation of the probability distribution described by the histograms
+    """
     difs = centers - np.expand_dims(means, -1)
     sq_difs = np.square(difs)
     prods = hists * sq_difs
@@ -59,27 +78,31 @@ def hist_sd(hists, centers, means):
 def main():
     """Display histograms and predicted vs true values for an Atari experiment."""
     base_dir = os.path.join("data", "results")
+    out_file = "atari_meta.csv"
     res = []
-    for game in ["Jamesbond"]:#os.listdir(base_dir):
+    games = os.listdir(base_dir)
+    for game in games:
         
-        data_dir = os.path.join(base_dir, game)
+        # Histogram parameters
         n_bins = 100
         pad_ratio = 4.
         sig_ratio = 2.
-        
 
-
+        # Get experiment results
+        data_dir = os.path.join(base_dir, game)
         data = get_results(data_dir)
         data["game"] = game
 
-
+        # Load sample predictions
         hists = np.load(os.path.join(data_dir, "hists.npy"))
         y = np.load(os.path.join(data_dir, "y.npy"))
         reg = np.load(os.path.join(data_dir, "reg.npy"))
 
+        # Compute standard deviations
         data["y_sd"] = np.std(y)
         data["reg_sd"] = np.std(reg)
 
+        # Compute histogram borders
         if game != "Pong":
             borders, sig = get_bins(n_bins, pad_ratio, sig_ratio)
         else:
@@ -87,12 +110,14 @@ def main():
             sig = 0.03
         centers = (borders[:-1] + borders[1:]) / 2.
 
+        # Get transformed Y
         tght = TruncGaussHistTransform(borders, sig)
         y_trans = tght(y)
         y_trans += 1e-7
-
+        
         y_pred = np.dot(hists, centers)
 
+        # Compute histogram metrics
         data["hlg_sd"] = np.std(y_pred)
         kld = entropy(y_trans, hists, axis=1)
         kld = np.where(np.isfinite(kld), kld, 5)
@@ -100,9 +125,11 @@ def main():
         data["kl_sd"] = np.std(kld)
         data["hist_sd"] = np.mean(hist_sd(hists, centers, y_pred))
         res.append(data)
+    
+    # Save results
     df = pd.DataFrame(res)
     df.head()
-    df.to_csv("atari_james.tsv", sep="\t")
+    df.to_csv(out_file)
 
 
 if __name__ == "__main__":

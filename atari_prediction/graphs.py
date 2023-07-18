@@ -3,7 +3,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-from experiment.models import HLGaussian
 from experiment.transforms import TruncGaussHistTransform
 import os
 
@@ -30,7 +29,8 @@ def get_bins(n_bins, pad_ratio, sig_ratio):
 def main():
     """Display histograms and predicted vs true values for an Atari experiment."""
     base_dir = os.path.join("data", "results")
-    for game in ["BankHeist", "MontezumaRevenge", "PrivateEye", "Skiing"]:
+    games = os.listdir(base_dir)
+    for game in games:
         data_dir = os.path.join(base_dir, game)
         n_bins = 100
         pad_ratio = 4.
