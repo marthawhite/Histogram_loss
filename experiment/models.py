@@ -7,6 +7,7 @@ Includes HL Gaussian, HL OneBin, and Regression models.
 from tensorflow import keras
 import tensorflow as tf
 from experiment.transforms import *
+from time_series_test import MultiDense
 
 
 class Regression(keras.Model):
@@ -53,7 +54,9 @@ class HistModel(keras.Model):
         super().__init__(name=name)
         self.base = base
         self.dropout = keras.layers.Dropout(dropout)
-        self.softmax = keras.layers.Dense(tf.size(centers), activation="softmax")
+        shape = centers.shape[-1:] + centers.shape[0:1]
+        self.dense = MultiDense(shape, individual=True)
+        self.softmax = keras.layers.Softmax()
         self.transform = transform
         self.mean = HistMean(centers)
         self.hist_loss = keras.metrics.Mean("loss")
@@ -71,13 +74,15 @@ class HistModel(keras.Model):
         """
         features = self.base(inputs, training=training)
         features = self.dropout(features, training=training)
-        hist = self.softmax(features, training=training)
+        hist = self.dense(features)
+        hist = self.softmax(hist)
         return self.mean(hist)
     
     def get_hist(self, inputs, training=None):
         features = self.base(inputs, training=training)
         features = self.dropout(features, training=training)
-        hist = self.softmax(features, training=training)
+        hist = self.dense(features)
+        hist = self.softmax(hist)
         return hist
 
     def train_step(self, data):
@@ -95,7 +100,8 @@ class HistModel(keras.Model):
         with tf.GradientTape() as tape:
             features = self.base(x, training=True)
             features = self.dropout(features, training=True)
-            hist = self.softmax(features, training=True)
+            hist = self.dense(features)
+            hist = self.softmax(hist)
             loss = keras.losses.categorical_crossentropy(y_transformed, hist)
         
         trainable_vars = self.trainable_variables
@@ -121,7 +127,8 @@ class HistModel(keras.Model):
         y_transformed = self.transform(y)
         features = self.base(x, training=False)
         features = self.dropout(features, training=False)
-        hist = self.softmax(features, training=False)
+        hist = self.dense(features)
+        hist = self.softmax(hist)
 
         loss = keras.losses.categorical_crossentropy(y_transformed, hist)
         self.hist_loss.update_state(loss)

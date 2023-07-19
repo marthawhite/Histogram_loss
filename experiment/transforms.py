@@ -145,7 +145,11 @@ class HistMean(keras.layers.Layer):
 
     def __init__(self, centers):
         super().__init__(trainable=False, name="HistMean")
-        self.centers = centers
+        k = len(centers.shape) - 1
+        self.in_perm = list(range(1, k + 1)) + [0, k + 1]
+        self.out_perm = [k] + list(range(k))
+        centers_perm = list(range(1, k + 1)) + [0]
+        self.centers = tf.transpose(centers, centers_perm)
 
     def call(self, inputs):
         """Return the weighted average between the centers and probability vectors.
@@ -156,4 +160,6 @@ class HistMean(keras.layers.Layer):
         Returns:
             a tensor of shape (len(inputs), 1) consisting of the expected values
         """
-        return tf.linalg.matvec(inputs, self.centers)
+        inputs = tf.transpose(inputs, self.in_perm)
+        means = tf.linalg.matvec(inputs, self.centers)
+        return tf.transpose(means, self.out_perm)
