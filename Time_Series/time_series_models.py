@@ -599,37 +599,38 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     
     return ds_train, ds_test, data_max, data_min
         
-def main():
+def main(model):
     
     
     n_epochs = 1
     learning_rate = 1e-4
     
-    
-    train, test, data_max, data_min= get_time_series_dataset("ETTm2.csv", drop="date")
-    data_max = np.array(data_max.tolist()*20, dtype=np.float32)
-    data_min = np.array(data_min.tolist()*20, dtype=np.float32)
-    
-    model = TimeSerriesHL(units=7, data_min=data_min, data_max=data_max, bins=100)
-    model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
-    )
-    
-    
-    TimeSerriesHLHistory =  model.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
-    with open("TSHL20.json", "w") as file:
-        json.dump(TimeSerriesHLHistory.history, file)
+    if model == "HL":
         
-    
-    train, test, data_max, data_min= get_time_series_dataset("ETTm2.csv", drop="date")
-    
-    model = TimeSerriesRegression(units=7)
-    model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
-    )
-    TimeSerriesRegressionHistory =  model.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
-    with open("TSregression20.json", "w") as file:
-        json.dump(TimeSerriesRegressionHistory.history, file)
+        train, test, data_max, data_min= get_time_series_dataset("ETTm2.csv", drop="date")
+        data_max = np.array(data_max.tolist()*20, dtype=np.float32)
+        data_min = np.array(data_min.tolist()*20, dtype=np.float32)
+
+        model = TimeSerriesHL(units=7, data_min=data_min, data_max=data_max, bins=100)
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
+        )
+
+
+        TimeSerriesHLHistory =  model.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
+        with open("TSHL20.json", "w") as file:
+            json.dump(TimeSerriesHLHistory.history, file)
+
+    else:
+        train, test, data_max, data_min= get_time_series_dataset("ETTm2.csv", drop="date")
+
+        model = TimeSerriesRegression(units=7)
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
+        )
+        TimeSerriesRegressionHistory =  model.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
+        with open("TSregression20.json", "w") as file:
+            json.dump(TimeSerriesRegressionHistory.history, file)
     
     
     
@@ -639,5 +640,5 @@ def main():
     
         
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1])
      
