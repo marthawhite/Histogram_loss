@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import sys
 import json
+import os
 
 
 
@@ -433,7 +434,7 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     return ds_train, ds_test, data_max, data_min
         
 def main(model):
-    
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
     
     n_epochs = 1
     learning_rate = 1e-4
