@@ -19,6 +19,8 @@ class TruncGaussHistTransform(keras.layers.Layer):
         super().__init__(trainable=False, name="TruncGaussHistTransform")
         self.borders = borders
         self.sigma = sigma
+        k = len(self.borders.shape)
+        self.perm_out = list(range(1, k+1)) + [0]
 
     def call(self, inputs):
         """Transform the input and return it.
@@ -30,10 +32,11 @@ class TruncGaussHistTransform(keras.layers.Layer):
             x_transformed - a tensor of shape (len(inputs), len(borders) - 1)
             consisting of the probability vectors for each target
         """
-        border_targets = self.adjust_and_erf(self.borders, tf.expand_dims(inputs, 1), self.sigma)
-        two_z = border_targets[:, -1] - border_targets[:, 0]
-        x_transformed = (border_targets[:, 1:] - border_targets[:, :-1]) / tf.expand_dims(two_z, 1)
-        return x_transformed
+        
+        border_targets = self.adjust_and_erf(tf.expand_dims(self.borders, 1), inputs, self.sigma)
+        two_z = border_targets[-1] - border_targets[0]
+        x_transformed = (border_targets[1:] - border_targets[:-1]) / two_z
+        return tf.transpose(x_transformed, self.perm_out)
 
     def adjust_and_erf(self, a, mu, sig):
         """Calculate the erf of a after standardizing and dividing by sqrt(2)."""
