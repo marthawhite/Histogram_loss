@@ -8,7 +8,7 @@ import json
 
 
 
-class MultivariateHistTransform(keras.layers.Layer):
+class TruncGaussHistTransform(keras.layers.Layer):
     """Layer that transforms a scalar target into a binned probability vector 
     that approximates a truncated Gaussian distribution with the target as the mean.
     
@@ -126,58 +126,62 @@ class TimeSerriesHL(keras.Model):
         self.loss = keras.metrics.Mean("loss")
         self.mse = keras.metrics.Mean("mse")
         self.mae = keras.metrics.Mean("mae")
-        
+    
+    def get_hist(self, inputs, training=None, init_state=None):
+        x = layers.TimeDistributed(self.dense1)(inputs)
+        x = layers.TimeDistributed(self.batchnorm1)(x, training=training)
+        x = layers.TimeDistributed(self.dropout1)(x, training=training)
+
+        x = layers.TimeDistributed(self.dense2)(x)
+        x = layers.TimeDistributed(self.batchnorm2)(x, training=training)
+        x = layers.TimeDistributed(self.dropout2)(x, training=training)
+
+        x = layers.TimeDistributed(self.dense3)(x)
+        x = layers.TimeDistributed(self.batchnorm3)(x, training=training)
+        x = layers.TimeDistributed(self.dropout3)(x, training=training)
+
+        x = layers.TimeDistributed(self.dense4)(x)
+        x = layers.TimeDistributed(self.batchnorm4)(x, training=training)
+        x = layers.TimeDistributed(self.dropout4)(x, training=training)
+
+        x = layers.TimeDistributed(self.dense5)(x)
+        x = layers.TimeDistributed(self.batchnorm5)(x, training=training)
+        x = layers.TimeDistributed(self.dropout5)(x, training=training)
+
+        x = self.rnn_block(x, training=training, initial_state=init_state)
+        hiden_state = x[0]
+        hiden_and_cell = x[1:]
+        x = self.batchnorm6(hiden_state, training=training)
+        x = self.dropout6(x, training=training)
+
+        x = self.dense6(x)
+        x = self.batchnorm7(x, training=training)
+        x = self.dropout7(x, training=training)
+
+        x = self.dense7(x)
+        x = self.batchnorm8(x, training=training)
+        x = self.dropout8(x, training=training)
+
+        x = self.dense8(x)
+        x = self.batchnorm9(x, training=training)
+        x = self.dropout9(x, training=training)
+
+        x = self.dense9(x)
+        x = self.batchnorm10(x, training=training)
+        x = self.dropout10(x, training=training)
+
+        x = self.dense10(x) # (batch, train_len * units * bins)
+        x = self.reshape(x) # (batch, train_len * units, bins)
+        x = self.softmax(x)
+        return x, hiden_and_cell
+
     
     def train_step(self, data):
         x, y = data # y (batchsize, timesteps, units)
         y = self.target_reshape(y) # (batch, units*train_len)
         targets = self.hist_transform(y) # (batch, units*train_len, bins)
         with tf.GradientTape() as tape:
-            x = layers.TimeDistributed(self.dense1)(x)
-            x = layers.TimeDistributed(self.batchnorm1)(x)
-            x = layers.TimeDistributed(self.dropout1)(x)
-
-            x = layers.TimeDistributed(self.dense2)(x)
-            x = layers.TimeDistributed(self.batchnorm2)(x)
-            x = layers.TimeDistributed(self.dropout2)(x)
-
-            x = layers.TimeDistributed(self.dense3)(x)
-            x = layers.TimeDistributed(self.batchnorm3)(x)
-            x = layers.TimeDistributed(self.dropout3)(x)
-
-            x = layers.TimeDistributed(self.dense4)(x)
-            x = layers.TimeDistributed(self.batchnorm4)(x)
-            x = layers.TimeDistributed(self.dropout4)(x)
-
-            x = layers.TimeDistributed(self.dense5)(x)
-            x = layers.TimeDistributed(self.batchnorm5)(x)
-            x = layers.TimeDistributed(self.dropout5)(x)
-
-            x = self.rnn_block(x)
-            hiden_state = x[0]
-            hiden_and_cell = x[1:]
-            x = self.batchnorm6(hiden_state)
-            x = self.dropout6(x)
-
-            x = self.dense6(x)
-            x = self.batchnorm7(x)
-            x = self.dropout7(x)
-
-            x = self.dense7(x)
-            x = self.batchnorm8(x)
-            x = self.dropout8(x)
-
-            x = self.dense8(x)
-            x = self.batchnorm9(x)
-            x = self.dropout9(x)
-
-            x = self.dense9(x)
-            x = self.batchnorm10(x)
-            x = self.dropout10(x)
-
-            x = self.dense10(x) # (batch, train_len * units * bins)
-            x = self.reshape(x) # (batch, train_len * units, bins)
-            x = self.softmax(x)
+            x, _ = self.get_hist(x, training=True)
             predictions = self.hist_mean(x)
             
             loss = keras.losses.categorical_crossentropy(targets, x)
@@ -206,104 +210,14 @@ class TimeSerriesHL(keras.Model):
         y = self.test_targets_reshape(y) # (batch, pred_loops*units*train_len)
         predictions = []
         
-        x = layers.TimeDistributed(self.dense1)(x)
-        x = layers.TimeDistributed(self.batchnorm1)(x)
-        x = layers.TimeDistributed(self.dropout1)(x)
-        
-        x = layers.TimeDistributed(self.dense2)(x)
-        x = layers.TimeDistributed(self.batchnorm2)(x)
-        x = layers.TimeDistributed(self.dropout2)(x)
-        
-        x = layers.TimeDistributed(self.dense3)(x)
-        x = layers.TimeDistributed(self.batchnorm3)(x)
-        x = layers.TimeDistributed(self.dropout3)(x)
-        
-        x = layers.TimeDistributed(self.dense4)(x)
-        x = layers.TimeDistributed(self.batchnorm4)(x)
-        x = layers.TimeDistributed(self.dropout4)(x)
-        
-        x = layers.TimeDistributed(self.dense5)(x)
-        x = layers.TimeDistributed(self.batchnorm5)(x)
-        x = layers.TimeDistributed(self.dropout5)(x)
-        
-        x = self.rnn_block(x)
-        hiden_state = x[0]
-        hiden_and_cell = x[1:]
-        x = self.batchnorm6(hiden_state)
-        x = self.dropout6(x)
-        
-        x = self.dense6(x)
-        x = self.batchnorm7(x)
-        x = self.dropout7(x)
-        
-        x = self.dense7(x)
-        x = self.batchnorm8(x)
-        x = self.dropout8(x)
-        
-        x = self.dense8(x)
-        x = self.batchnorm9(x)
-        x = self.dropout9(x)
-        
-        x = self.dense9(x)
-        x = self.batchnorm10(x)
-        x = self.dropout10(x)
-        
-        x = self.dense10(x)
-        x = self.reshape(x) # (batchsize, units, bins)
-        x = self.softmax(x)
+        x, hiden_and_cell = self.get_hist(x, training=False)
         predictions.append(self.hist_mean(x)) # (batchsize, values)
         
         for i in range(self.pred_loops-1):
             x = tf.identity(predictions[-1])
             x = self.predict_reshape(x)
             
-            x = layers.TimeDistributed(self.dense1)(x)
-            x = layers.TimeDistributed(self.batchnorm1)(x)
-            x = layers.TimeDistributed(self.dropout1)(x)
-
-            x = layers.TimeDistributed(self.dense2)(x)
-            x = layers.TimeDistributed(self.batchnorm2)(x)
-            x = layers.TimeDistributed(self.dropout2)(x)
-
-            x = layers.TimeDistributed(self.dense3)(x)
-            x = layers.TimeDistributed(self.batchnorm3)(x)
-            x = layers.TimeDistributed(self.dropout3)(x)
-
-            x = layers.TimeDistributed(self.dense4)(x)
-            x = layers.TimeDistributed(self.batchnorm4)(x)
-            x = layers.TimeDistributed(self.dropout4)(x)
-
-            x = layers.TimeDistributed(self.dense5)(x)
-            x = layers.TimeDistributed(self.batchnorm5)(x)
-            x = layers.TimeDistributed(self.dropout5)(x)
-        
-            
-            #x = tf.expand_dims(x, axis =1)
-            x = self.rnn_block(x, initial_state=hiden_and_cell)
-            hiden_state = x[0]
-            hiden_and_cell = x[1:]
-            x = self.batchnorm6(hiden_state)
-            x = self.dropout6(x)
-
-            x = self.dense6(x)
-            x = self.batchnorm7(x)
-            x = self.dropout7(x)
-
-            x = self.dense7(x)
-            x = self.batchnorm8(x)
-            x = self.dropout8(x)
-
-            x = self.dense8(x)
-            x = self.batchnorm9(x)
-            x = self.dropout9(x)
-
-            x = self.dense9(x)
-            x = self.batchnorm10(x)
-            x = self.dropout10(x)
-
-            x = self.dense10(x)
-            x = self.reshape(x) # (batchsize, units, bins)
-            x = self.softmax(x)
+            x, hiden_and_cell = self.get_hist(x, training=False, init_state=hiden_and_cell)
             predictions.append(self.hist_mean(x)) # (batchsize, values)
             
         predictions= tf.convert_to_tensor(predictions) #  time major:(timesteps, batches values)
@@ -384,7 +298,53 @@ class TimeSerriesRegression(keras.Model):
         self.mse = keras.metrics.Mean("mse")
         self.mae = keras.metrics.Mean("mae")
         
-    
+    def get_pred(self, inputs, training=None, init_state=None):
+        x = layers.TimeDistributed(self.dense1)(inputs)
+        x = layers.TimeDistributed(self.batchnorm1)(x, training=training)
+        x = layers.TimeDistributed(self.dropout1)(x, training=training)
+
+        x = layers.TimeDistributed(self.dense2)(x)
+        x = layers.TimeDistributed(self.batchnorm2)(x, training=training)
+        x = layers.TimeDistributed(self.dropout2)(x, training=training)
+
+        x = layers.TimeDistributed(self.dense3)(x)
+        x = layers.TimeDistributed(self.batchnorm3)(x, training=training)
+        x = layers.TimeDistributed(self.dropout3)(x, training=training)
+
+        x = layers.TimeDistributed(self.dense4)(x)
+        x = layers.TimeDistributed(self.batchnorm4)(x, training=training)
+        x = layers.TimeDistributed(self.dropout4)(x, training=training)
+
+        x = layers.TimeDistributed(self.dense5)(x)
+        x = layers.TimeDistributed(self.batchnorm5)(x, training=training)
+        x = layers.TimeDistributed(self.dropout5)(x, training=training)
+
+        x = self.rnn_block(x, training=training, initial_state=init_state)
+        hiden_state = x[0]
+        hiden_and_cell = x[1:]
+        x = self.batchnorm6(hiden_state, training=training)
+        x = self.dropout6(x, training=training)
+
+        x = self.dense6(x)
+        x = self.batchnorm7(x, training=training)
+        x = self.dropout7(x, training=training)
+
+        x = self.dense7(x)
+        x = self.batchnorm8(x, training=training)
+        x = self.dropout8(x, training=training)
+
+        x = self.dense8(x)
+        x = self.batchnorm9(x, training=training)
+        x = self.dropout9(x, training=training)
+
+        x = self.dense9(x)
+        x = self.batchnorm10(x, training=training)
+        x = self.dropout10(x, training=training)
+
+        x = self.dense10(x) # (batch, train_len * units * bins)
+        return x, hiden_and_cell
+
+
     def train_step(self, data):
         x, y = data # y should be data from one time step 
         # y (batchsize, value)
@@ -392,49 +352,7 @@ class TimeSerriesRegression(keras.Model):
         targets = self.target_reshape(y) #(batch_size, train_len*units)
         
         with tf.GradientTape() as tape:
-            x = layers.TimeDistributed(self.dense1)(x)
-            x = layers.TimeDistributed(self.batchnorm1)(x)
-            x = layers.TimeDistributed(self.dropout1)(x)
-
-            x = layers.TimeDistributed(self.dense2)(x)
-            x = layers.TimeDistributed(self.batchnorm2)(x)
-            x = layers.TimeDistributed(self.dropout2)(x)
-
-            x = layers.TimeDistributed(self.dense3)(x)
-            x = layers.TimeDistributed(self.batchnorm3)(x)
-            x = layers.TimeDistributed(self.dropout3)(x)
-
-            x = layers.TimeDistributed(self.dense4)(x)
-            x = layers.TimeDistributed(self.batchnorm4)(x)
-            x = layers.TimeDistributed(self.dropout4)(x)
-
-            x = layers.TimeDistributed(self.dense5)(x)
-            x = layers.TimeDistributed(self.batchnorm5)(x)
-            x = layers.TimeDistributed(self.dropout5)(x)
-
-            x = self.rnn_block(x)
-            hiden_state = x[0]
-            hiden_and_cell = x[1:]
-            x = self.batchnorm6(hiden_state)
-            x = self.dropout6(x)
-
-            x = self.dense6(x)
-            x = self.batchnorm7(x)
-            x = self.dropout7(x)
-
-            x = self.dense7(x)
-            x = self.batchnorm8(x)
-            x = self.dropout8(x)
-
-            x = self.dense8(x)
-            x = self.batchnorm9(x)
-            x = self.dropout9(x)
-
-            x = self.dense9(x)
-            x = self.batchnorm10(x)
-            x = self.dropout10(x)
-
-            predict = self.dense10(x) # (batch_size, units*train_len)
+            predict, _ = self.get_hist(x, training=True)
             loss = keras.losses.mean_squared_error(targets, predict)
             
         trainable_vars = self.trainable_variables
@@ -457,49 +375,7 @@ class TimeSerriesRegression(keras.Model):
         y = self.test_targets_reshape(y)
         predictions = []
         
-        x = layers.TimeDistributed(self.dense1)(x)
-        x = layers.TimeDistributed(self.batchnorm1)(x)
-        x = layers.TimeDistributed(self.dropout1)(x)
-        
-        x = layers.TimeDistributed(self.dense2)(x)
-        x = layers.TimeDistributed(self.batchnorm2)(x)
-        x = layers.TimeDistributed(self.dropout2)(x)
-        
-        x = layers.TimeDistributed(self.dense3)(x)
-        x = layers.TimeDistributed(self.batchnorm3)(x)
-        x = layers.TimeDistributed(self.dropout3)(x)
-        
-        x = layers.TimeDistributed(self.dense4)(x)
-        x = layers.TimeDistributed(self.batchnorm4)(x)
-        x = layers.TimeDistributed(self.dropout4)(x)
-        
-        x = layers.TimeDistributed(self.dense5)(x)
-        x = layers.TimeDistributed(self.batchnorm5)(x)
-        x = layers.TimeDistributed(self.dropout5)(x)
-        
-        x = self.rnn_block(x)
-        hiden_state = x[0]
-        hiden_and_cell = x[1:]
-        x = self.batchnorm6(hiden_state)
-        x = self.dropout6(x)
-        
-        x = self.dense6(x)
-        x = self.batchnorm7(x)
-        x = self.dropout7(x)
-        
-        x = self.dense7(x)
-        x = self.batchnorm8(x)
-        x = self.dropout8(x)
-        
-        x = self.dense8(x)
-        x = self.batchnorm9(x)
-        x = self.dropout9(x)
-        
-        x = self.dense9(x)
-        x = self.batchnorm10(x)
-        x = self.dropout10(x)
-        
-        x = self.dense10(x) # (batchsize, units*train_len)
+        x, hiden_and_cell = self.get_pred(x, training=False)
         
         predictions.append(x) # (timestep, batchsize, units*train_len)
         
@@ -507,50 +383,7 @@ class TimeSerriesRegression(keras.Model):
             x = tf.identity(predictions[-1])
             x = self.predict_reshape(x) # (batch_size, train_len, units)
             
-            x = layers.TimeDistributed(self.dense1)(x)
-            x = layers.TimeDistributed(self.batchnorm1)(x)
-            x = layers.TimeDistributed(self.dropout1)(x)
-
-            x = layers.TimeDistributed(self.dense2)(x)
-            x = layers.TimeDistributed(self.batchnorm2)(x)
-            x = layers.TimeDistributed(self.dropout2)(x)
-
-            x = layers.TimeDistributed(self.dense3)(x)
-            x = layers.TimeDistributed(self.batchnorm3)(x)
-            x = layers.TimeDistributed(self.dropout3)(x)
-
-            x = layers.TimeDistributed(self.dense4)(x)
-            x = layers.TimeDistributed(self.batchnorm4)(x)
-            x = layers.TimeDistributed(self.dropout4)(x)
-            
-            x = layers.TimeDistributed(self.dense5)(x)
-            x = layers.TimeDistributed(self.batchnorm5)(x)
-            x = layers.TimeDistributed(self.dropout5)(x)
-            
-            #x = tf.expand_dims(x, axis =1)
-            x = self.rnn_block(x, initial_state=hiden_and_cell)
-            hiden_state = x[0]
-            hiden_and_cell = x[1:]
-            x = self.batchnorm6(hiden_state)
-            x = self.dropout6(x)
-
-            x = self.dense6(x)
-            x = self.batchnorm7(x)
-            x = self.dropout7(x)
-
-            x = self.dense7(x)
-            x = self.batchnorm8(x)
-            x = self.dropout8(x)
-
-            x = self.dense8(x)
-            x = self.batchnorm9(x)
-            x = self.dropout9(x)
-
-            x = self.dense9(x)
-            x = self.batchnorm10(x)
-            x = self.dropout10(x)
-
-            x = self.dense10(x)
+            x, hiden_and_cell = self.get_pred(x, training=False, init_state=hiden_and_cell)
             predictions.append(x) # (batchsize, train_len*units)
             
         predictions= tf.convert_to_tensor(predictions) #  time major:(pred_loops, batches, train_len*units)
