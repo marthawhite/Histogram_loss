@@ -1,3 +1,6 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 import tensorflow as tf 
 from tensorflow import keras
 from keras import layers
@@ -5,7 +8,6 @@ import numpy as np
 import pandas as pd
 import sys
 import json
-import os
 
 
 
@@ -407,7 +409,7 @@ class TimeSerriesRegression(keras.Model):
         
 def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_len=720, test_size=0.2, batch_size=64):
     # test_size is the portion of the dataset to use as test data must be between 0 and 1
-    df = pd.read_csv(filename)
+    df = pd.read_csv(filename, nrows=5000)
     df = df.drop(drop, axis = 1)
     mean = df.mean()
     std = df.std()
@@ -434,7 +436,6 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     return ds_train, ds_test, data_max, data_min
         
 def main(model):
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
     
     n_epochs = 1
     learning_rate = 1e-4
