@@ -453,7 +453,7 @@ def main(model):
 
         for i in range(3):
             TimeSerriesHLHistory =  model.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
-            with open("TSHL20.json", "w") as file:
+            with open(f"TSHL20_{i}.json", "w") as file:
                 json.dump(TimeSerriesHLHistory.history, file)
 
     else:
@@ -466,7 +466,7 @@ def main(model):
         
         for i in range(3):
             TimeSerriesRegressionHistory =  model.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
-            with open("TSregression20.json", "w") as file:
+            with open(f"TSregression20_{i}.json", "w") as file:
                 json.dump(TimeSerriesRegressionHistory.history, file)
     
     
