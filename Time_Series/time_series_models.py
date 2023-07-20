@@ -120,7 +120,7 @@ class TimeSerriesHL(keras.Model):
         self.softmax = layers.Softmax()
         
         
-        self.hist_transform = TruncGaussHistTransform(borders, sigma)
+        self.hist_transform = MultivariateHistTransform(borders, sigma)
         self.hist_mean = HistMean(centers)
         
         self.loss = keras.metrics.Mean("loss")
@@ -134,46 +134,46 @@ class TimeSerriesHL(keras.Model):
         targets = self.hist_transform(y) # (batch, units*train_len, bins)
         with tf.GradientTape() as tape:
             x = layers.TimeDistributed(self.dense1)(x)
-            x = layers.TimeDistributed(self.batchnorm1)(x)
-            x = layers.TimeDistributed(self.dropout1)(x)
+            x = layers.TimeDistributed(self.batchnorm1)(x, training=True)
+            x = layers.TimeDistributed(self.dropout1)(x, training=True)
 
             x = layers.TimeDistributed(self.dense2)(x)
-            x = layers.TimeDistributed(self.batchnorm2)(x)
-            x = layers.TimeDistributed(self.dropout2)(x)
+            x = layers.TimeDistributed(self.batchnorm2)(x, training=True)
+            x = layers.TimeDistributed(self.dropout2)(x, training=True)
 
             x = layers.TimeDistributed(self.dense3)(x)
-            x = layers.TimeDistributed(self.batchnorm3)(x)
-            x = layers.TimeDistributed(self.dropout3)(x)
+            x = layers.TimeDistributed(self.batchnorm3)(x, training=True)
+            x = layers.TimeDistributed(self.dropout3)(x, training=True)
 
             x = layers.TimeDistributed(self.dense4)(x)
-            x = layers.TimeDistributed(self.batchnorm4)(x)
-            x = layers.TimeDistributed(self.dropout4)(x)
+            x = layers.TimeDistributed(self.batchnorm4)(x, training=True)
+            x = layers.TimeDistributed(self.dropout4)(x, training=True)
 
             x = layers.TimeDistributed(self.dense5)(x)
-            x = layers.TimeDistributed(self.batchnorm5)(x)
-            x = layers.TimeDistributed(self.dropout5)(x)
+            x = layers.TimeDistributed(self.batchnorm5)(x, training=True)
+            x = layers.TimeDistributed(self.dropout5)(x, training=True)
 
-            x = self.rnn_block(x)
+            x = self.rnn_block(x, training=True)
             hiden_state = x[0]
             hiden_and_cell = x[1:]
-            x = self.batchnorm6(hiden_state)
-            x = self.dropout6(x)
+            x = self.batchnorm6(hiden_state, training=True)
+            x = self.dropout6(x, training=True)
 
             x = self.dense6(x)
-            x = self.batchnorm7(x)
-            x = self.dropout7(x)
+            x = self.batchnorm7(x, training=True)
+            x = self.dropout7(x, training=True)
 
             x = self.dense7(x)
-            x = self.batchnorm8(x)
-            x = self.dropout8(x)
+            x = self.batchnorm8(x, training=True)
+            x = self.dropout8(x, training=True)
 
             x = self.dense8(x)
-            x = self.batchnorm9(x)
-            x = self.dropout9(x)
+            x = self.batchnorm9(x, training=True)
+            x = self.dropout9(x, training=True)
 
             x = self.dense9(x)
-            x = self.batchnorm10(x)
-            x = self.dropout10(x)
+            x = self.batchnorm10(x, training=True)
+            x = self.dropout10(x, training=True)
 
             x = self.dense10(x) # (batch, train_len * units * bins)
             x = self.reshape(x) # (batch, train_len * units, bins)
@@ -393,46 +393,46 @@ class TimeSerriesRegression(keras.Model):
         
         with tf.GradientTape() as tape:
             x = layers.TimeDistributed(self.dense1)(x)
-            x = layers.TimeDistributed(self.batchnorm1)(x)
-            x = layers.TimeDistributed(self.dropout1)(x)
+            x = layers.TimeDistributed(self.batchnorm1)(x, training=True)
+            x = layers.TimeDistributed(self.dropout1)(x, training=True)
 
             x = layers.TimeDistributed(self.dense2)(x)
-            x = layers.TimeDistributed(self.batchnorm2)(x)
-            x = layers.TimeDistributed(self.dropout2)(x)
+            x = layers.TimeDistributed(self.batchnorm2)(x, training=True)
+            x = layers.TimeDistributed(self.dropout2)(x, training=True)
 
             x = layers.TimeDistributed(self.dense3)(x)
-            x = layers.TimeDistributed(self.batchnorm3)(x)
-            x = layers.TimeDistributed(self.dropout3)(x)
+            x = layers.TimeDistributed(self.batchnorm3)(x, training=True)
+            x = layers.TimeDistributed(self.dropout3)(x, training=True)
 
             x = layers.TimeDistributed(self.dense4)(x)
-            x = layers.TimeDistributed(self.batchnorm4)(x)
-            x = layers.TimeDistributed(self.dropout4)(x)
+            x = layers.TimeDistributed(self.batchnorm4)(x, training=True)
+            x = layers.TimeDistributed(self.dropout4)(x, training=True)
 
             x = layers.TimeDistributed(self.dense5)(x)
-            x = layers.TimeDistributed(self.batchnorm5)(x)
-            x = layers.TimeDistributed(self.dropout5)(x)
+            x = layers.TimeDistributed(self.batchnorm5)(x, training=True)
+            x = layers.TimeDistributed(self.dropout5)(x, training=True)
 
-            x = self.rnn_block(x)
+            x = self.rnn_block(x, training=True)
             hiden_state = x[0]
             hiden_and_cell = x[1:]
             x = self.batchnorm6(hiden_state)
-            x = self.dropout6(x)
+            x = self.dropout6(x, training=True)
 
             x = self.dense6(x)
-            x = self.batchnorm7(x)
-            x = self.dropout7(x)
+            x = self.batchnorm7(x, training=True)
+            x = self.dropout7(x, training=True)
 
             x = self.dense7(x)
-            x = self.batchnorm8(x)
-            x = self.dropout8(x)
+            x = self.batchnorm8(x, training=True)
+            x = self.dropout8(x, training=True)
 
             x = self.dense8(x)
-            x = self.batchnorm9(x)
-            x = self.dropout9(x)
+            x = self.batchnorm9(x, training=True)
+            x = self.dropout9(x, training=True)
 
             x = self.dense9(x)
-            x = self.batchnorm10(x)
-            x = self.dropout10(x)
+            x = self.batchnorm10(x, training=True)
+            x = self.dropout10(x, training=True)
 
             predict = self.dense10(x) # (batch_size, units*train_len)
             loss = keras.losses.mean_squared_error(targets, predict)
