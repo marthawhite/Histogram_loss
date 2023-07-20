@@ -355,7 +355,7 @@ class TimeSerriesRegression(keras.Model):
         targets = self.target_reshape(y) #(batch_size, train_len*units)
         
         with tf.GradientTape() as tape:
-            predict, _ = self.get_hist(x, training=True)
+            predict, _ = self.get_pred(x, training=True)
             loss = keras.losses.mean_squared_error(targets, predict)
             
         trainable_vars = self.trainable_variables
