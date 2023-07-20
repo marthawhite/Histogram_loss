@@ -409,7 +409,7 @@ class TimeSerriesRegression(keras.Model):
         
 def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_len=720, test_size=0.2, batch_size=64):
     # test_size is the portion of the dataset to use as test data must be between 0 and 1
-    df = pd.read_csv(filename, nrows=5000)
+    df = pd.read_csv(filename)
     df = df.drop(drop, axis = 1)
     mean = df.mean()
     std = df.std()
@@ -437,7 +437,7 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
         
 def main(model):
     
-    n_epochs = 1
+    n_epochs = 20
     learning_rate = 1e-4
     
     if model == "HL":
@@ -451,10 +451,10 @@ def main(model):
             optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
         )
 
-
-        TimeSerriesHLHistory =  model.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
-        with open("TSHL20.json", "w") as file:
-            json.dump(TimeSerriesHLHistory.history, file)
+        for i in range(3):
+            TimeSerriesHLHistory =  model.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
+            with open("TSHL20.json", "w") as file:
+                json.dump(TimeSerriesHLHistory.history, file)
 
     else:
         train, test, data_max, data_min= get_time_series_dataset("ETTm2.csv", drop="date")
@@ -463,9 +463,11 @@ def main(model):
         model.compile(
             optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
         )
-        TimeSerriesRegressionHistory =  model.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
-        with open("TSregression20.json", "w") as file:
-            json.dump(TimeSerriesRegressionHistory.history, file)
+        
+        for i in range(3):
+            TimeSerriesRegressionHistory =  model.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
+            with open("TSregression20.json", "w") as file:
+                json.dump(TimeSerriesRegressionHistory.history, file)
     
     
     
