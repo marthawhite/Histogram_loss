@@ -8,7 +8,7 @@ import json
 
 
 
-class TruncGaussHistTransform(keras.layers.Layer):
+class MultivariateHistTransform(keras.layers.Layer):
     """Layer that transforms a scalar target into a binned probability vector 
     that approximates a truncated Gaussian distribution with the target as the mean.
     
@@ -120,7 +120,7 @@ class TimeSerriesHL(keras.Model):
         self.softmax = layers.Softmax()
         
         
-        self.hist_transform = TruncGaussHistTransform(borders, sigma)
+        self.hist_transform = MultivariateHistTransform(borders, sigma)
         self.hist_mean = HistMean(centers)
         
         self.loss = keras.metrics.Mean("loss")
