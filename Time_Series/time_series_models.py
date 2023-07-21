@@ -451,7 +451,7 @@ def main(model):
             optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
         )
 
-        for i in range(3):
+        for i in range(4):
             TimeSerriesHLHistory =  model.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
             with open(f"TSHL20_{i}.json", "w") as file:
                 json.dump(TimeSerriesHLHistory.history, file)
@@ -464,7 +464,7 @@ def main(model):
             optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
         )
         
-        for i in range(3):
+        for i in range(4):
             TimeSerriesRegressionHistory =  model.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
             with open(f"TSregression20_{i}.json", "w") as file:
                 json.dump(TimeSerriesRegressionHistory.history, file)
