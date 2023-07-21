@@ -78,43 +78,43 @@ class TimeSerriesHL(keras.Model):
         self.test_targets_reshape = layers.Reshape((pred_loops*train_len*units,))
         self.test_predict_reshape = layers.Reshape((pred_loops*train_len*units,))
         
-        self.dense1 = layers.Dense(128, activation="relu")
+        self.dense1 = layers.Dense(512, activation="relu")
         self.batchnorm1 = layers.BatchNormalization()
         self.dropout1 = layers.Dropout(0.5)
         
-        self.dense2 = layers.Dense(128, activation="relu")
+        self.dense2 = layers.Dense(512, activation="relu")
         self.batchnorm2 = layers.BatchNormalization()
         self.dropout2 = layers.Dropout(0.5)
         
-        self.dense3 = layers.Dense(128, activation="relu")
+        self.dense3 = layers.Dense(512, activation="relu")
         self.batchnorm3 = layers.BatchNormalization()
         self.dropout3 = layers.Dropout(0.5)
         
-        self.dense4 = layers.Dense(128, activation="relu")
+        self.dense4 = layers.Dense(512, activation="relu")
         self.batchnorm4 = layers.BatchNormalization()
         self.dropout4 = layers.Dropout(0.5)
         
-        self.dense5 = layers.Dense(128, activation="relu")
+        self.dense5 = layers.Dense(512, activation="relu")
         self.batchnorm5 = layers.BatchNormalization()
         self.dropout5 = layers.Dropout(0.5)
         
-        self.rnn_block = layers.LSTM(128, return_state=True)
+        self.rnn_block = layers.LSTM(512, return_state=True)
         self.batchnorm6 = layers.BatchNormalization()
         self.dropout6 = layers.Dropout(0.5)
         
-        self.dense6 = layers.Dense(128, activation="relu")
+        self.dense6 = layers.Dense(512, activation="relu")
         self.batchnorm7 = layers.BatchNormalization()
         self.dropout7 = layers.Dropout(0.5)
         
-        self.dense7 = layers.Dense(128, activation="relu")
+        self.dense7 = layers.Dense(512, activation="relu")
         self.batchnorm8 = layers.BatchNormalization()
         self.dropout8 = layers.Dropout(0.5)
         
-        self.dense8 = layers.Dense(128, activation="relu")
+        self.dense8 = layers.Dense(512, activation="relu")
         self.batchnorm9 = layers.BatchNormalization()
         self.dropout9 = layers.Dropout(0.5)
         
-        self.dense9 = layers.Dense(128, activation="relu")
+        self.dense9 = layers.Dense(512, activation="relu")
         self.batchnorm10 = layers.BatchNormalization()
         self.dropout10 = layers.Dropout(0.5)
         
@@ -255,7 +255,7 @@ class TimeSerriesRegression(keras.Model):
         self.test_targets_reshape = layers.Reshape((pred_loops*train_len*units,))
         self.test_predict_reshape = layers.Reshape((pred_loops*train_len*units,))
         
-        self.dense1 = layers.Dense(256, activation="relu")
+        self.dense1 = layers.Dense(512, activation="relu")
         self.batchnorm1 = layers.BatchNormalization()
         self.dropout1 = layers.Dropout(0.5)
         
