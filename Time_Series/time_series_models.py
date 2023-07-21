@@ -78,45 +78,48 @@ class TimeSerriesHL(keras.Model):
         self.test_targets_reshape = layers.Reshape((pred_loops*train_len*units,))
         self.test_predict_reshape = layers.Reshape((pred_loops*train_len*units,))
         
-        self.dense1 = layers.Dense(512, activation="relu")
+        width = 512
+        drop = 0.5
+
+        self.dense1 = layers.Dense(width, activation="relu")
         self.batchnorm1 = layers.BatchNormalization()
-        self.dropout1 = layers.Dropout(0.5)
+        self.dropout1 = layers.Dropout(drop)
         
-        self.dense2 = layers.Dense(512, activation="relu")
+        self.dense2 = layers.Dense(width, activation="relu")
         self.batchnorm2 = layers.BatchNormalization()
-        self.dropout2 = layers.Dropout(0.5)
+        self.dropout2 = layers.Dropout(drop)
         
-        self.dense3 = layers.Dense(512, activation="relu")
+        self.dense3 = layers.Dense(width, activation="relu")
         self.batchnorm3 = layers.BatchNormalization()
-        self.dropout3 = layers.Dropout(0.5)
+        self.dropout3 = layers.Dropout(drop)
         
-        self.dense4 = layers.Dense(512, activation="relu")
+        self.dense4 = layers.Dense(width, activation="relu")
         self.batchnorm4 = layers.BatchNormalization()
-        self.dropout4 = layers.Dropout(0.5)
+        self.dropout4 = layers.Dropout(drop)
         
-        self.dense5 = layers.Dense(512, activation="relu")
+        self.dense5 = layers.Dense(width, activation="relu")
         self.batchnorm5 = layers.BatchNormalization()
-        self.dropout5 = layers.Dropout(0.5)
+        self.dropout5 = layers.Dropout(drop)
         
         self.rnn_block = layers.LSTM(512, return_state=True)
         self.batchnorm6 = layers.BatchNormalization()
-        self.dropout6 = layers.Dropout(0.5)
-        
-        self.dense6 = layers.Dense(512, activation="relu")
+        self.dropout6 = layers.Dropout(drop)
+
+        self.dense6 = layers.Dense(width, activation="relu")
         self.batchnorm7 = layers.BatchNormalization()
-        self.dropout7 = layers.Dropout(0.5)
+        self.dropout7 = layers.Dropout(drop)
         
-        self.dense7 = layers.Dense(512, activation="relu")
+        self.dense7 = layers.Dense(width, activation="relu")
         self.batchnorm8 = layers.BatchNormalization()
-        self.dropout8 = layers.Dropout(0.5)
+        self.dropout8 = layers.Dropout(drop)
         
-        self.dense8 = layers.Dense(512, activation="relu")
+        self.dense8 = layers.Dense(width, activation="relu")
         self.batchnorm9 = layers.BatchNormalization()
-        self.dropout9 = layers.Dropout(0.5)
+        self.dropout9 = layers.Dropout(drop)
         
-        self.dense9 = layers.Dense(512, activation="relu")
+        self.dense9 = layers.Dense(width, activation="relu")
         self.batchnorm10 = layers.BatchNormalization()
-        self.dropout10 = layers.Dropout(0.5)
+        self.dropout10 = layers.Dropout(drop)
         
         self.dense10 = layers.Dense(train_len*units*bins)
         self.reshape = layers.Reshape((train_len*units, bins))
@@ -126,9 +129,7 @@ class TimeSerriesHL(keras.Model):
         self.hist_transform = MultivariateHistTransform(borders, sigma)
         self.hist_mean = HistMean(centers)
         
-        self.loss = keras.metrics.Mean("loss")
-        self.mse = keras.metrics.Mean("mse")
-        self.mae = keras.metrics.Mean("mae")
+        self.hist_loss = keras.metrics.Mean("loss")
     
     def get_hist(self, inputs, training=None, init_state=None):
         x = layers.TimeDistributed(self.dense1)(inputs)
@@ -194,16 +195,8 @@ class TimeSerriesHL(keras.Model):
         
         self.optimizer.apply_gradients(zip(gradients, trainable_vars))
         
-        mse = keras.losses.mean_squared_error(y, predictions)
-        mae = keras.losses.mean_absolute_error(y, predictions)
-        
-        for metric in self.metrics:
-            if metric.name == "loss":
-                metric.update_state(loss)
-            elif metric.name == "mse":
-                metric.update_state(mse)
-            else:
-                metric.update_state(mae)
+        self.hist_loss.update_state(loss)
+        self.compiled_metrics.update_state(y, predictions)
         # Return a dict mapping metric names to current value
         return {m.name: m.result() for m in self.metrics} 
     
@@ -227,17 +220,7 @@ class TimeSerriesHL(keras.Model):
         predictions= tf.transpose(predictions, [1,0,2]) # batch major
         predictions = self.test_predict_reshape(predictions)
         
-        loss = keras.losses.mean_squared_error(predictions, y)
-        mse = keras.losses.mean_squared_error(y, predictions)
-        mae = keras.losses.mean_absolute_error(y, predictions)
-        
-        for metric in self.metrics:
-            if metric.name == "loss":
-                metric.update_state(loss)
-            elif metric.name == "mse":
-                metric.update_state(mse)
-            else:
-                metric.update_state(mae)
+        self.compiled_metrics.update_state(y, predictions)
         # Return a dict mapping metric names to current value
         return {m.name: m.result() for m in self.metrics}
     
@@ -255,51 +238,50 @@ class TimeSerriesRegression(keras.Model):
         self.test_targets_reshape = layers.Reshape((pred_loops*train_len*units,))
         self.test_predict_reshape = layers.Reshape((pred_loops*train_len*units,))
         
-        self.dense1 = layers.Dense(512, activation="relu")
+        width = 512
+        drop = 0.5
+
+        self.dense1 = layers.Dense(width, activation="relu")
         self.batchnorm1 = layers.BatchNormalization()
-        self.dropout1 = layers.Dropout(0.5)
+        self.dropout1 = layers.Dropout(drop)
         
-        self.dense2 = layers.Dense(512, activation="relu")
+        self.dense2 = layers.Dense(width, activation="relu")
         self.batchnorm2 = layers.BatchNormalization()
-        self.dropout2 = layers.Dropout(0.5)
+        self.dropout2 = layers.Dropout(drop)
         
-        self.dense3 = layers.Dense(512, activation="relu")
+        self.dense3 = layers.Dense(width, activation="relu")
         self.batchnorm3 = layers.BatchNormalization()
-        self.dropout3 = layers.Dropout(0.5)
+        self.dropout3 = layers.Dropout(drop)
         
-        self.dense4 = layers.Dense(512, activation="relu")
+        self.dense4 = layers.Dense(width, activation="relu")
         self.batchnorm4 = layers.BatchNormalization()
-        self.dropout4 = layers.Dropout(0.5)
+        self.dropout4 = layers.Dropout(drop)
         
-        self.dense5 = layers.Dense(512, activation="relu")
+        self.dense5 = layers.Dense(width, activation="relu")
         self.batchnorm5 = layers.BatchNormalization()
-        self.dropout5 = layers.Dropout(0.5)
+        self.dropout5 = layers.Dropout(drop)
         
         self.rnn_block = layers.LSTM(512, return_state=True)
         self.batchnorm6 = layers.BatchNormalization()
-        self.dropout6 = layers.Dropout(0.5)
+        self.dropout6 = layers.Dropout(drop)
         
-        self.dense6 = layers.Dense(512, activation="relu")
+        self.dense6 = layers.Dense(width, activation="relu")
         self.batchnorm7 = layers.BatchNormalization()
-        self.dropout7 = layers.Dropout(0.5)
+        self.dropout7 = layers.Dropout(drop)
         
-        self.dense7 = layers.Dense(512, activation="relu")
+        self.dense7 = layers.Dense(width, activation="relu")
         self.batchnorm8 = layers.BatchNormalization()
-        self.dropout8 = layers.Dropout(0.5)
+        self.dropout8 = layers.Dropout(drop)
         
-        self.dense8 = layers.Dense(512, activation="relu")
+        self.dense8 = layers.Dense(width, activation="relu")
         self.batchnorm9 = layers.BatchNormalization()
-        self.dropout9 = layers.Dropout(0.5)
+        self.dropout9 = layers.Dropout(drop)
         
-        self.dense9 = layers.Dense(512, activation="relu")
+        self.dense9 = layers.Dense(width, activation="relu")
         self.batchnorm10 = layers.BatchNormalization()
-        self.dropout10 = layers.Dropout(0.5)
+        self.dropout10 = layers.Dropout(drop)
         
         self.dense10 = layers.Dense(units*train_len)
-        
-        self.loss = keras.metrics.Mean("loss")
-        self.mse = keras.metrics.Mean("mse")
-        self.mae = keras.metrics.Mean("mae")
         
     def get_pred(self, inputs, training=None, init_state=None):
         x = layers.TimeDistributed(self.dense1)(inputs)
@@ -356,20 +338,14 @@ class TimeSerriesRegression(keras.Model):
         
         with tf.GradientTape() as tape:
             predict, _ = self.get_pred(x, training=True)
-            loss = keras.losses.mean_squared_error(targets, predict)
+            loss = self.compute_loss(y=targets, y_pred=predict)
             
         trainable_vars = self.trainable_variables
         gradients = tape.gradient(loss, trainable_vars)
         
         self.optimizer.apply_gradients(zip(gradients, trainable_vars))
         
-        mae = keras.losses.mean_absolute_error(targets, predict)
-        
-        for metric in self.metrics:
-            if metric.name == "mae":
-                metric.update_state(mae)
-            else:
-                metric.update_state(loss)
+        self.compiled_metrics.update_state(targets, predict)
         # Return a dict mapping metric names to current value
         return {m.name: m.result() for m in self.metrics}
     
@@ -393,14 +369,8 @@ class TimeSerriesRegression(keras.Model):
         predictions= tf.transpose(predictions, [1,0,2]) # batch major: (batches, pred_loops, train_len*units)
         predictions = self.test_predict_reshape(predictions)
         
-        loss = keras.losses.mean_squared_error(predictions, y)
-        mae = keras.losses.mean_absolute_error(predictions, y)
-        
-        for metric in self.metrics:
-            if metric.name == "mae":
-                metric.update_state(mae)
-            else:
-                metric.update_state(loss)
+        self.compute_loss(y=y, y_pred=predictions)
+        self.compiled_metrics.update_state(y, predictions)
         # Return a dict mapping metric names to current value
         return {m.name: m.result() for m in self.metrics}
 
@@ -409,7 +379,7 @@ class TimeSerriesRegression(keras.Model):
         
 def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_len=720, test_size=0.2, batch_size=64):
     # test_size is the portion of the dataset to use as test data must be between 0 and 1
-    df = pd.read_csv(filename)
+    df = pd.read_csv(filename, nrows=1000)
     df = df.drop(drop, axis = 1)
     mean = df.mean()
     std = df.std()
@@ -439,6 +409,10 @@ def main(model):
     
     n_epochs = 20
     learning_rate = 1e-4
+    n_runs = 4
+    metrics = ["mse", "mae"]
+    units = 7
+    bins = 100
     
     if model == "HL":
         
@@ -446,12 +420,13 @@ def main(model):
         data_max = np.array(data_max.tolist()*20, dtype=np.float32)
         data_min = np.array(data_min.tolist()*20, dtype=np.float32)
 
-        model = TimeSerriesHL(units=7, data_min=data_min, data_max=data_max, bins=100)
+        model = TimeSerriesHL(units=units, data_min=data_min, data_max=data_max, bins=bins)
         model.compile(
             optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
+            metrics=metrics
         )
 
-        for i in range(4):
+        for i in range(n_runs):
             TimeSerriesHLHistory =  model.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
             with open(f"TSHL20_{i}.json", "w") as file:
                 json.dump(TimeSerriesHLHistory.history, file)
@@ -459,23 +434,18 @@ def main(model):
     else:
         train, test, data_max, data_min= get_time_series_dataset("ETTm2.csv", drop="date")
 
-        model = TimeSerriesRegression(units=7)
+        model = TimeSerriesRegression(units=units)
         model.compile(
             optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
+            loss="mse",
+            metrics=metrics
         )
         
-        for i in range(4):
+        for i in range(n_runs):
             TimeSerriesRegressionHistory =  model.fit(x=train, epochs=n_epochs, validation_data=test, verbose=2)
             with open(f"TSregression20_{i}.json", "w") as file:
                 json.dump(TimeSerriesRegressionHistory.history, file)
-    
-    
-    
-  
-    
 
-    
         
 if __name__ == "__main__":
     main(sys.argv[1])
-     
