@@ -1,8 +1,18 @@
+"""Module for converting the results of time series experiments to CSV."""
+
 import json
 import pandas as pd
 
 
 def getjson(name, n):
+    """Combine multiple JSON files into a single dict.
+    
+    Params:
+        name - the file prefix; the JSON file has the form {name}_{i}.json
+        n - the number of files
+    
+    Returns: a dict with the combined results
+    """
     data = {}
     for i in range(n):
         file = f"{name}_{i}.json"
@@ -14,6 +24,7 @@ def getjson(name, n):
 
 
 def main():
+    """Convert time series results to CSV."""
     n = 3
     outfile = "ts1.csv"
     names = ["TSHL20", "TSregression20"]
