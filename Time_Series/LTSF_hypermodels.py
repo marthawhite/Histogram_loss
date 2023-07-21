@@ -219,7 +219,7 @@ class NLinear_L2(keras.Model):
         seq_last = x[:,-1].numpy()[:,np.newaxis]*np.ones(tf.size(x))
         
         features = x - seq_last
-        features = self.dense(x, training=True)
+        features = self.dense(x, training=False)
         predictions = x + seq_last
         
         loss = keras.losses.mean_squared_error(y, predictions)

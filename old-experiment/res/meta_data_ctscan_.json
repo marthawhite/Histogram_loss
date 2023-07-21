@@ -1,1 +1,0 @@
-{"best_params": {"lr": 0.001, "h_l": 4, "dropout_rate": 0.05, "n_bins": 100, "ker_par": 1.0, "batch_size": 256}, "num_runs": 1, "test_ratio": 0.2}
