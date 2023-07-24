@@ -78,46 +78,47 @@ class TimeSerriesHL(keras.Model):
         self.test_targets_reshape = layers.Reshape((pred_loops*train_len*units,))
         self.test_predict_reshape = layers.Reshape((pred_loops*train_len*units,))
         
-        width = 512
+        width1 = 256
+        width2 = 128
         drop = 0.5
 
-        self.dense1 = layers.Dense(width, activation="relu")
+        self.dense1 = layers.Dense(width1, activation="relu")
         self.batchnorm1 = layers.BatchNormalization()
         self.dropout1 = layers.Dropout(drop)
         
-        self.dense2 = layers.Dense(width, activation="relu")
+        self.dense2 = layers.Dense(width1, activation="relu")
         self.batchnorm2 = layers.BatchNormalization()
         self.dropout2 = layers.Dropout(drop)
         
-        self.dense3 = layers.Dense(width, activation="relu")
+        self.dense3 = layers.Dense(width1, activation="relu")
         self.batchnorm3 = layers.BatchNormalization()
         self.dropout3 = layers.Dropout(drop)
         
-        self.dense4 = layers.Dense(width, activation="relu")
+        self.dense4 = layers.Dense(width2, activation="relu")
         self.batchnorm4 = layers.BatchNormalization()
         self.dropout4 = layers.Dropout(drop)
         
-        self.dense5 = layers.Dense(width, activation="relu")
+        self.dense5 = layers.Dense(width2, activation="relu")
         self.batchnorm5 = layers.BatchNormalization()
         self.dropout5 = layers.Dropout(drop)
         
-        self.rnn_block = layers.LSTM(512, return_state=True)
+        self.rnn_block = layers.LSTM(width2, return_state=True)
         self.batchnorm6 = layers.BatchNormalization()
         self.dropout6 = layers.Dropout(drop)
 
-        self.dense6 = layers.Dense(width, activation="relu")
+        self.dense6 = layers.Dense(width2, activation="relu")
         self.batchnorm7 = layers.BatchNormalization()
         self.dropout7 = layers.Dropout(drop)
         
-        self.dense7 = layers.Dense(width, activation="relu")
+        self.dense7 = layers.Dense(width2, activation="relu")
         self.batchnorm8 = layers.BatchNormalization()
         self.dropout8 = layers.Dropout(drop)
         
-        self.dense8 = layers.Dense(width, activation="relu")
+        self.dense8 = layers.Dense(width1, activation="relu")
         self.batchnorm9 = layers.BatchNormalization()
         self.dropout9 = layers.Dropout(drop)
         
-        self.dense9 = layers.Dense(width, activation="relu")
+        self.dense9 = layers.Dense(width1, activation="relu")
         self.batchnorm10 = layers.BatchNormalization()
         self.dropout10 = layers.Dropout(drop)
         
@@ -238,46 +239,47 @@ class TimeSerriesRegression(keras.Model):
         self.test_targets_reshape = layers.Reshape((pred_loops*train_len*units,))
         self.test_predict_reshape = layers.Reshape((pred_loops*train_len*units,))
         
-        width = 512
+        width1 = 256
+        width2 = 128
         drop = 0.5
 
-        self.dense1 = layers.Dense(width, activation="relu")
+        self.dense1 = layers.Dense(width1, activation="relu")
         self.batchnorm1 = layers.BatchNormalization()
         self.dropout1 = layers.Dropout(drop)
         
-        self.dense2 = layers.Dense(width, activation="relu")
+        self.dense2 = layers.Dense(width1, activation="relu")
         self.batchnorm2 = layers.BatchNormalization()
         self.dropout2 = layers.Dropout(drop)
         
-        self.dense3 = layers.Dense(width, activation="relu")
+        self.dense3 = layers.Dense(width1, activation="relu")
         self.batchnorm3 = layers.BatchNormalization()
         self.dropout3 = layers.Dropout(drop)
         
-        self.dense4 = layers.Dense(width, activation="relu")
+        self.dense4 = layers.Dense(width2, activation="relu")
         self.batchnorm4 = layers.BatchNormalization()
         self.dropout4 = layers.Dropout(drop)
         
-        self.dense5 = layers.Dense(width, activation="relu")
+        self.dense5 = layers.Dense(width2, activation="relu")
         self.batchnorm5 = layers.BatchNormalization()
         self.dropout5 = layers.Dropout(drop)
         
-        self.rnn_block = layers.LSTM(512, return_state=True)
+        self.rnn_block = layers.LSTM(width2, return_state=True)
         self.batchnorm6 = layers.BatchNormalization()
         self.dropout6 = layers.Dropout(drop)
         
-        self.dense6 = layers.Dense(width, activation="relu")
+        self.dense6 = layers.Dense(width2, activation="relu")
         self.batchnorm7 = layers.BatchNormalization()
         self.dropout7 = layers.Dropout(drop)
         
-        self.dense7 = layers.Dense(width, activation="relu")
+        self.dense7 = layers.Dense(width2, activation="relu")
         self.batchnorm8 = layers.BatchNormalization()
         self.dropout8 = layers.Dropout(drop)
         
-        self.dense8 = layers.Dense(width, activation="relu")
+        self.dense8 = layers.Dense(width1, activation="relu")
         self.batchnorm9 = layers.BatchNormalization()
         self.dropout9 = layers.Dropout(drop)
         
-        self.dense9 = layers.Dense(width, activation="relu")
+        self.dense9 = layers.Dense(width1, activation="relu")
         self.batchnorm10 = layers.BatchNormalization()
         self.dropout10 = layers.Dropout(drop)
         
