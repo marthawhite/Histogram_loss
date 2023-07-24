@@ -78,54 +78,28 @@ class TimeSerriesHL(keras.Model):
         self.test_targets_reshape = layers.Reshape((pred_loops*train_len*units,))
         self.test_predict_reshape = layers.Reshape((pred_loops*train_len*units,))
         
-        width1 = 256
-        width2 = 128
+        width = 128
         drop = 0.5
 
-        self.dense1 = layers.Dense(width1, activation="relu")
+        self.dense1 = layers.Dense(width, activation="relu")
         self.batchnorm1 = layers.BatchNormalization()
         self.dropout1 = layers.Dropout(drop)
         
-        self.dense2 = layers.Dense(width1, activation="relu")
+        self.dense2 = layers.Dense(width, activation="relu")
         self.batchnorm2 = layers.BatchNormalization()
         self.dropout2 = layers.Dropout(drop)
         
-        self.dense3 = layers.Dense(width1, activation="relu")
+        self.rnn_block = layers.LSTM(width, return_state=True)
         self.batchnorm3 = layers.BatchNormalization()
         self.dropout3 = layers.Dropout(drop)
-        
-        self.dense4 = layers.Dense(width2, activation="relu")
+
+        self.dense3 = layers.Dense(width, activation="relu")
         self.batchnorm4 = layers.BatchNormalization()
         self.dropout4 = layers.Dropout(drop)
         
-        self.dense5 = layers.Dense(width2, activation="relu")
-        self.batchnorm5 = layers.BatchNormalization()
-        self.dropout5 = layers.Dropout(drop)
-        
-        self.rnn_block = layers.LSTM(width2, return_state=True)
-        self.batchnorm6 = layers.BatchNormalization()
-        self.dropout6 = layers.Dropout(drop)
-
-        self.dense6 = layers.Dense(width2, activation="relu")
-        self.batchnorm7 = layers.BatchNormalization()
-        self.dropout7 = layers.Dropout(drop)
-        
-        self.dense7 = layers.Dense(width2, activation="relu")
-        self.batchnorm8 = layers.BatchNormalization()
-        self.dropout8 = layers.Dropout(drop)
-        
-        self.dense8 = layers.Dense(width1, activation="relu")
-        self.batchnorm9 = layers.BatchNormalization()
-        self.dropout9 = layers.Dropout(drop)
-        
-        self.dense9 = layers.Dense(width1, activation="relu")
-        self.batchnorm10 = layers.BatchNormalization()
-        self.dropout10 = layers.Dropout(drop)
-        
-        self.dense10 = layers.Dense(train_len*units*bins)
+        self.dense4 = layers.Dense(train_len*units*bins)
         self.reshape = layers.Reshape((train_len*units, bins))
         self.softmax = layers.Softmax()
-        
         
         self.hist_transform = MultivariateHistTransform(borders, sigma)
         self.hist_mean = HistMean(centers)
@@ -141,41 +115,17 @@ class TimeSerriesHL(keras.Model):
         x = layers.TimeDistributed(self.batchnorm2)(x, training=training)
         x = layers.TimeDistributed(self.dropout2)(x, training=training)
 
-        x = layers.TimeDistributed(self.dense3)(x)
-        x = layers.TimeDistributed(self.batchnorm3)(x, training=training)
-        x = layers.TimeDistributed(self.dropout3)(x, training=training)
-
-        x = layers.TimeDistributed(self.dense4)(x)
-        x = layers.TimeDistributed(self.batchnorm4)(x, training=training)
-        x = layers.TimeDistributed(self.dropout4)(x, training=training)
-
-        x = layers.TimeDistributed(self.dense5)(x)
-        x = layers.TimeDistributed(self.batchnorm5)(x, training=training)
-        x = layers.TimeDistributed(self.dropout5)(x, training=training)
-
         x = self.rnn_block(x, training=training, initial_state=init_state)
         hiden_state = x[0]
         hiden_and_cell = x[1:]
-        x = self.batchnorm6(hiden_state, training=training)
-        x = self.dropout6(x, training=training)
+        x = self.batchnorm3(hiden_state, training=training)
+        x = self.dropout3(x, training=training)
 
-        x = self.dense6(x)
-        x = self.batchnorm7(x, training=training)
-        x = self.dropout7(x, training=training)
+        x = self.dense3(x)
+        x = self.batchnorm4(x, training=training)
+        x = self.dropout4(x, training=training)
 
-        x = self.dense7(x)
-        x = self.batchnorm8(x, training=training)
-        x = self.dropout8(x, training=training)
-
-        x = self.dense8(x)
-        x = self.batchnorm9(x, training=training)
-        x = self.dropout9(x, training=training)
-
-        x = self.dense9(x)
-        x = self.batchnorm10(x, training=training)
-        x = self.dropout10(x, training=training)
-
-        x = self.dense10(x) # (batch, train_len * units * bins)
+        x = self.dense4(x) # (batch, train_len * units * bins)
         x = self.reshape(x) # (batch, train_len * units, bins)
         x = self.softmax(x)
         return x, hiden_and_cell
@@ -239,51 +189,27 @@ class TimeSerriesRegression(keras.Model):
         self.test_targets_reshape = layers.Reshape((pred_loops*train_len*units,))
         self.test_predict_reshape = layers.Reshape((pred_loops*train_len*units,))
         
-        width1 = 256
-        width2 = 128
+        width = 128
         drop = 0.5
 
-        self.dense1 = layers.Dense(width1, activation="relu")
+        self.dense1 = layers.Dense(width, activation="relu")
         self.batchnorm1 = layers.BatchNormalization()
         self.dropout1 = layers.Dropout(drop)
         
-        self.dense2 = layers.Dense(width1, activation="relu")
+        self.dense2 = layers.Dense(width, activation="relu")
         self.batchnorm2 = layers.BatchNormalization()
         self.dropout2 = layers.Dropout(drop)
         
-        self.dense3 = layers.Dense(width1, activation="relu")
+        
+        self.rnn_block = layers.LSTM(width, return_state=True)
         self.batchnorm3 = layers.BatchNormalization()
         self.dropout3 = layers.Dropout(drop)
         
-        self.dense4 = layers.Dense(width2, activation="relu")
+        self.dense3 = layers.Dense(width, activation="relu")
         self.batchnorm4 = layers.BatchNormalization()
         self.dropout4 = layers.Dropout(drop)
         
-        self.dense5 = layers.Dense(width2, activation="relu")
-        self.batchnorm5 = layers.BatchNormalization()
-        self.dropout5 = layers.Dropout(drop)
-        
-        self.rnn_block = layers.LSTM(width2, return_state=True)
-        self.batchnorm6 = layers.BatchNormalization()
-        self.dropout6 = layers.Dropout(drop)
-        
-        self.dense6 = layers.Dense(width2, activation="relu")
-        self.batchnorm7 = layers.BatchNormalization()
-        self.dropout7 = layers.Dropout(drop)
-        
-        self.dense7 = layers.Dense(width2, activation="relu")
-        self.batchnorm8 = layers.BatchNormalization()
-        self.dropout8 = layers.Dropout(drop)
-        
-        self.dense8 = layers.Dense(width1, activation="relu")
-        self.batchnorm9 = layers.BatchNormalization()
-        self.dropout9 = layers.Dropout(drop)
-        
-        self.dense9 = layers.Dense(width1, activation="relu")
-        self.batchnorm10 = layers.BatchNormalization()
-        self.dropout10 = layers.Dropout(drop)
-        
-        self.dense10 = layers.Dense(units*train_len)
+        self.dense4 = layers.Dense(units*train_len)
         
     def get_pred(self, inputs, training=None, init_state=None):
         x = layers.TimeDistributed(self.dense1)(inputs)
@@ -294,41 +220,17 @@ class TimeSerriesRegression(keras.Model):
         x = layers.TimeDistributed(self.batchnorm2)(x, training=training)
         x = layers.TimeDistributed(self.dropout2)(x, training=training)
 
-        x = layers.TimeDistributed(self.dense3)(x)
-        x = layers.TimeDistributed(self.batchnorm3)(x, training=training)
-        x = layers.TimeDistributed(self.dropout3)(x, training=training)
-
-        x = layers.TimeDistributed(self.dense4)(x)
-        x = layers.TimeDistributed(self.batchnorm4)(x, training=training)
-        x = layers.TimeDistributed(self.dropout4)(x, training=training)
-
-        x = layers.TimeDistributed(self.dense5)(x)
-        x = layers.TimeDistributed(self.batchnorm5)(x, training=training)
-        x = layers.TimeDistributed(self.dropout5)(x, training=training)
-
         x = self.rnn_block(x, training=training, initial_state=init_state)
         hiden_state = x[0]
         hiden_and_cell = x[1:]
-        x = self.batchnorm6(hiden_state, training=training)
-        x = self.dropout6(x, training=training)
+        x = self.batchnorm3(hiden_state, training=training)
+        x = self.dropout3(x, training=training)
 
-        x = self.dense6(x)
-        x = self.batchnorm7(x, training=training)
-        x = self.dropout7(x, training=training)
+        x = self.dense3(x)
+        x = self.batchnorm4(x, training=training)
+        x = self.dropout4(x, training=training)
 
-        x = self.dense7(x)
-        x = self.batchnorm8(x, training=training)
-        x = self.dropout8(x, training=training)
-
-        x = self.dense8(x)
-        x = self.batchnorm9(x, training=training)
-        x = self.dropout9(x, training=training)
-
-        x = self.dense9(x)
-        x = self.batchnorm10(x, training=training)
-        x = self.dropout10(x, training=training)
-
-        x = self.dense10(x) # (batch, train_len * units * bins)
+        x = self.dense4(x) # (batch, train_len * units * bins)
         return x, hiden_and_cell
 
 
