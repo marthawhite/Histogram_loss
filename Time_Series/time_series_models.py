@@ -411,7 +411,7 @@ def main(model):
     
     n_epochs = 20
     learning_rate = 1e-4
-    n_runs = 4
+    n_runs = 5
     metrics = ["mse", "mae"]
     units = 7
     bins = 100
