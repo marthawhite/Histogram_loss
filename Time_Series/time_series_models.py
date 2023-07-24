@@ -379,7 +379,7 @@ class TimeSerriesRegression(keras.Model):
         
 def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_len=720, test_size=0.2, batch_size=64):
     # test_size is the portion of the dataset to use as test data must be between 0 and 1
-    df = pd.read_csv(filename, nrows=1000)
+    df = pd.read_csv(filename)
     df = df.drop(drop, axis = 1)
     mean = df.mean()
     std = df.std()
@@ -395,13 +395,13 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     target = train[seq_len:]
     x_train = keras.utils.timeseries_dataset_from_array(inputs, None, seq_len, batch_size=None)
     y_train = keras.utils.timeseries_dataset_from_array(target, None, train_len, batch_size=None)
-    ds_train = tf.data.Dataset.zip((x_train, y_train)).batch(batch_size)
+    ds_train = tf.data.Dataset.zip((x_train, y_train)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
     #ds_train = keras.utils.timeseries_dataset_from_array(data=inputs, targets=target, sequence_length=seq_len, batch_size=batch_size)
-    inputs = data[:-(pred_len)]
-    targets = data[seq_len:]
+    inputs = test[:-(pred_len)]
+    targets = test[seq_len:]
     x = keras.utils.timeseries_dataset_from_array(inputs, None, seq_len, batch_size=None)
     y = keras.utils.timeseries_dataset_from_array(targets, None, pred_len, batch_size=None)
-    ds_test = tf.data.Dataset.zip((x,y)).batch(batch_size)
+    ds_test = tf.data.Dataset.zip((x,y)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
     
     return ds_train, ds_test, data_max, data_min
         
