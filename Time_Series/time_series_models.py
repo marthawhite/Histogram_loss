@@ -78,7 +78,7 @@ class TimeSerriesHL(keras.Model):
         self.test_targets_reshape = layers.Reshape((pred_loops*train_len*units,))
         self.test_predict_reshape = layers.Reshape((pred_loops*train_len*units,))
         
-        width = 512
+        width = 128
         drop = 0.5
 
         self.dense1 = layers.Dense(width, activation="relu")
@@ -89,42 +89,17 @@ class TimeSerriesHL(keras.Model):
         self.batchnorm2 = layers.BatchNormalization()
         self.dropout2 = layers.Dropout(drop)
         
-        self.dense3 = layers.Dense(width, activation="relu")
+        self.rnn_block = layers.LSTM(width, return_state=True)
         self.batchnorm3 = layers.BatchNormalization()
         self.dropout3 = layers.Dropout(drop)
-        
-        self.dense4 = layers.Dense(width, activation="relu")
+
+        self.dense3 = layers.Dense(width, activation="relu")
         self.batchnorm4 = layers.BatchNormalization()
         self.dropout4 = layers.Dropout(drop)
         
-        self.dense5 = layers.Dense(width, activation="relu")
-        self.batchnorm5 = layers.BatchNormalization()
-        self.dropout5 = layers.Dropout(drop)
-        
-        self.rnn_block = layers.LSTM(512, return_state=True)
-        self.batchnorm6 = layers.BatchNormalization()
-        self.dropout6 = layers.Dropout(drop)
-
-        self.dense6 = layers.Dense(width, activation="relu")
-        self.batchnorm7 = layers.BatchNormalization()
-        self.dropout7 = layers.Dropout(drop)
-        
-        self.dense7 = layers.Dense(width, activation="relu")
-        self.batchnorm8 = layers.BatchNormalization()
-        self.dropout8 = layers.Dropout(drop)
-        
-        self.dense8 = layers.Dense(width, activation="relu")
-        self.batchnorm9 = layers.BatchNormalization()
-        self.dropout9 = layers.Dropout(drop)
-        
-        self.dense9 = layers.Dense(width, activation="relu")
-        self.batchnorm10 = layers.BatchNormalization()
-        self.dropout10 = layers.Dropout(drop)
-        
-        self.dense10 = layers.Dense(train_len*units*bins)
+        self.dense4 = layers.Dense(train_len*units*bins)
         self.reshape = layers.Reshape((train_len*units, bins))
         self.softmax = layers.Softmax()
-        
         
         self.hist_transform = MultivariateHistTransform(borders, sigma)
         self.hist_mean = HistMean(centers)
@@ -140,41 +115,17 @@ class TimeSerriesHL(keras.Model):
         x = layers.TimeDistributed(self.batchnorm2)(x, training=training)
         x = layers.TimeDistributed(self.dropout2)(x, training=training)
 
-        x = layers.TimeDistributed(self.dense3)(x)
-        x = layers.TimeDistributed(self.batchnorm3)(x, training=training)
-        x = layers.TimeDistributed(self.dropout3)(x, training=training)
-
-        x = layers.TimeDistributed(self.dense4)(x)
-        x = layers.TimeDistributed(self.batchnorm4)(x, training=training)
-        x = layers.TimeDistributed(self.dropout4)(x, training=training)
-
-        x = layers.TimeDistributed(self.dense5)(x)
-        x = layers.TimeDistributed(self.batchnorm5)(x, training=training)
-        x = layers.TimeDistributed(self.dropout5)(x, training=training)
-
         x = self.rnn_block(x, training=training, initial_state=init_state)
         hiden_state = x[0]
         hiden_and_cell = x[1:]
-        x = self.batchnorm6(hiden_state, training=training)
-        x = self.dropout6(x, training=training)
+        x = self.batchnorm3(hiden_state, training=training)
+        x = self.dropout3(x, training=training)
 
-        x = self.dense6(x)
-        x = self.batchnorm7(x, training=training)
-        x = self.dropout7(x, training=training)
+        x = self.dense3(x)
+        x = self.batchnorm4(x, training=training)
+        x = self.dropout4(x, training=training)
 
-        x = self.dense7(x)
-        x = self.batchnorm8(x, training=training)
-        x = self.dropout8(x, training=training)
-
-        x = self.dense8(x)
-        x = self.batchnorm9(x, training=training)
-        x = self.dropout9(x, training=training)
-
-        x = self.dense9(x)
-        x = self.batchnorm10(x, training=training)
-        x = self.dropout10(x, training=training)
-
-        x = self.dense10(x) # (batch, train_len * units * bins)
+        x = self.dense4(x) # (batch, train_len * units * bins)
         x = self.reshape(x) # (batch, train_len * units, bins)
         x = self.softmax(x)
         return x, hiden_and_cell
@@ -238,7 +189,7 @@ class TimeSerriesRegression(keras.Model):
         self.test_targets_reshape = layers.Reshape((pred_loops*train_len*units,))
         self.test_predict_reshape = layers.Reshape((pred_loops*train_len*units,))
         
-        width = 512
+        width = 128
         drop = 0.5
 
         self.dense1 = layers.Dense(width, activation="relu")
@@ -249,39 +200,16 @@ class TimeSerriesRegression(keras.Model):
         self.batchnorm2 = layers.BatchNormalization()
         self.dropout2 = layers.Dropout(drop)
         
-        self.dense3 = layers.Dense(width, activation="relu")
+        
+        self.rnn_block = layers.LSTM(width, return_state=True)
         self.batchnorm3 = layers.BatchNormalization()
         self.dropout3 = layers.Dropout(drop)
         
-        self.dense4 = layers.Dense(width, activation="relu")
+        self.dense3 = layers.Dense(width, activation="relu")
         self.batchnorm4 = layers.BatchNormalization()
         self.dropout4 = layers.Dropout(drop)
         
-        self.dense5 = layers.Dense(width, activation="relu")
-        self.batchnorm5 = layers.BatchNormalization()
-        self.dropout5 = layers.Dropout(drop)
-        
-        self.rnn_block = layers.LSTM(512, return_state=True)
-        self.batchnorm6 = layers.BatchNormalization()
-        self.dropout6 = layers.Dropout(drop)
-        
-        self.dense6 = layers.Dense(width, activation="relu")
-        self.batchnorm7 = layers.BatchNormalization()
-        self.dropout7 = layers.Dropout(drop)
-        
-        self.dense7 = layers.Dense(width, activation="relu")
-        self.batchnorm8 = layers.BatchNormalization()
-        self.dropout8 = layers.Dropout(drop)
-        
-        self.dense8 = layers.Dense(width, activation="relu")
-        self.batchnorm9 = layers.BatchNormalization()
-        self.dropout9 = layers.Dropout(drop)
-        
-        self.dense9 = layers.Dense(width, activation="relu")
-        self.batchnorm10 = layers.BatchNormalization()
-        self.dropout10 = layers.Dropout(drop)
-        
-        self.dense10 = layers.Dense(units*train_len)
+        self.dense4 = layers.Dense(units*train_len)
         
     def get_pred(self, inputs, training=None, init_state=None):
         x = layers.TimeDistributed(self.dense1)(inputs)
@@ -292,41 +220,17 @@ class TimeSerriesRegression(keras.Model):
         x = layers.TimeDistributed(self.batchnorm2)(x, training=training)
         x = layers.TimeDistributed(self.dropout2)(x, training=training)
 
-        x = layers.TimeDistributed(self.dense3)(x)
-        x = layers.TimeDistributed(self.batchnorm3)(x, training=training)
-        x = layers.TimeDistributed(self.dropout3)(x, training=training)
-
-        x = layers.TimeDistributed(self.dense4)(x)
-        x = layers.TimeDistributed(self.batchnorm4)(x, training=training)
-        x = layers.TimeDistributed(self.dropout4)(x, training=training)
-
-        x = layers.TimeDistributed(self.dense5)(x)
-        x = layers.TimeDistributed(self.batchnorm5)(x, training=training)
-        x = layers.TimeDistributed(self.dropout5)(x, training=training)
-
         x = self.rnn_block(x, training=training, initial_state=init_state)
         hiden_state = x[0]
         hiden_and_cell = x[1:]
-        x = self.batchnorm6(hiden_state, training=training)
-        x = self.dropout6(x, training=training)
+        x = self.batchnorm3(hiden_state, training=training)
+        x = self.dropout3(x, training=training)
 
-        x = self.dense6(x)
-        x = self.batchnorm7(x, training=training)
-        x = self.dropout7(x, training=training)
+        x = self.dense3(x)
+        x = self.batchnorm4(x, training=training)
+        x = self.dropout4(x, training=training)
 
-        x = self.dense7(x)
-        x = self.batchnorm8(x, training=training)
-        x = self.dropout8(x, training=training)
-
-        x = self.dense8(x)
-        x = self.batchnorm9(x, training=training)
-        x = self.dropout9(x, training=training)
-
-        x = self.dense9(x)
-        x = self.batchnorm10(x, training=training)
-        x = self.dropout10(x, training=training)
-
-        x = self.dense10(x) # (batch, train_len * units * bins)
+        x = self.dense4(x) # (batch, train_len * units * bins)
         return x, hiden_and_cell
 
 
@@ -379,7 +283,7 @@ class TimeSerriesRegression(keras.Model):
         
 def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_len=720, test_size=0.2, batch_size=64):
     # test_size is the portion of the dataset to use as test data must be between 0 and 1
-    df = pd.read_csv(filename, nrows=1000)
+    df = pd.read_csv(filename)
     df = df.drop(drop, axis = 1)
     mean = df.mean()
     std = df.std()
@@ -395,13 +299,13 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     target = train[seq_len:]
     x_train = keras.utils.timeseries_dataset_from_array(inputs, None, seq_len, batch_size=None)
     y_train = keras.utils.timeseries_dataset_from_array(target, None, train_len, batch_size=None)
-    ds_train = tf.data.Dataset.zip((x_train, y_train)).batch(batch_size)
+    ds_train = tf.data.Dataset.zip((x_train, y_train)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
     #ds_train = keras.utils.timeseries_dataset_from_array(data=inputs, targets=target, sequence_length=seq_len, batch_size=batch_size)
-    inputs = data[:-(pred_len)]
-    targets = data[seq_len:]
+    inputs = test[:-(pred_len)]
+    targets = test[seq_len:]
     x = keras.utils.timeseries_dataset_from_array(inputs, None, seq_len, batch_size=None)
     y = keras.utils.timeseries_dataset_from_array(targets, None, pred_len, batch_size=None)
-    ds_test = tf.data.Dataset.zip((x,y)).batch(batch_size)
+    ds_test = tf.data.Dataset.zip((x,y)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
     
     return ds_train, ds_test, data_max, data_min
         
@@ -409,7 +313,7 @@ def main(model):
     
     n_epochs = 20
     learning_rate = 1e-4
-    n_runs = 4
+    n_runs = 5
     metrics = ["mse", "mae"]
     units = 7
     bins = 100

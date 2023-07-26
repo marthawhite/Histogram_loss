@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=ETTm2-HL
+#SBATCH --job-name=128-HL
 #SBATCH --output=%x-%j.out
-#SBATCH --time=1-00:00:00
+#SBATCH --time=0-12:00:00
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=8000M
+#SBATCH --mem=4000M
 #SBATCH --gres=gpu:1
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
