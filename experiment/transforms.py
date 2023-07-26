@@ -13,6 +13,12 @@ class TruncGaussHistTransform(keras.layers.Layer):
     Params:
         borders - the borders of the histogram bins
         sigma - the sigma parameter of the truncated Gaussian distribution
+
+    If the inputs have shape (batchsize, x1, ..., xd), then
+        borders should be broadcastable with (n_bins + 1, x1, ..., xd)
+        and sigma should be broadcastable with (x1, ..., xd)
+    
+    e.g. borders can be produced using linspace(low, high, n_bins + 1)
     """
 
     def __init__(self, borders, sigma):
@@ -29,7 +35,7 @@ class TruncGaussHistTransform(keras.layers.Layer):
             inputs - the tensor of targets to transform
 
         Returns:
-            x_transformed - a tensor of shape (len(inputs), len(borders) - 1)
+            x_transformed - a tensor of shape (batchsize, x1, ..., xd, n_bins)
             consisting of the probability vectors for each target
         """
         
@@ -137,10 +143,13 @@ class ProjTransform(keras.layers.Layer):
 
 
 class HistMean(keras.layers.Layer):
-    """Layer that transforms a probability vector into its expected value.
+    """Layer that transforms a binned probability vector into its expected value.
     
     Params:
         centers - the centers of the histogram bins
+
+    If inputs have shape (batchsize, x1, ..., xd, n_bins), then centers should be
+    broadcastable to (n_bins, x1, ..., xd).
     """
 
     def __init__(self, centers):
@@ -152,13 +161,13 @@ class HistMean(keras.layers.Layer):
         self.centers = tf.transpose(centers, centers_perm)
 
     def call(self, inputs):
-        """Return the weighted average between the centers and probability vectors.
+        """Return the weighted average between the bin centers and probability vectors.
         
         Params:
             inputs - a tensor of probability vectors to transform
 
         Returns:
-            a tensor of shape (len(inputs), 1) consisting of the expected values
+            a tensor of shape (batchsize, x1, ..., xd) consisting of the expected values
         """
         inputs = tf.transpose(inputs, self.in_perm)
         means = tf.linalg.matvec(inputs, self.centers)
