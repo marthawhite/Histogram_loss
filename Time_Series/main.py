@@ -1,10 +1,10 @@
 import tensorflow as tf
 from tensorflow import keras
-import os
 import pandas as pd
 from experiment.models import HLGaussian, Regression
 from Time_Series.time_series_transformer import get_model
 import json
+import sys
 
 
 def reshape(n, chans):
@@ -23,6 +23,7 @@ def get_data(in_file, seq_len, pred_len, chans=7):
     x = keras.utils.timeseries_dataset_from_array(df[:-pred_len], None, sequence_length=seq_len)
     y = keras.utils.timeseries_dataset_from_array(df[seq_len:], None, sequence_length=pred_len).map(reshape(pred_len, chans))
     return tf.data.Dataset.zip((x, y))
+
 
 def get_bins(n_bins, pad_ratio, sig_ratio):
     """Return the histogram bins given the HL parameters.
@@ -43,8 +44,7 @@ def get_bins(n_bins, pad_ratio, sig_ratio):
     return borders, sigma
 
 
-def main():
-    in_file = os.path.join("data", "ETTh1.csv")
+def main(data_path):
     pred_len = 72
     seq_len = 336
     epochs = 20
@@ -55,7 +55,7 @@ def main():
     head_size = 256
     n_heads = 4
     features = 128
-    data = get_data(in_file, seq_len, pred_len, chans)
+    data = get_data(data_path, seq_len, pred_len, chans)
     metrics = ["mse", "mae"]
 
     borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio)
@@ -80,4 +80,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    data_path = sys.argv[1]
+    main(data_path)

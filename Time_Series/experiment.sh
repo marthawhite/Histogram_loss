@@ -1,15 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name=128-HL
+#SBATCH --job-name=Transformer
 #SBATCH --output=%x-%j.out
 #SBATCH --time=0-12:00:00
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=4000M
+#SBATCH --mem=8000M
 #SBATCH --gres=gpu:1
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-MODEL=HL
-PY_FILE=Histogram_loss/Time_Series/time_series_models.py
+PY_FILE=Histogram_loss/main.py
 BASE_DIR=~/scratch
 DATA_FILE=ETTm2.csv
 
@@ -19,4 +18,4 @@ source $SLURM_TMPDIR/env/bin/activate
 pip install --no-index --upgrade pip
 pip install --no-index -r requirements.txt
 
-python $BASE_DIR/$PY_FILE $MODEL
+python $BASE_DIR/$PY_FILE $DATA_FILE
