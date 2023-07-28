@@ -1,6 +1,5 @@
-import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
+from keras import layers
 
 
 def get_model(input_shape, head_size, num_heads, feature_dims):
@@ -18,5 +17,3 @@ def get_model(input_shape, head_size, num_heads, feature_dims):
     x = layers.GlobalAveragePooling1D()(x)
     outputs = layers.Reshape((values, feature_dims))(x)
     return keras.Model(inputs, outputs)
-
-
