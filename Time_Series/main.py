@@ -8,21 +8,35 @@ import sys
 
 
 def reshape(n, chans):
-    return lambda x: tf.transpose(tf.reshape(x, (-1, n, chans)), [0, 2, 1])
+    return lambda x: tf.transpose(tf.reshape(x, (n, chans)), [1, 0])
 
 
-def get_data(in_file, seq_len, pred_len, chans=7):
-    df = pd.read_csv(in_file)
-    df = df.drop("date", axis=1)
+def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_len=720, test_size=0.2, batch_size=64, chans=7):
+    # test_size is the portion of the dataset to use as test data must be between 0 and 1
+    df = pd.read_csv(filename)
+    df = df.drop(drop, axis = 1)
     df = tf.convert_to_tensor(df, dtype=tf.float32)
     dmin = tf.reduce_min(df, axis=0)
     dmax = tf.reduce_max(df, axis=0)
     dif = dmax - dmin
     scale = tf.where(dif == 0, 1., dif)
     df = (df - dmin) / scale
-    x = keras.utils.timeseries_dataset_from_array(df[:-pred_len], None, sequence_length=seq_len)
-    y = keras.utils.timeseries_dataset_from_array(df[seq_len:], None, sequence_length=pred_len).map(reshape(pred_len, chans))
-    return tf.data.Dataset.zip((x, y))
+    n = df.shape[0] 
+    split = round((1-test_size)*n)
+    data = df
+    train = data[:split]
+    test = data[split:]
+    inputs = train[:-(train_len)]
+    target = train[seq_len:]
+    x_train = keras.utils.timeseries_dataset_from_array(inputs, None, seq_len, batch_size=None)
+    y_train = keras.utils.timeseries_dataset_from_array(target, None, train_len, batch_size=None).map(reshape(pred_len, chans))
+    ds_train = tf.data.Dataset.zip((x_train, y_train)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
+    inputs = test[:-(pred_len)]
+    targets = test[seq_len:]
+    x = keras.utils.timeseries_dataset_from_array(inputs, None, seq_len, batch_size=None)
+    y = keras.utils.timeseries_dataset_from_array(targets, None, pred_len, batch_size=None).map(reshape(pred_len, chans))
+    ds_test = tf.data.Dataset.zip((x,y)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
+    return ds_train, ds_test
 
 
 def get_bins(n_bins, pad_ratio, sig_ratio):
@@ -47,7 +61,7 @@ def get_bins(n_bins, pad_ratio, sig_ratio):
 def main(data_path):
     pred_len = 72
     seq_len = 336
-    epochs = 20
+    epochs = 60
     sig_ratio = 2.
     pad_ratio = 3.
     n_bins = 25
@@ -55,26 +69,31 @@ def main(data_path):
     head_size = 256
     n_heads = 4
     features = 128
-    data = get_data(data_path, seq_len, pred_len, chans)
+    test_ratio = 0.1
+    batch_size = 64
+    drop = "date"
+    train, test = get_time_series_dataset(data_path, drop, seq_len, pred_len, pred_len, test_ratio, batch_size, chans)
     metrics = ["mse", "mae"]
 
     borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio)
     borders = tf.expand_dims(borders, -1)
     borders = tf.expand_dims(borders, -1)
 
-    base = get_model(data.element_spec[0].shape[1:], head_size, n_heads, features)
+    shape = train.element_spec[0].shape[1:]
+
+    base = get_model(shape, head_size, n_heads, features)
 
     hlg = HLGaussian(base, borders, sigma, out_shape=(pred_len,))    
     hlg.compile("adam", None, metrics)
-    hist = hlg.fit(data, epochs=epochs, verbose=2)
+    hist = hlg.fit(train, epochs=epochs, verbose=2, validation_data=test)
     with open(f"HL_transformer.json", "w") as file:
         json.dump(hist.history, file)
 
-    base = get_model(data.element_spec[0].shape[1:], head_size, n_heads, features)
+    base = get_model(shape, head_size, n_heads, features)
 
     reg = Regression(base, out_shape=(pred_len,))    
     reg.compile("adam", "mse", metrics)
-    hist = reg.fit(data, epochs=epochs, verbose=2)
+    hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test)
     with open(f"Reg_transformer.json", "w") as file:
         json.dump(hist.history, file)
 
