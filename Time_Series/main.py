@@ -59,21 +59,24 @@ def get_bins(n_bins, pad_ratio, sig_ratio):
 
 
 def main(data_path):
-    pred_len = 72
-    seq_len = 336
-    epochs = 60
+    pred_len = 96
+    seq_len = 96
+    epochs = 8
     sig_ratio = 2.
     pad_ratio = 3.
     n_bins = 25
     chans = 7
-    head_size = 256
-    n_heads = 4
+    head_size = 512
+    n_heads = 8
     features = 128
-    test_ratio = 0.1
-    batch_size = 64
+    test_ratio = 0.2
+    batch_size = 32
     drop = "date"
     train, test = get_time_series_dataset(data_path, drop, seq_len, pred_len, pred_len, test_ratio, batch_size, chans)
     metrics = ["mse", "mae"]
+    lr = 1e-4
+    sched = lambda e, r: lr * 0.5 ** e
+    callbacks = [keras.callbacks.EarlyStopping("val_mse", patience=3), keras.callbacks.LearningRateScheduler(sched)]
 
     borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio)
     borders = tf.expand_dims(borders, -1)
@@ -84,8 +87,8 @@ def main(data_path):
     base = get_model(shape, head_size, n_heads, features)
 
     hlg = HLGaussian(base, borders, sigma, out_shape=(pred_len,))    
-    hlg.compile("adam", None, metrics)
-    hist = hlg.fit(train, epochs=epochs, verbose=2, validation_data=test)
+    hlg.compile(keras.optimizers.Adam(lr, ), None, metrics)
+    hist = hlg.fit(train, epochs=epochs, verbose=2, validation_data=test, callbacks=callbacks)
     with open(f"HL_transformer.json", "w") as file:
         json.dump(hist.history, file)
 
@@ -93,7 +96,7 @@ def main(data_path):
 
     reg = Regression(base, out_shape=(pred_len,))    
     reg.compile("adam", "mse", metrics)
-    hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test)
+    hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test, callbacks=callbacks)
     with open(f"Reg_transformer.json", "w") as file:
         json.dump(hist.history, file)
 
