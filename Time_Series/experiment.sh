@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=Transformer
+#SBATCH --job-name=TransformerH1
 #SBATCH --output=%x-%j.out
 #SBATCH --time=0-12:00:00
 #SBATCH --cpus-per-task=1
@@ -10,7 +10,7 @@
 
 PY_FILE=Histogram_loss/main.py
 BASE_DIR=~/scratch
-DATA_FILE=ETTm2.csv
+DATA_FILE=ETTh1.csv
 
 module load python/3.10 scipy-stack cuda cudnn
 virtualenv --no-download $SLURM_TMPDIR/env
