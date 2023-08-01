@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import sys
 import json
+from Time_Series.main import get_bins
 
 
 
@@ -63,11 +64,11 @@ class TimeSerriesHL(keras.Model):
         super().__init__()
         if bins < 10:
             bins = 10
-        data_range = data_max-data_min
-        sigma = 4*(data_range)/(5*bins - 48)
-        true_min = data_min - 6*sigma
-        true_max = data_max + 6*sigma
-        borders = tf.linspace(true_min, true_max, bins+1)
+
+        sig_ratio = 2.
+        pad_ratio = 3.
+        
+        borders, sigma = get_bins(bins, pad_ratio, sig_ratio, data_min, data_max)
         centers = tf.transpose(borders, [1,0])
         centers = (centers[:,:-1] + centers[:,1:]) / 2
         
