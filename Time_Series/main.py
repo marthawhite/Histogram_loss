@@ -21,11 +21,17 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     scale = tf.where(sig == 0, 1., sig)
     df = (df - mu) / scale
     
+    hours_per_month = 730
+    train_months = 12
+    test_months = 4
+    test_start = -(test_months * hours_per_month + seq_len + pred_len - 1)
+    train_start = test_start - (train_months * hours_per_month + seq_len + train_len - 1)
+
     n = df.shape[0] 
     split = round((1-test_size)*n)
     data = df
-    train = data[:split]
-    test = data[split:]
+    train = data[train_start:test_start]
+    test = data[test_start:]
     inputs = train[:-(train_len)]
     target = train[seq_len:]
     dmin = tf.reduce_min(train, axis=0)
@@ -35,6 +41,8 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     ds_train = tf.data.Dataset.zip((x_train, y_train)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
     inputs = test[:-(pred_len)]
     targets = test[seq_len:]
+
+    print(train.shape, test.shape)
     x = keras.utils.timeseries_dataset_from_array(inputs, None, seq_len, batch_size=None)
     y = keras.utils.timeseries_dataset_from_array(targets, None, pred_len, batch_size=None).map(reshape(pred_len, chans))
     ds_test = tf.data.Dataset.zip((x,y)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
@@ -63,7 +71,7 @@ def get_bins(n_bins, pad_ratio, sig_ratio, low=0., high=1.):
 def main(data_path):
     pred_len = 336
     seq_len = 96
-    epochs = 8
+    epochs = 40
     sig_ratio = 2.
     pad_ratio = 3.
     n_bins = 25
@@ -71,14 +79,14 @@ def main(data_path):
     head_size = 512
     n_heads = 8
     features = 128
-    test_ratio = 0.2
+    test_ratio = 0.25
     batch_size = 32
     drop = "date"
     train, test, dmin, dmax = get_time_series_dataset(data_path, drop, seq_len, pred_len, pred_len, test_ratio, batch_size, chans)
     metrics = ["mse", "mae"]
-    lr = 1e-4
-    sched = lambda e, r: lr * 0.5 ** e
-    callbacks = [keras.callbacks.EarlyStopping("val_mse", patience=3), keras.callbacks.LearningRateScheduler(sched)]
+    lr = 1e-3
+    #sched = lambda e, r: lr * 0.5 ** e
+    callbacks = [keras.callbacks.EarlyStopping("val_mse", patience=3)]#, keras.callbacks.LearningRateScheduler(sched)]
 
     borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio, dmin, dmax)
     borders = tf.expand_dims(borders, -1)
@@ -89,7 +97,7 @@ def main(data_path):
     base = get_model(shape, head_size, n_heads, features)
 
     hlg = HLGaussian(base, borders, sigma, out_shape=(pred_len,))    
-    hlg.compile(keras.optimizers.Adam(lr, ), None, metrics)
+    hlg.compile(keras.optimizers.Adam(lr), None, metrics)
     hist = hlg.fit(train, epochs=epochs, verbose=2, validation_data=test, callbacks=callbacks)
     with open(f"HL_transformer.json", "w") as file:
         json.dump(hist.history, file)
@@ -97,7 +105,7 @@ def main(data_path):
     base = get_model(shape, head_size, n_heads, features)
 
     reg = Regression(base, out_shape=(pred_len,))    
-    reg.compile("adam", "mse", metrics)
+    reg.compile(keras.optimizers.Adam(lr), "mse", metrics)
     hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test, callbacks=callbacks)
     with open(f"Reg_transformer.json", "w") as file:
         json.dump(hist.history, file)
