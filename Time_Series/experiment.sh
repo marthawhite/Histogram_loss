@@ -1,9 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name=ETT-Linear
+#SBATCH --job-name=LSTM-New
 #SBATCH --output=%x-%j.out
-#SBATCH --time=0-03:00:00
+#SBATCH --time=0-12:00:00
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=4000M
+#SBATCH --gres=gpu:1
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 

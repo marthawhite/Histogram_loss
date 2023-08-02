@@ -17,3 +17,25 @@ def get_model(input_shape, head_size, num_heads, feature_dims):
     x = layers.GlobalAveragePooling1D()(x)
     outputs = layers.Reshape((values, feature_dims))(x)
     return keras.Model(inputs, outputs)
+
+
+def linear_model(chans, seq_len):
+    return keras.models.Sequential([
+        keras.layers.Reshape((seq_len, chans)),
+        keras.layers.Permute([2, 1])
+    ])
+
+
+def lstm_model(width, n_layers, drop, input_shape):
+    inputs = keras.Input(input_shape)
+    x = inputs
+    for i in range(n_layers):
+        x = layers.TimeDistributed(layers.Dense(width, activation="relu"))(x)
+        x = layers.TimeDistributed(layers.BatchNormalization())(x)
+        x = layers.TimeDistributed(layers.Dropout(drop))(x)
+    x = layers.LSTM(width)(x)
+    for i in range(n_layers):
+        x = layers.BatchNormalization()(x)
+        x = layers.Dropout(drop)(x)
+        x = layers.Dense(width, activation="relu")(x)
+    return keras.Model(inputs, x)
