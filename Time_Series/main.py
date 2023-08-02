@@ -68,10 +68,17 @@ def get_bins(n_bins, pad_ratio, sig_ratio, low=0., high=1.):
     return borders, sigma
 
 
+def linear_model(chans, seq_len):
+    return keras.models.Sequential([
+        keras.layers.Reshape((seq_len, chans)),
+        keras.layers.Permute([2, 1])
+    ])
+
+
 def main(data_path):
     pred_len = 336
     seq_len = 96
-    epochs = 40
+    epochs = 200
     sig_ratio = 2.
     pad_ratio = 3.
     n_bins = 25
@@ -84,9 +91,7 @@ def main(data_path):
     drop = "date"
     train, test, dmin, dmax = get_time_series_dataset(data_path, drop, seq_len, pred_len, pred_len, test_ratio, batch_size, chans)
     metrics = ["mse", "mae"]
-    lr = 1e-3
-    #sched = lambda e, r: lr * 0.5 ** e
-    callbacks = [keras.callbacks.EarlyStopping("val_mse", patience=3)]#, keras.callbacks.LearningRateScheduler(sched)]
+    lr = 1e-4
 
     borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio, dmin, dmax)
     borders = tf.expand_dims(borders, -1)
@@ -94,19 +99,21 @@ def main(data_path):
 
     shape = train.element_spec[0].shape[1:]
 
-    base = get_model(shape, head_size, n_heads, features)
+    #base = get_model(shape, head_size, n_heads, features)
+    base = linear_model(chans, seq_len)
 
     hlg = HLGaussian(base, borders, sigma, out_shape=(pred_len,))    
     hlg.compile(keras.optimizers.Adam(lr), None, metrics)
-    hist = hlg.fit(train, epochs=epochs, verbose=2, validation_data=test, callbacks=callbacks)
+    hist = hlg.fit(train, epochs=epochs, verbose=2, validation_data=test)
     with open(f"HL_transformer.json", "w") as file:
         json.dump(hist.history, file)
 
-    base = get_model(shape, head_size, n_heads, features)
+    #base = get_model(shape, head_size, n_heads, features)
+    base = linear_model(chans, seq_len)
 
     reg = Regression(base, out_shape=(pred_len,))    
     reg.compile(keras.optimizers.Adam(lr), "mse", metrics)
-    hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test, callbacks=callbacks)
+    hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test)
     with open(f"Reg_transformer.json", "w") as file:
         json.dump(hist.history, file)
 
