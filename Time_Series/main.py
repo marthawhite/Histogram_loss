@@ -68,6 +68,8 @@ def get_bins(n_bins, pad_ratio, sig_ratio, low=0., high=1.):
 
 
 def main(data_path):
+    keras.utils.set_random_seed(1)
+
     pred_len = 336
     seq_len = 96
     epochs = 40
