@@ -8,8 +8,7 @@ import numpy as np
 import pandas as pd
 import sys
 import json
-from Time_Series.main import get_bins
-
+from experiment.bins import get_bins
 
 
 class MultivariateHistTransform(keras.layers.Layer):

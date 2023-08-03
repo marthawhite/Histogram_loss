@@ -1,70 +1,11 @@
 import tensorflow as tf
 from tensorflow import keras
-import pandas as pd
 from experiment.models import HLGaussian, Regression
-from Time_Series.time_series_transformer import get_model, linear_model, lstm_model
+from time_series.base_models import transformer, linear, lstm_encdec
 import json
 import sys
-
-
-def reshape(n, chans):
-    return lambda x: tf.transpose(tf.reshape(x, (n, chans)), [1, 0])
-
-
-def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_len=720, test_size=0.2, batch_size=64, chans=7):
-    # test_size is the portion of the dataset to use as test data must be between 0 and 1
-    df = pd.read_csv(filename)
-    df = df.drop(drop, axis = 1)
-    df = tf.convert_to_tensor(df, dtype=tf.float32)
-    mu = tf.reduce_mean(df, axis=0)
-    sig = tf.math.reduce_std(df, axis=0)
-    scale = tf.where(sig == 0, 1., sig)
-    df = (df - mu) / scale
-    
-    hours_per_month = 730
-    train_months = 12
-    test_months = 4
-    test_start = -(test_months * hours_per_month + seq_len + pred_len - 1)
-    train_start = test_start - (train_months * hours_per_month + seq_len + train_len - 1)
-
-    n = df.shape[0] 
-    split = round((1-test_size)*n)
-    data = df
-    train = data[train_start:test_start]
-    test = data[test_start:]
-    inputs = train[:-(train_len)]
-    target = train[seq_len:]
-    dmin = tf.reduce_min(train, axis=0)
-    dmax = tf.reduce_max(train, axis=0)
-    x_train = keras.utils.timeseries_dataset_from_array(inputs, None, seq_len, batch_size=None)
-    y_train = keras.utils.timeseries_dataset_from_array(target, None, train_len, batch_size=None).map(reshape(pred_len, chans))
-    ds_train = tf.data.Dataset.zip((x_train, y_train)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
-    inputs = test[:-(pred_len)]
-    targets = test[seq_len:]
-
-    x = keras.utils.timeseries_dataset_from_array(inputs, None, seq_len, batch_size=None)
-    y = keras.utils.timeseries_dataset_from_array(targets, None, pred_len, batch_size=None).map(reshape(pred_len, chans))
-    ds_test = tf.data.Dataset.zip((x,y)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
-    return ds_train, ds_test, dmin, dmax
-
-
-def get_bins(n_bins, pad_ratio, sig_ratio, low=0., high=1.):
-    """Return the histogram bins given the HL parameters.
-    
-    Params:
-        n_bins - the number of bins to create (includes padding)
-        pad_ratio - the number of sigma of padding to use on each side 
-        sig_ratio - the ratio of sigma to bin width
-
-    Returns: 
-        borders - a Tensor of n_bins + 1 bin borders
-        sigma - the sigma to use for HL-Gaussian
-    """
-    bin_width = (high - low) / (n_bins - 2 * sig_ratio * pad_ratio)
-    pad_width = sig_ratio * pad_ratio * bin_width
-    borders = tf.linspace(low - pad_width, high + pad_width, n_bins + 1)
-    sigma = bin_width * sig_ratio
-    return borders, sigma
+from experiment.bins import get_bins
+from time_series.datasets import get_time_series_dataset
 
 
 def main(data_path):
@@ -99,7 +40,7 @@ def main(data_path):
     #base = linear_model(chans, seq_len)
     for layers in [2, 3, 5, 7]:
         for width in [128, 256, 512]:
-            base = lstm_model(width, layers, 0.5, shape)
+            base = lstm_encdec(width, layers, 0.5, shape)
 
             hlg = HLGaussian(base, borders, sigma, out_shape=(chans, pred_len))    
             hlg.compile(keras.optimizers.Adam(lr), None, metrics)
@@ -109,7 +50,7 @@ def main(data_path):
 
             #base = get_model(shape, head_size, n_heads, features)
             #base = linear_model(chans, seq_len)
-            base = lstm_model(width, layers, 0.5, shape)
+            base = lstm_encdec(width, layers, 0.5, shape)
 
             reg = Regression(base, out_shape=(chans, pred_len))    
             reg.compile(keras.optimizers.Adam(lr), "mse", metrics)

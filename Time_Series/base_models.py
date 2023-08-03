@@ -2,7 +2,7 @@ from tensorflow import keras
 from keras import layers
 
 
-def get_model(input_shape, head_size, num_heads, feature_dims):
+def transformer(input_shape, head_size, num_heads, feature_dims):
     values = input_shape[-1]
     inputs = keras.Input(shape=input_shape)
     res = inputs
@@ -19,14 +19,14 @@ def get_model(input_shape, head_size, num_heads, feature_dims):
     return keras.Model(inputs, outputs)
 
 
-def linear_model(chans, seq_len):
+def linear(chans, seq_len):
     return keras.models.Sequential([
         keras.layers.Reshape((seq_len, chans)),
         keras.layers.Permute([2, 1])
     ])
 
 
-def lstm_model(width, n_layers, drop, input_shape):
+def lstm_encdec(width, n_layers, drop, input_shape):
     inputs = keras.Input(input_shape)
     x = inputs
     for i in range(n_layers):
