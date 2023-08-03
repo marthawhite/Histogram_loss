@@ -1,3 +1,5 @@
+"""Module for loading time series data"""
+
 from experiment.dataset import Dataset
 import tensorflow as tf
 import pandas as pd

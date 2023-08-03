@@ -1,3 +1,10 @@
+"""Module with models for autoregressive time series prediction.
+The prediction targets can have length k * l where l is the length of the training targets.
+Predictions are obtained iteratively by feeding the previous predictions back into the model.
+
+Source: https://www.tensorflow.org/tutorials/structured_data/time_series#advanced_autoregressive_model
+"""
+
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
