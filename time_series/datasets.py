@@ -6,11 +6,42 @@ import pandas as pd
 from tensorflow import keras
 
 
-def reshape(n, chans):
-    return lambda x: tf.transpose(tf.reshape(x, (n, chans)), [1, 0])
+def reshape(T, chans):
+    """Return a function that permutes timesteps and channels.
+    Apply to UNBATCHED data via tf.data.Dataset.map.
+
+    Params:
+        T - the number of timesteps
+        chans - the number of channels
+
+    Returns: a function to map to data
+    """
+    return lambda x: tf.transpose(tf.reshape(x, (T, chans)), [1, 0])
 
 
 def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_len=720, test_size=0.2, batch_size=64, chans=7):
+    """Return the train/test split for a CSV time series dataset.
+    Uses 12-4 month split to be comparable to standard 12-4-4 train-val-test for ETTh datasets.
+    
+    Params:
+        filename - the name of the CSV file containing the data
+        drop - the names of the columns to drop
+            Note: All non-numeric data should be dropped
+        seq_len - the length of the input sequences
+        train_len - the length of the training target sequences
+        pred_len - the length of the prediction target sequences
+        test_size - the proportion of samples to use for testing
+            WARNING: NOT USED IN CURRENT IMPLEMENTATION
+        batch_size - the size of the data batches
+        chans - the number of channels (features) in the data
+
+    Returns: ds_train, ds_test, dmin, dmax
+        ds_train - a tf.data.Dataset containing (x, y) tuples of inputs and targets for training
+        ds_test - a tf.data.Dataset containing (x, y) tuples of inputs and targets for testing
+        dmin - a Tensor with the minimum values for each feature in the training split
+        dmax - a Tensor with the maximum values for each feature in the training split
+    """
+    
     # test_size is the portion of the dataset to use as test data must be between 0 and 1
     df = pd.read_csv(filename)
     df = df.drop(drop, axis = 1)
@@ -20,6 +51,7 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     scale = tf.where(sig == 0, 1., sig)
     df = (df - mu) / scale
     
+    # Just remove this and replace the train/test assignments to revert to old splitting
     hours_per_month = 730
     train_months = 12
     test_months = 4
@@ -31,6 +63,8 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     data = df
     train = data[train_start:test_start]
     test = data[test_start:]
+    # train = data[:split]
+    # test = data[split:]
     inputs = train[:-(train_len)]
     target = train[seq_len:]
     dmin = tf.reduce_min(train, axis=0)
