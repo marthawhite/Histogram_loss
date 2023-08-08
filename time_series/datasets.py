@@ -46,10 +46,7 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     df = pd.read_csv(filename)
     df = df.drop(drop, axis = 1)
     df = tf.convert_to_tensor(df, dtype=tf.float32)
-    mu = tf.reduce_mean(df, axis=0)
-    sig = tf.math.reduce_std(df, axis=0)
-    scale = tf.where(sig == 0, 1., sig)
-    df = (df - mu) / scale
+    
     
     # Just remove this and replace the train/test assignments to revert to old splitting
     samples_per_month = 730
@@ -67,6 +64,13 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     test = data[test_start:]
     # train = data[:split]
     # test = data[split:]
+
+    mu = tf.reduce_mean(train, axis=0)
+    sig = tf.math.reduce_std(train, axis=0)
+    scale = tf.where(sig == 0, 1., sig)
+    train = (train - mu) / scale
+    test = (test - mu) / scale
+
     inputs = train[:-(train_len)]
     target = train[seq_len:]
     dmin = tf.reduce_min(train, axis=0)
