@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=LSTM-New
+#SBATCH --job-name=LSTM-100
 #SBATCH --output=%x-%j.out
 #SBATCH --time=0-12:00:00
 #SBATCH --cpus-per-task=1
@@ -10,7 +10,6 @@
 
 PY_FILE=Histogram_loss/main.py
 BASE_DIR=~/scratch
-DATA_FILE=ETTh1.csv
 
 module load python/3.10 scipy-stack cuda cudnn
 virtualenv --no-download $SLURM_TMPDIR/env
@@ -18,4 +17,4 @@ source $SLURM_TMPDIR/env/bin/activate
 pip install --no-index --upgrade pip
 pip install --no-index -r requirements.txt
 
-python $BASE_DIR/$PY_FILE $DATA_FILE
+python $BASE_DIR/$PY_FILE

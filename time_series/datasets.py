@@ -52,11 +52,13 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     df = (df - mu) / scale
     
     # Just remove this and replace the train/test assignments to revert to old splitting
-    hours_per_month = 730
+    samples_per_month = 730
+    if filename[-6] == "m":
+        samples_per_month = 730 * 4
     train_months = 12
     test_months = 4
-    test_start = -(test_months * hours_per_month + seq_len + pred_len - 1)
-    train_start = test_start - (train_months * hours_per_month + seq_len + train_len - 1)
+    test_start = -(test_months * samples_per_month + seq_len + pred_len - 1)
+    train_start = test_start - (train_months * samples_per_month + seq_len + train_len - 1)
 
     n = df.shape[0] 
     split = round((1-test_size)*n)
