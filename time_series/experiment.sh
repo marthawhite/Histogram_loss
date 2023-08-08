@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=LSTM-100
+#SBATCH --job-name=Transformer-100
 #SBATCH --output=%x-%j.out
 #SBATCH --time=0-12:00:00
 #SBATCH --cpus-per-task=1
