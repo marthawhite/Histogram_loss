@@ -4,7 +4,7 @@ from tensorflow import keras
 from keras import layers
 
 
-def transformer(input_shape, head_size, num_heads, feature_dims, depth=5):
+def transformer(input_shape, head_size, num_heads, feature_dims):
     """Return a Keras model implementing a transformer.
     Source: https://keras.io/examples/timeseries/timeseries_classification_transformer/
 
@@ -26,7 +26,7 @@ def transformer(input_shape, head_size, num_heads, feature_dims, depth=5):
     values = input_shape[-1]
     inputs = keras.Input(shape=input_shape)
     res = inputs
-    for i in range(depth):
+    for i in range(5):
         x = layers.MultiHeadAttention(key_dim=head_size, num_heads=num_heads)(res, res)
         res = inputs + x 
         x = layers.BatchNormalization()(res)

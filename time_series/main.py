@@ -62,15 +62,15 @@ def main():
         with open(f"HL_transformer_{dataset}.json", "w") as file:
             json.dump(hist.history, file)
 
-        base = transformer(shape, head_size, n_heads, features)
-        #base = linear_model(chans, seq_len)
-        #base = lstm_encdec(width, layers, 0.5, shape)
+        # base = transformer(shape, head_size, n_heads, features)
+        # #base = linear_model(chans, seq_len)
+        # #base = lstm_encdec(width, layers, 0.5, shape)
 
-        reg = Regression(base, out_shape=(pred_len,))    
-        reg.compile(keras.optimizers.Adam(lr), "mse", metrics)
-        hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test)
-        with open(f"Reg_transformer_{dataset}.json", "w") as file:
-            json.dump(hist.history, file)
+        # reg = Regression(base, out_shape=(pred_len,))    
+        # reg.compile(keras.optimizers.Adam(lr), "mse", metrics)
+        # hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test)
+        # with open(f"Reg_transformer_{dataset}.json", "w") as file:
+        #     json.dump(hist.history, file)
 
 
 if __name__ == "__main__":
