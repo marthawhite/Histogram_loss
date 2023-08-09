@@ -1,6 +1,6 @@
 # Histogram Loss
 
-This repository contains code for running experiments with distributional losses in machine learning. It is part of an undergraduate summer research project in the University of Alberta Department of Computing Science under Professor Martha White. The project focuses on evaluating the performance of the Histogram Loss ([Imani 2019]((https://era.library.ualberta.ca/items/90c26ffa-6eff-4ac6-a011-9699d27d91d0/view/347e81b7-8f26-4acb-9960-044c8a2ee7db/Ehsan_Imani.pdf))) on various regression problems.
+This repository contains code for running experiments with distributional losses in machine learning. It is part of an undergraduate summer research project in the University of Alberta Department of Computing Science under Professor Martha White. The project focuses on evaluating the performance of the Histogram Loss ([Imani 2019](https://era.library.ualberta.ca/items/90c26ffa-6eff-4ac6-a011-9699d27d91d0/view/347e81b7-8f26-4acb-9960-044c8a2ee7db/Ehsan_Imani.pdf)) on various regression problems.
 
 ## Problems
  - [Age Estimation](https://paperswithcode.com/task/age-estimation) - Predicting the age of a person based on an image of their face.
