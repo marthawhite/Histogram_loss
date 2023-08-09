@@ -1,3 +1,5 @@
+"""Module containing models and hypermodels from LSTF-Linear."""
+
 import keras_tuner as kt
 from tensorflow import keras
 import tensorflow as tf

@@ -1,3 +1,10 @@
+"""Module with models for autoregressive time series prediction.
+The prediction targets can have length k * l where l is the length of the training targets.
+Predictions are obtained iteratively by feeding the previous predictions back into the model.
+
+Source: https://www.tensorflow.org/tutorials/structured_data/time_series#advanced_autoregressive_model
+"""
+
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -8,43 +15,8 @@ import numpy as np
 import pandas as pd
 import sys
 import json
-
-
-
-class MultivariateHistTransform(keras.layers.Layer):
-    """Layer that transforms a scalar target into a binned probability vector 
-    that approximates a truncated Gaussian distribution with the target as the mean.
-    
-    Params:
-        borders - the borders of the histogram bins
-        sigma - the sigma parameter of the truncated Gaussian distribution
-    """
-
-    def __init__(self, borders, sigma):
-        super().__init__(trainable=False, name="TruncGaussHistTransform")
-        self.borders = borders
-        self.sigma = sigma
-        k = len(self.borders.shape)
-        self.perm_out = list(range(1, k+1)) + [0]
-
-    def call(self, inputs):
-        """Transform the input and return it.
-        
-        Params:
-            inputs - the tensor of targets to transform
-
-        Returns:
-            x_transformed - a tensor of shape (len(inputs), len(borders) - 1)
-            consisting of the probability vectors for each target
-        """
-        border_targets = self.adjust_and_erf(tf.expand_dims(self.borders, 1), inputs, self.sigma)
-        two_z = border_targets[-1] - border_targets[0]
-        x_transformed = (border_targets[1:] - border_targets[:-1]) / two_z
-        return tf.transpose(x_transformed, self.perm_out)
-    
-    def adjust_and_erf(self, a, mu, sig):
-        """Calculate the erf of a after standardizing and dividing by sqrt(2)."""
-        return tf.math.erf((a - mu)/(tf.math.sqrt(2.0)*sig))
+from experiment.bins import get_bins
+from experiment.transforms import TruncGaussHistTransform
 
 
 class HistMean(keras.layers.Layer):
@@ -63,11 +35,11 @@ class TimeSerriesHL(keras.Model):
         super().__init__()
         if bins < 10:
             bins = 10
-        data_range = data_max-data_min
-        sigma = 4*(data_range)/(5*bins - 48)
-        true_min = data_min - 6*sigma
-        true_max = data_max + 6*sigma
-        borders = tf.linspace(true_min, true_max, bins+1)
+
+        sig_ratio = 2.
+        pad_ratio = 3.
+        
+        borders, sigma = get_bins(bins, pad_ratio, sig_ratio, data_min, data_max)
         centers = tf.transpose(borders, [1,0])
         centers = (centers[:,:-1] + centers[:,1:]) / 2
         
@@ -101,7 +73,7 @@ class TimeSerriesHL(keras.Model):
         self.reshape = layers.Reshape((train_len*units, bins))
         self.softmax = layers.Softmax()
         
-        self.hist_transform = MultivariateHistTransform(borders, sigma)
+        self.hist_transform = TruncGaussHistTransform(borders, sigma)
         self.hist_mean = HistMean(centers)
         
         self.hist_loss = keras.metrics.Mean("loss")
@@ -174,12 +146,10 @@ class TimeSerriesHL(keras.Model):
         self.compiled_metrics.update_state(y, predictions)
         # Return a dict mapping metric names to current value
         return {m.name: m.result() for m in self.metrics}
-    
 
-
-        
 
 class TimeSerriesRegression(keras.Model):
+
     def __init__(self, units, train_len=20, pred_loops = 36):
         super().__init__()
         self.pred_loops = pred_loops
@@ -233,7 +203,6 @@ class TimeSerriesRegression(keras.Model):
         x = self.dense4(x) # (batch, train_len * units * bins)
         return x, hiden_and_cell
 
-
     def train_step(self, data):
         x, y = data # y should be data from one time step 
         # y (batchsize, value)
@@ -278,8 +247,6 @@ class TimeSerriesRegression(keras.Model):
         # Return a dict mapping metric names to current value
         return {m.name: m.result() for m in self.metrics}
 
-
-    
         
 def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_len=720, test_size=0.2, batch_size=64):
     # test_size is the portion of the dataset to use as test data must be between 0 and 1
@@ -308,7 +275,8 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     ds_test = tf.data.Dataset.zip((x,y)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
     
     return ds_train, ds_test, data_max, data_min
-        
+
+
 def main(model):
     
     n_epochs = 20
@@ -350,6 +318,6 @@ def main(model):
             with open(f"TSregression20_{i}.json", "w") as file:
                 json.dump(TimeSerriesRegressionHistory.history, file)
 
-        
+
 if __name__ == "__main__":
     main(sys.argv[1])
