@@ -19,6 +19,34 @@ def reshape(T, chans):
     return lambda x: tf.transpose(tf.reshape(x, (T, chans)), [1, 0])
 
 
+def get_ETT_split(data, filename, seq_len):
+    """Create data splits according to Informer and LTSF-Linear.
+    Creates 12-4-4 month train-val-test split where each month is 30 days 
+
+    Sources: 
+        Informer https://github.com/zhouhaoyi/Informer2020/blob/main/data/data_loader.py
+        LTSF-Linear https://github.com/cure-lab/LTSF-Linear/blob/main/data_provider/data_loader.py
+    
+    Params:
+        data - the Tensor containing the raw ETT data
+        filename - the name of the input file; one of ETT{h1/h2/m1/m2}.csv
+        seq_len - the length of the input sequences
+
+    Returns: train, val, test - the split dataset
+    """
+    periods = 1
+    if filename[-6] == "m":
+        periods = 4
+    samples_per_month = 30 * 24 * periods  # 30 days
+    train_len = 12 * samples_per_month  # 12 months
+    test_len = 4 * samples_per_month
+    val_end = train_len + test_len
+    train = data[:train_len]
+    val = data[train_len - seq_len:val_end]
+    test = data[val_end - seq_len:val_end + test_len]
+    return train, val, test
+
+
 def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_len=720, test_size=0.2, batch_size=64, chans=7):
     """Return the train/test split for a CSV time series dataset.
     Uses 12-4 month split to be comparable to standard 12-4-4 train-val-test for ETTh datasets.
@@ -47,23 +75,7 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     df = df.drop(drop, axis = 1)
     df = tf.convert_to_tensor(df, dtype=tf.float32)
     
-    
-    # Just remove this and replace the train/test assignments to revert to old splitting
-    samples_per_month = 730
-    if filename[-6] == "m":
-        samples_per_month = 730 * 4
-    train_months = 12
-    test_months = 4
-    test_start = -(test_months * samples_per_month + seq_len + pred_len - 1)
-    train_start = test_start - (train_months * samples_per_month + seq_len + train_len - 1)
-
-    n = df.shape[0] 
-    split = round((1-test_size)*n)
-    data = df
-    train = data[train_start:test_start]
-    test = data[test_start:]
-    # train = data[:split]
-    # test = data[split:]
+    train, _, test = get_ETT_split(df, filename, seq_len)
 
     mu = tf.reduce_mean(train, axis=0)
     sig = tf.math.reduce_std(train, axis=0)
