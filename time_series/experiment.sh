@@ -1,14 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name=Transformer
+#SBATCH --job-name=LSTM
 #SBATCH --output=%x-%j.out
-#SBATCH --time=1-00:00:00
+#SBATCH --time=0-12:00:00
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=4000M
 #SBATCH --gres=gpu:1
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-PY_FILE=Histogram_loss/transformer_main.py
+PY_FILE=Histogram_loss/lstm_main.py
 BASE_DIR=~/scratch
 
 module load python/3.10 scipy-stack cuda cudnn
