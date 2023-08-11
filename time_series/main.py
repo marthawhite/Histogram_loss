@@ -24,15 +24,15 @@ def main():
     """
     datasets = ["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
     pred_len = 336
-    seq_len = 336
+    seq_len = 96
     epochs = 100
     sig_ratio = 2.
     pad_ratio = 3.
     n_bins = 100
     chans = 7
-    # head_size = 512
-    # n_heads = 8
-    # features = 128
+    head_size = 512
+    n_heads = 8
+    features = 128
     # layers = 2
     # width = 512
     test_ratio = 0.25
@@ -52,14 +52,14 @@ def main():
 
         shape = train.element_spec[0].shape[1:]
 
-        #base = transformer(shape, head_size, n_heads, features)
-        base = linear(chans, seq_len)
+        base = transformer(shape, head_size, n_heads, features)
+        #base = linear(chans, seq_len)
         #base = lstm_encdec(width, layers, 0.5, shape)
 
         hlg = HLGaussian(base, borders, sigma, out_shape=(pred_len,))    
         hlg.compile(keras.optimizers.Adam(lr), None, metrics)
         hist = hlg.fit(train, epochs=epochs, verbose=2, validation_data=test)
-        with open(f"HL_linear_{dataset}.json", "w") as file:
+        with open(f"HL_transformer_{dataset}.json", "w") as file:
             json.dump(hist.history, file)
 
         # #base = transformer(shape, head_size, n_heads, features)
