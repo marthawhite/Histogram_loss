@@ -24,11 +24,11 @@ def main():
     """
     datasets = ["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
     pred_len = 336
-    seq_len = 96
+    seq_len = 336
     epochs = 100
     sig_ratio = 2.
     pad_ratio = 3.
-    n_bins = 25
+    n_bins = 100
     chans = 7
     # head_size = 512
     # n_heads = 8
@@ -39,7 +39,7 @@ def main():
     batch_size = 32
     drop = "date"
     metrics = ["mse", "mae"]
-    lr = 1e-3
+    lr = 1e-4
 
     for dataset in datasets:
         keras.utils.set_random_seed(1)
@@ -62,15 +62,15 @@ def main():
         with open(f"HL_linear_{dataset}.json", "w") as file:
             json.dump(hist.history, file)
 
-        #base = transformer(shape, head_size, n_heads, features)
-        base = linear(chans, seq_len)
-        #base = lstm_encdec(width, layers, 0.5, shape)
+        # #base = transformer(shape, head_size, n_heads, features)
+        # base = linear(chans, seq_len)
+        # #base = lstm_encdec(width, layers, 0.5, shape)
 
-        reg = Regression(base, out_shape=(pred_len,))    
-        reg.compile(keras.optimizers.Adam(lr), "mse", metrics)
-        hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test)
-        with open(f"Reg_linear_{dataset}.json", "w") as file:
-            json.dump(hist.history, file)
+        # reg = Regression(base, out_shape=(pred_len,))    
+        # reg.compile(keras.optimizers.Adam(lr), "mse", metrics)
+        # hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test)
+        # with open(f"Reg_linear_{dataset}.json", "w") as file:
+        #     json.dump(hist.history, file)
 
 
 if __name__ == "__main__":

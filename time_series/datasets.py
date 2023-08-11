@@ -82,11 +82,12 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     scale = tf.where(sig == 0, 1., sig)
     train = (train - mu) / scale
     test = (test - mu) / scale
+    df = (df - mu) / scale
 
     inputs = train[:-(train_len)]
     target = train[seq_len:]
-    dmin = tf.reduce_min(train, axis=0)
-    dmax = tf.reduce_max(train, axis=0)
+    dmin = tf.reduce_min(df, axis=0)
+    dmax = tf.reduce_max(df, axis=0)
     x_train = keras.utils.timeseries_dataset_from_array(inputs, None, seq_len, batch_size=None)
     y_train = keras.utils.timeseries_dataset_from_array(target, None, train_len, batch_size=None).map(reshape(pred_len, chans))
     ds_train = tf.data.Dataset.zip((x_train, y_train)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
