@@ -56,7 +56,7 @@ def main():
         #base = linear(chans, seq_len)
         base = lstm_encdec(width, layers, 0.5, shape)
 
-        hlg = HLGaussian(base, borders, sigma, out_shape=(pred_len,))    
+        hlg = HLGaussian(base, borders, sigma, out_shape=(chans, pred_len))    
         hlg.compile(keras.optimizers.Adam(lr), None, metrics)
         hist = hlg.fit(train, epochs=epochs, verbose=2, validation_data=test)
         with open(f"HL_lstm_{dataset}.json", "w") as file:
