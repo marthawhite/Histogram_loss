@@ -14,12 +14,12 @@ def adjust_and_erf(a, mu, sig):
     return erf((a - mu) / (np.sqrt(2.0) * sig))
 
 
-bin_width = 1
+bin_width = 1.
 y_min = 0
-y_max = 1
+y_max = 1.
 padding_r = 10
 
-steps = 101
+steps = 100001
 
 borders = np.linspace(-100, 101, 202)
 centers = (borders[1:] + borders[:-1]) / 2
@@ -59,6 +59,7 @@ for sigma in sigs:
 
 difs = np.stack(difs)
 maes = np.stack(maes)
+print(maes)
 #print(list(sigs))
 #print(list(maes))
 #print(np.where(sigs < 1.4, maes, 0))
@@ -66,17 +67,17 @@ maes = np.stack(maes)
 y, new_sigs = np.meshgrid(y - 0.5, np.log(sigs))
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 surf = ax.plot_surface(y, new_sigs, difs, cmap=cm.viridis)
-ax.set_xlabel("delta / w")
-ax.set_ylabel("log(sigma / w)")
+ax.set_xlabel(r"Offset ($\delta / w$)")
+ax.set_ylabel(r"$\log(\sigma_w)$")
 ax.set_zlabel("Bias")
-ax.set_title("Bias by log(sigma) and relative bin position")
-fig.colorbar(surf)
+ax.set_title(r"Bias by $\log(\sigma_w)$ and Relative Bin Position")
+#fig.colorbar(surf)
 plt.show()
 
 #print(maes)
 plt.plot(sigs, maes)
-plt.xlabel("sigma / w")
+plt.xlabel(r"$\sigma_w$")
 plt.ylabel("MAE")
 plt.yscale("log")
-plt.title("MAE by Ratio of sigma to bin width")
+plt.title(r"Mean Absolute Bias by $\sigma_w$")
 plt.show()

@@ -20,18 +20,20 @@ y_min = 0.
 y_max = 1.
 sigma = 2.
 
-pads = np.arange(1, 11, 0.5, np.float64)
+pads = np.arange(1, 21, 0.5, np.float64)
+# pads = np.exp(np.linspace(-2, 3, 101))
+# print(pads)
 
-steps = 1001
+steps = 100001
 
 
 # Discretization only
-large_borders = np.linspace(-100, 101, 202)
-large_centers = (large_borders[1:] + large_borders[:-1]) / 2
+# large_borders = np.linspace(-100, 101, 202)
+# large_centers = (large_borders[1:] + large_borders[:-1]) / 2
 y = np.linspace(y_min, y_max, steps)
-y_inf = transform(y, large_borders, sigma)
-y_disc = np.dot(y_inf, large_centers)
-disc_diff = y_disc - y
+# y_inf = transform(y, large_borders, sigma)
+# y_disc = np.dot(y_inf, large_centers)
+# disc_diff = y_disc - y
 
 difs = []
 maes = []
@@ -41,6 +43,7 @@ for pad in pads:
     bins_min = y_min - pad * sigma
     bins_max = y_max + pad * sigma
 
+    #borders = np.linspace(bins_min, bins_max, n_bins+1)
     borders = np.arange(bins_min, bins_max + bin_width, bin_width)
     centers = (borders[1:] + borders[:-1]) / 2
     #print(borders)
@@ -51,6 +54,8 @@ for pad in pads:
 
     dif = y_new - y
     difs.append(dif)
+    # plt.plot(dif)
+    # plt.show()
 
     #two_z = adjust_and_erf(bins_max, y, sigma) - adjust_and_erf(bins_min, y, sigma)
     #bias = 2 * sigma * bin_width * (norm.pdf((bins_min - y) / sigma) - norm.pdf((bins_max - y) / sigma)) / two_z
@@ -58,30 +63,29 @@ for pad in pads:
 
 difs = np.stack(difs)
 total_maes = np.mean(np.abs(difs), axis=1)
-disc_maes = np.mean(np.abs(disc_diff))
-pad_maes = np.mean(np.abs(difs - disc_diff), axis=1)
+print(total_maes)
+# disc_maes = np.mean(np.abs(disc_diff))
+# pad_maes = np.mean(np.abs(difs - disc_diff), axis=1)
 #print(difs[0])
 
 #print(list(pad_maes))
 #print(difs[0:3])
 
-y, new_pads = np.meshgrid(y - 0.5, np.log(pads))
+y, new_pads = np.meshgrid(y - 0.5, pads)
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 surf = ax.plot_surface(y, new_pads, difs, cmap=cm.viridis)
-ax.set_xlabel("delta / w")
-ax.set_ylabel("padding / sigma")
+ax.set_xlabel(r"Offset $\delta / w)")
+ax.set_ylabel(r"$\psi_\sigma")
 ax.set_zlabel("Bias")
-ax.set_title("Bias by padding ratio and relative bin position")
+ax.set_title("Bias by Padding Ratio and Relative Bin Position")
 fig.colorbar(surf)
 plt.show()
 
-print(pad_maes)
 plt.plot(pads, total_maes, label="Total Error")
-plt.plot(pads, np.resize(disc_maes, pads.shape), label="Discretization")
-plt.plot(pads, pad_maes, label="Padding")
-plt.xlabel("padding / sigma")
+#plt.plot(pads, np.resize(disc_maes, pads.shape), label="Discretization")
+#plt.plot(pads, pad_maes, label="Padding")
+plt.xlabel(r"$\psi_\sigma$")
 plt.ylabel("MAE")
 plt.yscale("log")
-plt.title("Errors by ratio of padding to sigma")
-plt.legend()
+plt.title(r"Mean Absolute Bias by $\psi_\sigma$")
 plt.show()
