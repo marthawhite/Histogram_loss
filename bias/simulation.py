@@ -1,3 +1,5 @@
+"""Module for approximating the histogram transformation bias using simulated data."""
+
 import numpy as np
 from scipy.special import erf
 import matplotlib.pyplot as plt
@@ -5,6 +7,16 @@ from matplotlib import cm
 
 
 def transform(inputs, borders, sigma):
+    """Transform the inputs to binned probability vectors 
+    using a truncated Gaussian distribution.
+    
+    Params:
+        inputs - array of input samples; shape (n)
+        borders - array of histogram bin borders; shape (n_bins + 1)
+        sigma - scale parameter for truncated Gaussian distribution
+    
+    Returns: the transformed inputs; shape (n, n_bins)
+    """
     border_targets = adjust_and_erf(borders, np.expand_dims(inputs, -1), sigma)
     two_z = border_targets[:, -1] - border_targets[:, 0]
     x_trans = (border_targets[:, 1:] - border_targets[:, :-1]) / np.expand_dims(two_z, -1)
@@ -12,10 +24,12 @@ def transform(inputs, borders, sigma):
 
 
 def adjust_and_erf(a, mu, sig):
+    """Compute the erf after standardizing and dividing by sqrt(2)."""
     return erf((a - mu) / (np.sqrt(2.0) * sig))
 
 
 def main():
+    """Run the simulation and print the borders and MAE."""
     n_bins = 100
     bin_width = 1.
     y_min = 0.
