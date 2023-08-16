@@ -1,4 +1,4 @@
-"""Compute the simulated discretization values for various choices of sigma."""
+"""Compute the simulated discretization bias for various choices of sigma."""
 
 import numpy as np
 from scipy.special import erf

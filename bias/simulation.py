@@ -11,11 +11,11 @@ def transform(inputs, borders, sigma):
     using a truncated Gaussian distribution.
     
     Params:
-        inputs - array of input samples; shape (n)
+        inputs - array of input samples; shape (steps)
         borders - array of histogram bin borders; shape (n_bins + 1)
         sigma - scale parameter for truncated Gaussian distribution
     
-    Returns: the transformed inputs; shape (n, n_bins)
+    Returns: the transformed inputs; shape (steps, n_bins)
     """
     border_targets = adjust_and_erf(borders, np.expand_dims(inputs, -1), sigma)
     two_z = border_targets[:, -1] - border_targets[:, 0]

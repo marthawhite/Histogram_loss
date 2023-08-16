@@ -1,3 +1,5 @@
+"""Compute the simulated truncation bias over a range of padding ratios."""
+
 import numpy as np
 from scipy.special import erf
 import matplotlib.pyplot as plt
@@ -7,6 +9,19 @@ from simulation import transform
 
 
 def compute_difs(y, pads, sigma, y_min, y_max, bin_width):
+    """Compute the bias for each combination of y and padding.
+    
+    Params:
+        y - the input samples; shape (steps)
+        pads - the padding ratios tested; shape (d)
+        sigma - the value of sigma to use for the truncated Gaussian histogram transform
+        y_min - the minimum value of the data range
+        y_max - the maximum value of the data range
+        bin_width - the desired bin width for the histogram
+    
+    Returns: 
+        difs - the bias for each combination of y and padding; shape (d, steps)
+    """
     difs = []
     for pad in pads:
 
@@ -14,7 +29,6 @@ def compute_difs(y, pads, sigma, y_min, y_max, bin_width):
         bins_max = y_max + pad * sigma
 
         borders = np.arange(bins_min, bins_max + bin_width, bin_width)
-        #print(bins_min, bins_max, borders)
         centers = (borders[1:] + borders[:-1]) / 2
 
         y_trans = transform(y, borders, sigma)
@@ -27,6 +41,13 @@ def compute_difs(y, pads, sigma, y_min, y_max, bin_width):
 
 
 def plot_difs(y, pads, difs):
+    """Plot the bias based on the padding and the bin offset.
+    
+    Params:
+        y - the input samples; shape (steps)
+        pads - the padding ratios tested; shape (d)
+        difs - the bias for each combination of y and padding; shape (d, steps)
+    """
     y, new_pads = np.meshgrid(y - 0.5, pads)
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
     surf = ax.plot_surface(y, new_pads, difs, cmap=cm.viridis)
@@ -38,6 +59,12 @@ def plot_difs(y, pads, difs):
 
 
 def plot_maes(pads, maes):
+    """Plot the mean absolute bias for each padding ratio.
+    
+    Params:
+        pads - the padding ratios tested
+        maes - the mean absolute biases
+    """
     plt.plot(pads, maes)
     plt.xlabel(r"$\psi_\sigma$")
     plt.ylabel("MAE")
@@ -47,6 +74,7 @@ def plot_maes(pads, maes):
 
 
 def main():
+    """Run the experiment and save the results to a file."""
     bin_width = 1.
     y_min = 0.
     y_max = 1.
