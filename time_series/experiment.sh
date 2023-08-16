@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=Linear
+#SBATCH --job-name=Lin-Reg
 #SBATCH --output=%x-%j.out
-#SBATCH --time=1-00:00:00
+#SBATCH --time=0-12:00:00
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=4000M
 #SBATCH --mail-user=kluedema@ualberta.ca
