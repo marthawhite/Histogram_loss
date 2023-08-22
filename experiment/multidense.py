@@ -72,8 +72,11 @@ class MultiDense(keras.layers.Layer):
         # TODO: FIX
         if self.d == 0:
             l -= 1
+        if l > 0:
+            self.output_perm = [(l-2) % (l+1)] + list(range(self.d-1, l - 2)) + list(range(0, self.d-1)) + [l-1]
+        else:
+            self.output_perm = [0]   
 
-        self.output_perm = [(l-2) % (l+1)] + list(range(self.d-1, l - 2)) + list(range(0, self.d-1)) + [l-1]
 
     def call(self, inputs):
         """Apply the dense layers to the inputs.

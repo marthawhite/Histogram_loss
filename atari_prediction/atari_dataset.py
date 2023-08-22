@@ -122,6 +122,12 @@ class RLDataset(Dataset):
         self.env.reset(seed=1)
         self.i = -1
 
+    def get_test(self):
+        spec = (tf.TensorSpec(shape=(4, 84, 84), dtype=tf.uint8), tf.TensorSpec(shape=(), dtype=tf.float32))
+        ds = tf.data.Dataset.from_generator(self.test_gen, output_signature=spec)
+        ds = ds.batch(self.batch_size).prefetch(self.prefetch)
+        return ds
+
     def get_split(self, val_ratio):
         """Return a dataset that allows train/test split iteration.
         
@@ -139,3 +145,137 @@ class RLDataset(Dataset):
         ds = tf.data.Dataset.from_generator(self.gen, output_signature=spec)
         ds = self.prepare([ds])[0]
         return ds, ds
+    
+
+class RLAdvanced(Dataset):
+    """A dataset containing observations and returns for an RL agent from an atari game.
+    
+    Params:
+        action_file - path to file containing the agent's actions
+        returns_file - path to file containing the precomputed returns
+        game - the name of the game
+        kwargs - dataset superclass arguments (batch_size, buffer_size, prefetch)
+
+    NOTE: This dataset returns a function that alternates between returning training and testing generators.
+        For correct results, always alternate between training and testing iterations.
+    """
+
+    def __init__(self, action_file, returns_file, game=None, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.returns = self.get_returns(returns_file)
+        self.file = action_file
+        if game is None:
+            self.game = action_file.split(os.sep)[-1].split(".")[0]
+        else:
+            self.game = game
+
+    def get_env(self, game):
+        """Initialize the game environment.
+        
+        Params:
+            game - the name of the game environment
+
+        Returns: the gym environment
+        """
+        env = gym.make(game)
+        env.seed(1)
+        env = gym.wrappers.ResizeObservation(env, (84, 84))
+        env = gym.wrappers.GrayScaleObservation(env)
+        return gym.wrappers.FrameStack(env, 4)
+
+    def get_returns(self, returns_file):
+        """Load and scale the returns from a file.
+        
+        Params:
+            returns_file - the path to the .npy file containing the returns
+
+        Returns: the returns scaled to [0, 1]
+        """
+        data = np.load(returns_file)
+        max_val, min_val = np.max(data), np.min(data)
+        scale = max_val - min_val
+        if scale == 0.:
+            scale = 1.
+        return (data - min_val) / scale
+
+    def test_gen(self, limit):
+        """Generate training samples for a number of runs.
+        
+        Params:
+            limit - the number of game iterations (runs) used for training
+
+        Yields: (obs, return)
+            obs - the (4, 84, 84) image stack as a numpy array
+            return - the scaled return for the corresponding timestep
+        """
+        n = -1
+        i = -1
+        env = self.get_env(self.game)
+        file = open(self.file, "rb")
+        byte = file.read(1)
+        while n < limit:
+            if byte == b'R':
+                # Run finished
+                obs, info = env.reset()
+                n += 1
+            else:
+                # Yield observation
+                obs, r, done, _,_ = env.step(ord(byte) - 97)
+                i += 1
+                yield np.array(obs), self.returns[i]
+            byte = file.read(1)
+        file.close()
+        return
+
+
+    def train_gen(self, start):
+        """Generate test samples until the end of the file.
+        
+        Yields: (obs, return)
+            obs - the (4, 84, 84) image stack as a numpy array
+            return - the scaled return for the corresponding timestep
+        """
+        n = -1
+        i = -1
+        env = self.get_env(self.game)
+        file = open(self.file, "rb")
+        byte = file.read(1)
+        while byte != b"":
+            if byte == b'R':
+                obs, info = env.reset()
+                n += 1
+            else:
+                obs, r, done, _,_ = env.step(ord(byte) - 97)
+                i += 1
+                if n >= start:
+                    yield np.array(obs), self.returns[i]
+            byte = file.read(1)
+        file.close()
+        return
+    
+
+    def reset_file(self):
+        """Reset the actions file at the beginning of an epoch."""
+        self.file.seek(0)
+        self.env.reset(seed=1)
+        self.i = -1
+
+    def get_split(self, val_ratio):
+        """Return a dataset that allows train/test split iteration.
+        
+        Params:
+            val_ratio - the proportion of samples to use in the test split
+        
+        Returns: (ds, ds)
+            ds - a generator dataset that alternates between producing train and test samples each time iteration starts
+                NOTE: Always alternate between training and validation when using this dataset!
+        """
+        with open(self.file, "rb") as in_file:
+            n = in_file.read().count(b'R')
+        test_n = n - int(n * (1 - val_ratio))
+        spec = (tf.TensorSpec(shape=(4, 84, 84), dtype=tf.uint8), tf.TensorSpec(shape=(), dtype=tf.float32))
+        train = tf.data.Dataset.from_generator(lambda : self.train_gen(test_n), output_signature=spec)
+        train = train.repeat().shuffle(self.buf).batch(self.batch_size).prefetch(self.prefetch)
+        test = tf.data.Dataset.from_generator(lambda : self.test_gen(test_n), output_signature=spec)
+        test = test.repeat().batch(self.batch_size).prefetch(self.prefetch)
+        return train, test

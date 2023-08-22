@@ -12,7 +12,7 @@ from tensorflow import keras
 from experiment.models import HLGaussian, Regression
 import sys
 import json
-from atari_prediction.atari_dataset import RLDataset
+from atari_prediction.atari_dataset import RLAdvanced
 import numpy as np
 from atari_prediction.base_models import value_network, large_model
 
@@ -48,45 +48,42 @@ def main(action_file, returns_file):
     n_bins = 100
     pad_ratio = 4.
     sig_ratio = 2.
-    dropout = 0.
     learning_rate = 1e-3
 
     # Training params
     seed = 1
-    n_epochs = 1
+    n_epochs = 30
+    train_steps = 9000
+    val_steps = 1000
     buffer_size = 1000
     batch_size = 32
-    val_ratio = 0.05
+    val_ratio = 0.1
     metrics = ["mse", "mae"]
     base_model = value_network
 
     keras.utils.set_random_seed(seed)
     borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio)
     
-    ds = RLDataset(action_file, returns_file, buffer_size=buffer_size, batch_size=batch_size)
+    ds = RLAdvanced(action_file, returns_file, buffer_size=buffer_size, batch_size=batch_size, prefetch=0)
     train, val = ds.get_split(val_ratio)
 
     # Run HL-Gaussian
-    hl_gaussian = HLGaussian(base_model(), borders, sigma, dropout)
+    hl_gaussian = HLGaussian(base_model(), borders, sigma)
     hl_gaussian.compile(optimizer=keras.optimizers.Adam(learning_rate), metrics=metrics)
-    hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, validation_data=val, verbose=2)
+    hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, steps_per_epoch=train_steps, validation_steps=val_steps, validation_data=val, verbose=2)
     with open(f"hlg.json", "w") as file:
         json.dump(hl_gaussian_history.history, file)
+    data = hl_gaussian.predict(val.take(100))
+    np.save("hlg.npy", data)
 
     # Run Regression
     regression = Regression(base_model())
     regression.compile(optimizer=keras.optimizers.Adam(learning_rate), loss="mse", metrics=metrics)
-    regression_history = regression.fit(x=train, epochs=n_epochs, validation_data=val, verbose=2)
+    regression_history = regression.fit(x=train, epochs=n_epochs, steps_per_epoch=train_steps, validation_steps=val_steps, validation_data=val, verbose=2)
     with open("reg.json", "w") as file:
         json.dump(regression_history.history, file)
-
-    # Save samples to examine after
-    for x, y in train.take(1):
-        out = hl_gaussian.get_hist(x, training=False)
-        np.save(f"hists.npy", out.numpy())
-        np.save(f"y.npy", y.numpy())
-        np.save(f"reg.npy", regression(x, training=False).numpy())
-    
+    data = regression.predict(val.take(100))
+    np.save("reg.npy", data)
     
 if __name__ == "__main__":
     action_file = sys.argv[1]
