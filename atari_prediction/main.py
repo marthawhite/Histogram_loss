@@ -64,7 +64,7 @@ def main(action_file, returns_file):
     keras.utils.set_random_seed(seed)
     borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio)
     
-    ds = RLAdvanced(action_file, returns_file, buffer_size=buffer_size, batch_size=batch_size, prefetch=0)
+    ds = RLAdvanced(action_file, returns_file, buffer_size=buffer_size, batch_size=batch_size)
     train, val = ds.get_split(val_ratio)
 
     # Run HL-Gaussian
