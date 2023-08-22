@@ -2,13 +2,14 @@
 #SBATCH --job-name=atari
 #SBATCH --output=%x-%j.out
 #SBATCH --time=0-12:00:00
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=8000M
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=4000M
 #SBATCH --gres=gpu:1
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-GAME=PongNoFrameskip-v4
+NAME=Pong
+GAME=${NAME}NoFrameskip-v4
 PY_FILE=Histogram_loss/atari_main.py
 BASE_DIR=~/scratch
 RETURNS_FILE=../returns/$GAME.npy

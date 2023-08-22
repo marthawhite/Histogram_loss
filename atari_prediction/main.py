@@ -53,11 +53,11 @@ def main(action_file, returns_file):
     # Training params
     seed = 1
     n_epochs = 30
-    train_steps = 9000
-    val_steps = 1000
+    train_steps = 9500
+    val_steps = 500
     buffer_size = 1000
     batch_size = 32
-    val_ratio = 0.1
+    val_ratio = 0.05
     metrics = ["mse", "mae"]
     base_model = value_network
 
@@ -73,7 +73,7 @@ def main(action_file, returns_file):
     hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, steps_per_epoch=train_steps, validation_steps=val_steps, validation_data=val, verbose=2)
     with open(f"hlg.json", "w") as file:
         json.dump(hl_gaussian_history.history, file)
-    data = hl_gaussian.predict(val.take(100))
+    data = hl_gaussian.predict(val.take(1000))
     np.save("hlg.npy", data)
 
     # Run Regression
@@ -82,7 +82,7 @@ def main(action_file, returns_file):
     regression_history = regression.fit(x=train, epochs=n_epochs, steps_per_epoch=train_steps, validation_steps=val_steps, validation_data=val, verbose=2)
     with open("reg.json", "w") as file:
         json.dump(regression_history.history, file)
-    data = regression.predict(val.take(100))
+    data = regression.predict(val.take(1000))
     np.save("reg.npy", data)
     
 if __name__ == "__main__":
