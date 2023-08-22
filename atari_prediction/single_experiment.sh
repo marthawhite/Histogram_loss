@@ -13,7 +13,7 @@ GAME=${NAME}NoFrameskip-v4
 PY_FILE=Histogram_loss/atari_main.py
 BASE_DIR=~/scratch
 RETURNS_FILE=../returns/$GAME.npy
-OUT_DIR=$GAME
+OUT_DIR=$NAME
 
 POLICY_DIR=$SLURM_TMPDIR/data/policies
 DATA=$BASE_DIR/data/policies.zip
