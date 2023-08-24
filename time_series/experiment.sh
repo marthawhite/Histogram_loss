@@ -7,7 +7,7 @@
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-PY_FILE=Histogram_loss/linear_main.py
+PY_FILE=Histogram_loss/time_series/model_analysis.py
 BASE_DIR=~/scratch
 
 module load python/3.10 scipy-stack cuda cudnn
