@@ -25,7 +25,7 @@ def main():
     """
     datasets = ["ETTh2", "ETTm1"] #["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
     pred_len = 336
-    seq_len = 336
+    seq_len = 96
     epochs = 100
     sig_ratio = 2.
     pad_ratio = 3.
@@ -63,10 +63,10 @@ def main():
         # #base = linear(chans, seq_len)
         # base = lstm_encdec(width, layers, 0.5, shape)
 
-        hlg = HLGaussian(base, borders, sigma, out_shape=(chans, pred_len))    
+        hlg = HLGaussian(base, borders, sigma, out_shape=(pred_len,))    
         hlg.compile(keras.optimizers.Adam(lr), None, metrics)
         hist = hlg.fit(train, epochs=epochs, verbose=2, validation_data=test)
-        with open(f"HL_lstm_{dataset}.json", "w") as file:
+        with open(f"HL_transformer_{dataset}.json", "w") as file:
             json.dump(hist.history, file)
         predictions = hlg.predict(test_inputs)
         np.save(f"{dataset}_HL", predictions)
@@ -79,7 +79,7 @@ def main():
         reg = Regression(base, out_shape=(pred_len,))    
         reg.compile(keras.optimizers.Adam(lr), "mse", metrics)
         hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test)
-        with open(f"Reg_linear_{dataset}.json", "w") as file:
+        with open(f"Reg_transformer_{dataset}.json", "w") as file:
             json.dump(hist.history, file)
         predictions = reg.predict(test_inputs)
         np.save(f"{dataset}_reg", predictions)
