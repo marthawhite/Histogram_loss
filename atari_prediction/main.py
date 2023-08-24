@@ -17,6 +17,29 @@ import numpy as np
 from atari_prediction.base_models import value_network, large_model
 
 
+class DataCallback(keras.callbacks.Callback):
+
+    def __init__(self, name, train, test, saved_batches, **kwargs):
+        super().__init__(**kwargs)
+        self.train_ds = train
+        self.test_ds = test
+        self.name = name       
+        self.saved = saved_batches     
+
+    def on_epoch_end(self, epoch, logs=None):
+        super().on_epoch_end(epoch, logs)
+        filename = f"{self.name}_{epoch}"
+        np.save(f"{filename}_w.npy", self.model.weights)
+        preds = []
+        for x, y in self.train_ds.take(self.saved):
+            preds.append(self.model(x))
+        np.save(f"{filename}_train.npy", np.concatenate(preds))
+        preds = []
+        for x, y in self.test_ds.take(self.saved):
+            preds.append(self.model(x))
+        np.save(f"{filename}_test.npy", np.concatenate(preds))
+
+
 def get_bins(n_bins, pad_ratio, sig_ratio):
     """Return the histogram bins given the HL parameters.
     
@@ -54,37 +77,47 @@ def main(action_file, returns_file):
     seed = 1
     n_epochs = 30
     train_steps = 9500
-    val_steps = 500
+    val_steps = 5000
     buffer_size = 1000
     batch_size = 32
     val_ratio = 0.05
     metrics = ["mse", "mae"]
     base_model = value_network
+    saved_batches = 32
 
     keras.utils.set_random_seed(seed)
     borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio)
     
     ds = RLAdvanced(action_file, returns_file, buffer_size=buffer_size, batch_size=batch_size)
     train, val = ds.get_split(val_ratio)
+    hlcb = DataCallback("HL", train, val, saved_batches)
+    regcb = DataCallback("Reg", train, val, saved_batches)
+
+    preds = []
+    for x, y in train.take(saved_batches):
+        preds.append(y)
+    np.save("train.npy", np.concatenate(preds))
+
+    preds = []
+    for x, y in val.take(saved_batches):
+        preds.append(y)
+    np.save("test.npy", np.concatenate(preds))
 
     # Run HL-Gaussian
     hl_gaussian = HLGaussian(base_model(), borders, sigma)
     hl_gaussian.compile(optimizer=keras.optimizers.Adam(learning_rate), metrics=metrics)
-    hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, steps_per_epoch=train_steps, validation_steps=val_steps, validation_data=val, verbose=2)
+    hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, steps_per_epoch=train_steps, validation_steps=val_steps, validation_data=val, callbacks=[hlcb], verbose=2)
     with open(f"hlg.json", "w") as file:
         json.dump(hl_gaussian_history.history, file)
-    data = hl_gaussian.predict(val.take(1000))
-    np.save("hlg.npy", data)
 
     # Run Regression
     regression = Regression(base_model())
     regression.compile(optimizer=keras.optimizers.Adam(learning_rate), loss="mse", metrics=metrics)
-    regression_history = regression.fit(x=train, epochs=n_epochs, steps_per_epoch=train_steps, validation_steps=val_steps, validation_data=val, verbose=2)
+    regression_history = regression.fit(x=train, epochs=n_epochs, steps_per_epoch=train_steps, validation_steps=val_steps, validation_data=val, callbacks=[regcb], verbose=2)
     with open("reg.json", "w") as file:
         json.dump(regression_history.history, file)
-    data = regression.predict(val.take(1000))
-    np.save("reg.npy", data)
     
+
 if __name__ == "__main__":
     action_file = sys.argv[1]
     returns_file = sys.argv[2]
