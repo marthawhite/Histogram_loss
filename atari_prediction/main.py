@@ -12,7 +12,7 @@ from tensorflow import keras
 from experiment.models import HLGaussian, Regression
 import sys
 import json
-from atari_prediction.atari_dataset import RLAdvanced
+from atari_prediction.atari_dataset import RLAlternating
 import numpy as np
 from atari_prediction.base_models import value_network, large_model
 
@@ -30,10 +30,10 @@ class DataCallback(keras.callbacks.Callback):
         super().on_epoch_end(epoch, logs)
         filename = f"{self.name}_{epoch}"
         np.save(f"{filename}_w.npy", self.model.weights)
-        # preds = []
-        # for x, y in self.train_ds.take(self.saved):
-        #     preds.append(self.model(x))
-        # np.save(f"{filename}_train.npy", np.concatenate(preds))
+        preds = []
+        for x, y in self.train_ds.take(self.saved):
+            preds.append(self.model(x))
+        np.save(f"{filename}_train.npy", np.concatenate(preds))
         preds = []
         for x, y in self.test_ds.take(self.saved):
             preds.append(self.model(x))
@@ -93,15 +93,16 @@ def main(action_file, returns_file):
     keras.utils.set_random_seed(seed)
     borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio)
     
-    ds = RLAdvanced(action_file, returns_file, buffer_size=buffer_size, batch_size=batch_size)
+    ds = RLAlternating(action_file, returns_file, buffer_size=buffer_size, batch_size=batch_size)
     train, val = ds.get_split(val_ratio)
-    hlcb = DataCallback("HL", train, val, saved_batches)
-    regcb = DataCallback("Reg", train, val, saved_batches)
+    train_no_shuf = ds.get_train(val_ratio)
+    hlcb = DataCallback("HL", train_no_shuf, val, saved_batches)
+    regcb = DataCallback("Reg", train_no_shuf, val, saved_batches)
 
-    # preds = []
-    # for x, y in train.take(saved_batches):
-    #     preds.append(y)
-    # np.save("train.npy", np.concatenate(preds))
+    preds = []
+    for x, y in train_no_shuf.take(saved_batches):
+        preds.append(y)
+    np.save("train.npy", np.concatenate(preds))
 
     preds = []
     for x, y in val.take(saved_batches):
