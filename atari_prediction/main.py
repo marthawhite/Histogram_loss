@@ -30,10 +30,10 @@ class DataCallback(keras.callbacks.Callback):
         super().on_epoch_end(epoch, logs)
         filename = f"{self.name}_{epoch}"
         np.save(f"{filename}_w.npy", self.model.weights)
-        preds = []
-        for x, y in self.train_ds.take(self.saved):
-            preds.append(self.model(x))
-        np.save(f"{filename}_train.npy", np.concatenate(preds))
+        # preds = []
+        # for x, y in self.train_ds.take(self.saved):
+        #     preds.append(self.model(x))
+        # np.save(f"{filename}_train.npy", np.concatenate(preds))
         preds = []
         for x, y in self.test_ds.take(self.saved):
             preds.append(self.model(x))
@@ -98,10 +98,10 @@ def main(action_file, returns_file):
     hlcb = DataCallback("HL", train, val, saved_batches)
     regcb = DataCallback("Reg", train, val, saved_batches)
 
-    preds = []
-    for x, y in train.take(saved_batches):
-        preds.append(y)
-    np.save("train.npy", np.concatenate(preds))
+    # preds = []
+    # for x, y in train.take(saved_batches):
+    #     preds.append(y)
+    # np.save("train.npy", np.concatenate(preds))
 
     preds = []
     for x, y in val.take(saved_batches):
