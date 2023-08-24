@@ -344,21 +344,19 @@ class RLAlternating(Dataset):
         n = -1
         i = -1
         env = self.get_env(self.game)
-        file = open(self.file, "rb")
-        byte = file.read(1)
-        while byte != b"":
-            if byte == b'R':
+        with open(self.file, "rb") as file:
+            actions = file.read()
+        for byte in actions:
+            if byte == 82:
                 # Run finished
                 obs, info = env.reset()
                 n += 1
             else:
                 # Yield observation
-                obs, r, done, _,_ = env.step(ord(byte) - 97)
+                obs, r, done, _,_ = env.step(byte - 97)
                 i += 1
                 if n % cycle == 0:
                     yield np.array(obs), self.returns[i]
-            byte = file.read(1)
-        file.close()
         return
 
 
@@ -372,19 +370,17 @@ class RLAlternating(Dataset):
         n = -1
         i = -1
         env = self.get_env(self.game)
-        file = open(self.file, "rb")
-        byte = file.read(1)
-        while byte != b"":
-            if byte == b'R':
+        with open(self.file, "rb") as file:
+            actions = file.read()
+        for byte in actions:
+            if byte == 82:
                 obs, info = env.reset()
                 n += 1
             else:
-                obs, r, done, _,_ = env.step(ord(byte) - 97)
+                obs, r, done, _,_ = env.step(byte - 97)
                 i += 1
                 if n % cycle != 0:
                     yield np.array(obs), self.returns[i]
-            byte = file.read(1)
-        file.close()
         return
     
 

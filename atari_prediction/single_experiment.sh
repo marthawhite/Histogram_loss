@@ -1,15 +1,15 @@
 #!/bin/bash
 #SBATCH --job-name=atari
 #SBATCH --output=%x-%A-%a.out
-#SBATCH --array=0-9
+#SBATCH --array=0-1
 #SBATCH --time=0-12:00:00
-#SBATCH --cpus-per-task=1
-#SBATCH --mem=4000M
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=8000M
 #SBATCH --gres=gpu:1
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-GAMES=(Tutankham BattleZone Boxing VideoPinball Alien Jamesbond JourneyEscape Asterix PrivateEye)
+GAMES=(Tutankham BattleZone)
 NAME=${GAMES[$SLURM_ARRAY_TASK_ID]}
 GAME=${NAME}NoFrameskip-v4
 PY_FILE=Histogram_loss/atari_main.py
@@ -21,6 +21,7 @@ POLICY_DIR=$SLURM_TMPDIR/data/policies
 DATA=$BASE_DIR/data/policies.zip
 ACTION_FILE=$POLICY_DIR/$GAME.txt
 
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
 module load python/3.10 scipy-stack cuda cudnn
 virtualenv --no-download $SLURM_TMPDIR/env
