@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=atari
-#SBATCH --output=%x-%j.out
+#SBATCH --output=%x-%A-%a.out
+#SBATCH --array=0-9
 #SBATCH --time=0-12:00:00
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=4000M
@@ -8,7 +9,8 @@
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-NAME=Pong
+GAMES=(Tutankham BattleZone Boxing VideoPinball Alien Jamesbond JourneyEscape Asterix PrivateEye)
+NAME=${GAMES[$SLURM_ARRAY_TASK_ID]}
 GAME=${NAME}NoFrameskip-v4
 PY_FILE=Histogram_loss/atari_main.py
 BASE_DIR=~/scratch
