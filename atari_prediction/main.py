@@ -76,14 +76,19 @@ def main(action_file, returns_file):
     # Training params
     seed = 1
     n_epochs = 30
-    train_steps = 9500
-    val_steps = 5000
+    val_ratio = 0.05
+    epoch_steps = 10000
+    train_steps = epoch_steps * (1 - val_ratio)
+    val_steps = epoch_steps * val_ratio
     buffer_size = 1000
     batch_size = 32
-    val_ratio = 0.05
     metrics = ["mse", "mae"]
     base_model = value_network
     saved_batches = 32
+
+    with open(action_file, "rb") as in_file:
+        n = len(in_file.read())
+    n_epochs = n // (epoch_steps * batch_size)
 
     keras.utils.set_random_seed(seed)
     borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio)
