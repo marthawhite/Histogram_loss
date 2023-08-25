@@ -19,22 +19,21 @@ from atari_prediction.base_models import value_network, large_model
 
 class DataCallback(keras.callbacks.Callback):
 
-    def __init__(self, name, train, test, saved_batches, **kwargs):
+    def __init__(self, name, train, test, **kwargs):
         super().__init__(**kwargs)
         self.train_ds = train
         self.test_ds = test
         self.name = name       
-        self.saved = saved_batches     
 
     def on_epoch_end(self, epoch, logs=None):
         super().on_epoch_end(epoch, logs)
         filename = f"{self.name}_{epoch}"
         preds = []
-        for x, y in self.train_ds.take(self.saved):
+        for x, y in self.train_ds:
             preds.append(self.model(x))
         np.save(f"{filename}_train.npy", np.concatenate(preds))
         preds = []
-        for x, y in self.test_ds.take(self.saved):
+        for x, y in self.test_ds:
             preds.append(self.model(x))
         np.save(f"{filename}_test.npy", np.concatenate(preds))
 
@@ -93,17 +92,18 @@ def main(action_file, returns_file):
     
     ds = RLAlternating(action_file, returns_file, buffer_size=buffer_size, batch_size=batch_size)
     train, val = ds.get_split(val_ratio)
-    train_no_shuf = ds.get_train(val_ratio)
-    hlcb = DataCallback("HL", train_no_shuf, val, saved_batches)
-    regcb = DataCallback("Reg", train_no_shuf, val, saved_batches)
+    train_sample = ds.get_train(val_ratio).take(saved_batches)
+    val_sample = val.take(saved_batches)
+    hlcb = DataCallback("HL", train_sample, val_sample)
+    regcb = DataCallback("Reg", train_sample, val_sample)
 
     preds = []
-    for x, y in train_no_shuf.take(saved_batches):
+    for x, y in train_sample:
         preds.append(y)
     np.save("train.npy", np.concatenate(preds))
 
     preds = []
-    for x, y in val.take(saved_batches):
+    for x, y in val_sample:
         preds.append(y)
     np.save("test.npy", np.concatenate(preds))
 
