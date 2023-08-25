@@ -13,11 +13,15 @@ def value_network():
     return keras.models.Sequential([
         layers.Permute((2, 3, 1)),
         layers.Rescaling(1. / 255),
-        layers.Conv2D(32, 8, 4, activation="relu"),
-        layers.Conv2D(64, 4, 2, activation="relu"),
-        layers.Conv2D(64, 3, 1, activation="relu"),
+        layers.Conv2D(32, 8, 4),
+        layers.LeakyReLU(),
+        layers.Conv2D(64, 4, 2),
+        layers.LeakyReLU(),
+        layers.Conv2D(64, 3, 1),
+        layers.LeakyReLU(),
         layers.Flatten(),
-        layers.Dense(512, activation="relu")
+        layers.Dense(512),
+        layers.LeakyReLU()
         ])
 
 
