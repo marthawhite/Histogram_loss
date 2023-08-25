@@ -1,15 +1,15 @@
 #!/bin/bash
-#SBATCH --job-name=atari
+#SBATCH --job-name=Atari1
 #SBATCH --output=%x-%A-%a.out
-#SBATCH --array=0-1
+#SBATCH --array=0-7
 #SBATCH --time=0-12:00:00
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=8000M
+#SBATCH --cpus-per-task=3
+#SBATCH --mem=12000M
 #SBATCH --gres=gpu:1
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-GAMES=(Tutankham BattleZone)
+GAMES=(Tutankham BattleZone Boxing VideoPinball Jamesbond JourneyEscape MsPacman PrivateEye)
 NAME=${GAMES[$SLURM_ARRAY_TASK_ID]}
 GAME=${NAME}NoFrameskip-v4
 PY_FILE=Histogram_loss/atari_main.py

@@ -28,10 +28,11 @@ class DataCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         super().on_epoch_end(epoch, logs)
         filename = f"{self.name}_{epoch}"
-        preds = []
-        for x, y in self.train_ds:
-            preds.append(self.model(x))
-        np.save(f"{filename}_train.npy", np.concatenate(preds))
+        np.save(f"{filename}_w.npy", self.model.weights)
+        #preds = []
+        # for x, y in self.train_ds:
+        #     preds.append(self.model(x))
+        # np.save(f"{filename}_train.npy", np.concatenate(preds))
         preds = []
         for x, y in self.test_ds:
             preds.append(self.model(x))
@@ -81,7 +82,7 @@ def main(action_file, returns_file):
     batch_size = 32
     metrics = ["mse", "mae"]
     base_model = value_network
-    saved_batches = 32
+    saved_batches = 100
 
     with open(action_file, "rb") as in_file:
         n = len(in_file.read())
@@ -92,28 +93,21 @@ def main(action_file, returns_file):
     
     ds = RLAlternating(action_file, returns_file, buffer_size=buffer_size, batch_size=batch_size)
     train, val = ds.get_split(val_ratio)
-    train_sample = ds.get_train(val_ratio).take(saved_batches)
+    #train_sample = ds.get_train(val_ratio).take(saved_batches)
+    train_sample=None
     val_sample = val.take(saved_batches)
     hlcb = DataCallback("HL", train_sample, val_sample)
     regcb = DataCallback("Reg", train_sample, val_sample)
 
-    preds = []
-    for x, y in train_sample:
-        preds.append(y)
-    np.save("train.npy", np.concatenate(preds))
+    # preds = []
+    # for x, y in train_sample:
+    #     preds.append(y)
+    # np.save("train.npy", np.concatenate(preds))
 
     preds = []
     for x, y in val_sample:
         preds.append(y)
     np.save("test.npy", np.concatenate(preds))
-
-    # Run HL-Gaussian
-    hl_gaussian = HLGaussian(base_model(), borders, sigma)
-    hl_gaussian.compile(optimizer=keras.optimizers.Adam(learning_rate), metrics=metrics)
-    hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, steps_per_epoch=train_steps, validation_steps=val_steps, validation_data=val, callbacks=[hlcb], verbose=2)
-    with open(f"hlg.json", "w") as file:
-        json.dump(hl_gaussian_history.history, file)
-    np.save(f"HL_w.npy", hl_gaussian.weights)
 
     # Run Regression
     regression = Regression(base_model())
@@ -121,8 +115,14 @@ def main(action_file, returns_file):
     regression_history = regression.fit(x=train, epochs=n_epochs, steps_per_epoch=train_steps, validation_steps=val_steps, validation_data=val, callbacks=[regcb], verbose=2)
     with open("reg.json", "w") as file:
         json.dump(regression_history.history, file)
-    np.save(f"Reg_w.npy", regression.weights)
-    
+
+    # Run HL-Gaussian
+    hl_gaussian = HLGaussian(base_model(), borders, sigma)
+    hl_gaussian.compile(optimizer=keras.optimizers.Adam(learning_rate), metrics=metrics)
+    hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, steps_per_epoch=train_steps, validation_steps=val_steps, validation_data=val, callbacks=[hlcb], verbose=2)
+    with open(f"hlg.json", "w") as file:
+        json.dump(hl_gaussian_history.history, file)
+
 
 if __name__ == "__main__":
     action_file = sys.argv[1]
