@@ -70,7 +70,7 @@ def main(action_file, returns_file):
     n_bins = 100
     pad_ratio = 4.
     sig_ratio = 2.
-    learning_rate = 1e-3
+    learning_rate = 1e-4
 
     # Training params
     seed = 1
