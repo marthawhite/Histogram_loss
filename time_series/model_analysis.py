@@ -71,18 +71,18 @@ def main(base_model, loss):
             hlg = HLGaussian(base, borders, sigma, out_shape=(pred_len,))    
             hlg.compile(keras.optimizers.Adam(lr), None, metrics)
             hist = hlg.fit(train, epochs=epochs, verbose=2, validation_data=test)
-            with open(f"HL_transformer_{dataset}.json", "w") as file:
+            with open(f"HL_transformer_{dataset}_{base_model}.json", "w") as file:
                 json.dump(hist.history, file)
             predictions = hlg.predict(test_inputs)
-            np.save(f"{dataset}_HL", predictions)
+            np.save(f"{dataset}_{base_model}_HL", predictions)
         else:
             reg = Regression(base, out_shape=(pred_len,))    
             reg.compile(keras.optimizers.Adam(lr), "mse", metrics)
             hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test)
-            with open(f"Reg_transformer_{dataset}.json", "w") as file:
+            with open(f"Reg_transformer_{dataset}_{base_model}.json", "w") as file:
                 json.dump(hist.history, file)
             predictions = reg.predict(test_inputs)
-            np.save(f"{dataset}_reg", predictions)
+            np.save(f"{dataset}_{base_model}_reg", predictions)
         
 
         #base = transformer(shape, head_size, n_heads, features)
