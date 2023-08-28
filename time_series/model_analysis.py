@@ -41,7 +41,7 @@ def main(base_model, loss):
     batch_size = 32
     drop = "date"
     metrics = ["mse", "mae"]
-    lr = 1e-3
+    lr = 1e-4
     input_target_offset = 10
 
     for dataset in datasets:
@@ -67,7 +67,7 @@ def main(base_model, loss):
             base = lstm_encdec(width, layers, 0.5, shape)
         # #base = linear(chans, seq_len)
             
-        if loss = "HL":
+        if loss == "HL":
             hlg = HLGaussian(base, borders, sigma, out_shape=(pred_len,))    
             hlg.compile(keras.optimizers.Adam(lr), None, metrics)
             hist = hlg.fit(train, epochs=epochs, verbose=2, validation_data=test)
