@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=Analysis
 #SBATCH --output=%x-%A-%a.out
-#SBATCH --array=0-3
+#SBATCH --array=0-1
 #SBATCH --time=0-12:00:00
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8000M
@@ -9,9 +9,8 @@
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-MODELS=(Transformer LSTM Transformer LSTM)
-LOSSES=(HL HL Reg Reg)
-MODEL=${MODELS[$SLURM_ARRAY_TASK_ID]}
+MODEL=LSTM
+LOSSES=(HL Reg)
 LOSS=${LOSSES[$SLURM_ARRAY_TASK_ID]}
 
 PY_FILE=Histogram_loss/model_analysis.py

@@ -63,12 +63,14 @@ def main(base_model, loss):
         
         if base_model == "transformer":
             base = transformer(shape, head_size, n_heads, features)
+            out_shape = (pred_len,)
         else:
             base = lstm_encdec(width, layers, 0.5, shape)
+            out_shape = (chans, pred_len)
         # #base = linear(chans, seq_len)
             
         if loss == "HL":
-            hlg = HLGaussian(base, borders, sigma, out_shape=(pred_len,))    
+            hlg = HLGaussian(base, borders, sigma, out_shape=out_shape)    
             hlg.compile(keras.optimizers.Adam(lr), None, metrics)
             hist = hlg.fit(train, epochs=epochs, verbose=2, validation_data=test)
             with open(f"HL_{dataset}_{base_model}.json", "w") as file:
@@ -76,7 +78,7 @@ def main(base_model, loss):
             predictions = hlg.predict(test_inputs)
             np.save(f"{dataset}_{base_model}_HL", predictions)
         else:
-            reg = Regression(base, out_shape=(pred_len,))    
+            reg = Regression(base, out_shape=out_shape)    
             reg.compile(keras.optimizers.Adam(lr), "mse", metrics)
             hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test)
             with open(f"Reg_{dataset}_{base_model}.json", "w") as file:
