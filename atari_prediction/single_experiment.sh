@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=Alien
+#SBATCH --job-name=Atari
 #SBATCH --output=%x-%A-%a.out
-#SBATCH --array=0-0
+#SBATCH --array=0-57
 #SBATCH --time=0-12:00:00
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8000M
@@ -9,7 +9,64 @@
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-GAMES=(Alien)
+GAMES=(Freeway
+Riverraid
+Bowling
+Frostbite
+Krull
+DemonAttack
+Boxing
+UpNDown
+Robotank
+Berzerk
+AirRaid
+StarGunner
+Seaquest
+FishingDerby
+Asteroids
+Atlantis
+Breakout
+IceHockey
+Gopher
+KungFuMaster
+Zaxxon
+TimePilot
+Enduro
+Centipede
+Tutankham
+BeamRider
+ChopperCommand
+BattleZone
+YarsRevenge
+SpaceInvaders
+CrazyClimber
+Amidar
+MsPacman
+Gravitar
+Hero
+RoadRunner
+WizardOfWor
+VideoPinball
+Alien
+Carnival
+Jamesbond
+Phoenix
+Solaris
+Kangaroo
+Skiing
+JourneyEscape
+BankHeist
+Pooyan
+Pong
+Asterix
+Qbert
+DoubleDunk
+PrivateEye
+Pitfall
+Assault
+MontezumaRevenge
+Tennis
+Venture)
 NAME=${GAMES[$SLURM_ARRAY_TASK_ID]}
 GAME=${NAME}NoFrameskip-v4
 PY_FILE=Histogram_loss/atari_main.py

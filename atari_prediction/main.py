@@ -28,7 +28,7 @@ class DataCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         super().on_epoch_end(epoch, logs)
         filename = f"{self.name}_{epoch}"
-        np.save(f"{filename}_w.npy", self.model.weights)
+        #np.save(f"{filename}_w.npy", self.model.weights)
         #preds = []
         # for x, y in self.train_ds:
         #     preds.append(self.model(x))
@@ -74,6 +74,7 @@ def main(action_file, returns_file):
 
     # Training params
     seed = 1
+    epochs = 1
     val_ratio = 0.05
     epoch_steps = 10000
     train_steps = epoch_steps * (1 - val_ratio)
@@ -86,7 +87,7 @@ def main(action_file, returns_file):
 
     with open(action_file, "rb") as in_file:
         n = len(in_file.read())
-    n_epochs = n // (epoch_steps * batch_size)
+    n_epochs = n * epochs // (epoch_steps * batch_size)
 
     keras.utils.set_random_seed(seed)
     borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio)
@@ -98,11 +99,6 @@ def main(action_file, returns_file):
     val_sample = val.take(saved_batches)
     hlcb = DataCallback("HL", train_sample, val_sample)
     regcb = DataCallback("Reg", train_sample, val_sample)
-
-    # preds = []
-    # for x, y in train_sample:
-    #     preds.append(y)
-    # np.save("train.npy", np.concatenate(preds))
 
     preds = []
     for x, y in val_sample:
