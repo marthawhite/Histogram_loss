@@ -4,9 +4,9 @@ import os
 
 def main():
     # Play game
-    game = "Skiing"
+    game = "VideoPinball"
     env_name = f"{game}NoFrameskip-v4"
-    policy = os.path.join("atari_prediction", "policies", f"{env_name}.txt")
+    policy = os.path.join("policies", "policies", f"{env_name}.txt")
 
     env = gym.make(env_name, render_mode="human")
     env.seed(1)

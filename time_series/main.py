@@ -23,7 +23,7 @@ def main():
         data_path - path to the data file
     """
     datasets = ["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
-    pred_len = 336
+    pred_len = 1
     seq_len = 336
     epochs = 100
     sig_ratio = 2.
@@ -40,11 +40,12 @@ def main():
     drop = "date"
     metrics = ["mse", "mae"]
     lr = 1e-3
+    input_target_offset = 10
 
     for dataset in datasets:
         keras.utils.set_random_seed(1)
         data_path = f"{dataset}.csv"
-        train, test, dmin, dmax = get_time_series_dataset(data_path, drop, seq_len, pred_len, pred_len, test_ratio, batch_size, chans)
+        train, test, dmin, dmax = get_time_series_dataset(data_path, drop, seq_len, pred_len, pred_len, test_ratio, batch_size, chans, input_target_offset)
 
         borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio, dmin, dmax)
         borders = tf.expand_dims(borders, -1)

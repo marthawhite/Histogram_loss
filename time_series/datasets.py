@@ -47,7 +47,7 @@ def get_ETT_split(data, filename, seq_len):
     return train, val, test
 
 
-def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_len=720, test_size=0.2, batch_size=64, chans=7):
+def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_len=720, test_size=0.2, batch_size=64, chans=7, input_target_offset=0):
     """Return the train/test split for a CSV time series dataset.
     Uses 12-4 month split to be comparable to standard 12-4-4 train-val-test for ETTh datasets.
     
@@ -62,6 +62,7 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
             WARNING: NOT USED IN CURRENT IMPLEMENTATION
         batch_size - the size of the data batches
         chans - the number of channels (features) in the data
+        input_target_offset - the number of timesteps between the last input timestep and the first output timestep
 
     Returns: ds_train, ds_test, dmin, dmax
         ds_train - a tf.data.Dataset containing (x, y) tuples of inputs and targets for training
@@ -84,15 +85,15 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     test = (test - mu) / scale
     df = (df - mu) / scale
 
-    inputs = train[:-(train_len)]
-    target = train[seq_len:]
+    inputs = train[:-(train_len + input_target_offset)]
+    target = train[(seq_len + input_target_offset):]
     dmin = tf.reduce_min(df, axis=0)
     dmax = tf.reduce_max(df, axis=0)
     x_train = keras.utils.timeseries_dataset_from_array(inputs, None, seq_len, batch_size=None)
     y_train = keras.utils.timeseries_dataset_from_array(target, None, train_len, batch_size=None).map(reshape(pred_len, chans))
     ds_train = tf.data.Dataset.zip((x_train, y_train)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
-    inputs = test[:-(pred_len)]
-    targets = test[seq_len:]
+    inputs = test[:-(pred_len + input_target_offset)]
+    targets = test[(seq_len + input_target_offset):]
 
     x = keras.utils.timeseries_dataset_from_array(inputs, None, seq_len, batch_size=None)
     y = keras.utils.timeseries_dataset_from_array(targets, None, pred_len, batch_size=None).map(reshape(pred_len, chans))
