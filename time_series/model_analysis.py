@@ -15,9 +15,10 @@ import json
 from experiment.bins import get_bins
 from time_series.datasets import get_time_series_dataset
 import numpy as np
+import sys
 
 
-def main():
+def main(base_model, loss):
     """Run the time series experiment.
     
     Params:
@@ -59,18 +60,29 @@ def main():
         elements = np.array([element for element in test_targets.as_numpy_iterator()])
         np.save(f"{dataset}_targets", elements)
         
-
-        base = transformer(shape, head_size, n_heads, features)
+        
+        if base_model == "transformer":
+            base = transformer(shape, head_size, n_heads, features)
+        else:
+            base = lstm_encdec(width, layers, 0.5, shape)
         # #base = linear(chans, seq_len)
-        # base = lstm_encdec(width, layers, 0.5, shape)
-
-        hlg = HLGaussian(base, borders, sigma, out_shape=(pred_len,))    
-        hlg.compile(keras.optimizers.Adam(lr), None, metrics)
-        hist = hlg.fit(train, epochs=epochs, verbose=2, validation_data=test)
-        with open(f"HL_transformer_{dataset}.json", "w") as file:
-            json.dump(hist.history, file)
-        predictions = hlg.predict(test_inputs)
-        np.save(f"{dataset}_HL", predictions)
+            
+        if loss = "HL":
+            hlg = HLGaussian(base, borders, sigma, out_shape=(pred_len,))    
+            hlg.compile(keras.optimizers.Adam(lr), None, metrics)
+            hist = hlg.fit(train, epochs=epochs, verbose=2, validation_data=test)
+            with open(f"HL_transformer_{dataset}_{base_model}.json", "w") as file:
+                json.dump(hist.history, file)
+            predictions = hlg.predict(test_inputs)
+            np.save(f"{dataset}_{base_model}_HL", predictions)
+        else:
+            reg = Regression(base, out_shape=(pred_len,))    
+            reg.compile(keras.optimizers.Adam(lr), "mse", metrics)
+            hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test)
+            with open(f"Reg_transformer_{dataset}_{base_model}.json", "w") as file:
+                json.dump(hist.history, file)
+            predictions = reg.predict(test_inputs)
+            np.save(f"{dataset}_{base_model}_reg", predictions)
         
 
         #base = transformer(shape, head_size, n_heads, features)
@@ -87,4 +99,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1], sys.argv[2])
