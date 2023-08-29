@@ -1,3 +1,5 @@
+"""Play an Atari game given prespecified actions and display the game window."""
+
 import gym
 import os
 
