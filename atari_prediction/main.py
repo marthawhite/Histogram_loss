@@ -7,55 +7,48 @@ Params:
         returns_file - the path to the file containing the precomputed returns
 """
 
-import tensorflow as tf
 from tensorflow import keras
 from experiment.models import HLGaussian, Regression
 import sys
 import json
 from atari_prediction.atari_dataset import RLAlternating
 import numpy as np
-from atari_prediction.base_models import value_network, large_model
+from atari_prediction.base_models import value_network
+from experiment.bins import get_bins
 
 
 class DataCallback(keras.callbacks.Callback):
+    """Callback to save model predictions at the end of each epoch.
+    
+    Params:
+        name - the name of the model; used in the output file name
+        test - the dataset containing a small number of sample batches to 
+            obtain predictions for
+        save_weights - flag indicating whether the model weights should be saved
+            NOTE: Weight files are typically ~6 MB each
+    """
 
-    def __init__(self, name, train, test, **kwargs):
+    def __init__(self, name, test, save_weights=False, **kwargs):
         super().__init__(**kwargs)
-        self.train_ds = train
         self.test_ds = test
-        self.name = name       
+        self.name = name
+        self.save_w = save_weights
 
     def on_epoch_end(self, epoch, logs=None):
+        """Save model predictions and weights at the end of each epoch.
+        
+        Params:
+            epoch - the epoch index
+            logs - the model metrics for this epoch
+        """
         super().on_epoch_end(epoch, logs)
         filename = f"{self.name}_{epoch}"
-        #np.save(f"{filename}_w.npy", self.model.weights)
-        #preds = []
-        # for x, y in self.train_ds:
-        #     preds.append(self.model(x))
-        # np.save(f"{filename}_train.npy", np.concatenate(preds))
+        if self.save_w:
+            np.save(f"{filename}_w.npy", self.model.weights)        
         preds = []
         for x, y in self.test_ds:
             preds.append(self.model(x))
         np.save(f"{filename}_test.npy", np.concatenate(preds))
-
-
-def get_bins(n_bins, pad_ratio, sig_ratio):
-    """Return the histogram bins given the HL parameters.
-    
-    Params:
-        n_bins - the number of bins to create (includes padding)
-        pad_ratio - the number of sigma of padding to use on each side 
-        sig_ratio - the ratio of sigma to bin width
-
-    Returns: 
-        borders - a Tensor of n_bins + 1 bin borders
-        sigma - the sigma to use for HL-Gaussian
-    """
-    bin_width = 1 / (n_bins - 2 * sig_ratio * pad_ratio)
-    pad_width = sig_ratio * pad_ratio * bin_width
-    borders = tf.linspace(-pad_width, 1 + pad_width, n_bins + 1)
-    sigma = bin_width * sig_ratio
-    return borders, sigma
 
     
 def main(action_file, returns_file):
@@ -85,21 +78,23 @@ def main(action_file, returns_file):
     base_model = value_network
     saved_batches = 100
 
+    # Compute the number of epoch_steps length training segments to use
     with open(action_file, "rb") as in_file:
         n = len(in_file.read())
     n_epochs = n * epochs // (epoch_steps * batch_size)
 
+    # Get dataset and HL bins
     keras.utils.set_random_seed(seed)
     borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio)
-    
     ds = RLAlternating(action_file, returns_file, buffer_size=buffer_size, batch_size=batch_size)
     train, val = ds.get_split(val_ratio)
-    #train_sample = ds.get_train(val_ratio).take(saved_batches)
-    train_sample=None
-    val_sample = val.take(saved_batches)
-    hlcb = DataCallback("HL", train_sample, val_sample)
-    regcb = DataCallback("Reg", train_sample, val_sample)
 
+    # Prepare callbacks for saving predictions
+    val_sample = val.take(saved_batches)
+    hlcb = DataCallback("HL", val_sample)
+    regcb = DataCallback("Reg", val_sample)
+
+    # Save test targets
     preds = []
     for x, y in val_sample:
         preds.append(y)
