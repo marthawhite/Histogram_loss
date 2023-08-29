@@ -8,53 +8,47 @@ from scipy import stats
 
 def main(dir_path):
     epochs = 35
+    rows, cols = 6, 6
     avgs = []
     sds = []
-    preds = []
-    fig, axs = plt.subplots(5, 7, figsize=(19, 9), layout="constrained")
+    fig, axs = plt.subplots(rows, cols, figsize=(19, 9), layout="constrained", sharex='all')
     for mode in ["test"]:
         for i in range(epochs):
-        #for i in [32]:  
             hl_path = os.path.join(dir_path, f"HL_{i}_{mode}.npy")
             reg_path = os.path.join(dir_path, f"Reg_{i}_{mode}.npy")
             hl = np.load(hl_path)
             reg = np.load(reg_path)
             y_path = os.path.join(dir_path, f"{mode}.npy")
             y = np.load(y_path)
-            weights_path = os.path.join(dir_path, f"HL_{i}_w.npy")
+            weights_path = os.path.join(dir_path, f"Reg_{i}_w.npy")
             weights = np.load(weights_path, allow_pickle=True)
             avgs.append([np.mean(x) for x in weights[:-2]])
             sds.append([np.std(x) for x in weights[:-2]])
-            print(avgs[-1])
-            axs[i // 7, i % 7].plot(y[:1024])
-            axs[i // 7, i % 7].plot(hl[:1024])
-            axs[i // 7, i % 7].plot(reg[:1024])
+            print(f"Epoch {i+1}: {avgs[-1]}")
+            ax = axs[i // cols, i % cols]
+            ax.plot(y)
+            ax.plot(reg, color='tab:green')
+            ax.plot(hl, color='tab:orange')
+
     n = np.asarray([np.size(x) for x in weights[:-2]])
     plt.show()
-    avgs = np.stack(avgs).T
+    avgs = np.stack(avgs)
     sds = np.stack(sds)
-    ses = (sds / np.sqrt(n)).T
+    ses = sds / np.sqrt(n)
     alpha = 0.05
     t_stats = stats.t.ppf(1 - alpha / 2, n - 1)
-    print(t_stats)
-    x = range(epochs)
+    low = (avgs - t_stats * ses).T
+    high = (avgs + t_stats * ses).T
+    avgs = avgs.T
+    x = range(1, epochs + 1)
     for i in range(avgs.shape[0] - 2):
-        plt.plot(avgs[i])
-        plt.fill_between(x, avgs[i] - t_stats[i] * ses[i], avgs[i] + t_stats[i] * ses[i], alpha=0.2)
-    #plt.plot(preds)
+        plt.plot(x, avgs[i])
+        plt.fill_between(x, low[i], high[i], alpha=0.2)
     ax = plt.gca()
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     plt.show()
-            
 
-    # for i in range(epochs):
-    #     hl_path = os.path.join(dir_path, f"HL_{i}_w.npy")
-    #     reg_path = os.path.join(dir_path, f"Reg_{i}_w.npy")
-    #     hl = np.load(hl_path, allow_pickle=True)
-    #     reg = np.load(reg_path, allow_pickle=True)
-    #     print(hl)
-    #     print(reg)
 
 if __name__ == "__main__":
     dir_path = sys.argv[1]
