@@ -281,10 +281,19 @@ class RLAdvanced(Dataset):
         test_n = n - int(n * (1 - val_ratio))
         spec = (tf.TensorSpec(shape=(4, 84, 84), dtype=tf.uint8), tf.TensorSpec(shape=(), dtype=tf.float32))
         train = tf.data.Dataset.from_generator(lambda : self.train_gen(test_n), output_signature=spec)
-        train = train.repeat().shuffle(self.buf).batch(self.batch_size).prefetch(self.prefetch)
+        train = train.shuffle(self.buf).batch(self.batch_size).prefetch(self.prefetch)
         test = tf.data.Dataset.from_generator(lambda : self.test_gen(test_n), output_signature=spec)
         test = test.repeat().batch(self.batch_size).prefetch(self.prefetch)
         return train, test
+    
+    def get_test(self, val_ratio):
+        with open(self.file, "rb") as in_file:
+            n = in_file.read().count(b'R')
+        test_n = n - int(n * (1 - val_ratio))
+        spec = (tf.TensorSpec(shape=(4, 84, 84), dtype=tf.uint8), tf.TensorSpec(shape=(), dtype=tf.float32))
+        test = tf.data.Dataset.from_generator(lambda : self.test_gen(test_n), output_signature=spec)
+        test = test.batch(self.batch_size).prefetch(self.prefetch)
+        return test
 
 
 class RLAlternating(Dataset):

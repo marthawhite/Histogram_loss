@@ -15,6 +15,10 @@ from atari_prediction.atari_dataset import RLAdvanced
 import numpy as np
 from atari_prediction.base_models import value_network
 from experiment.bins import get_bins
+import tensorflow as tf
+gpus = tf.config.experimental.list_physical_devices('GPU')
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
 
 
 class DataCallback(keras.callbacks.Callback):
@@ -88,6 +92,7 @@ def main(action_file, returns_file):
     borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio)
     ds = RLAdvanced(action_file, returns_file, buffer_size=buffer_size, batch_size=batch_size)
     train, val = ds.get_split(val_ratio)
+    test = ds.get_test(val_ratio)
 
     # Prepare callbacks for saving predictions
     val_sample = val.take(saved_batches)
@@ -106,6 +111,7 @@ def main(action_file, returns_file):
     regression_history = regression.fit(x=train, epochs=n_epochs, steps_per_epoch=train_steps, validation_steps=val_steps, validation_data=val, callbacks=[regcb], verbose=2)
     with open("reg.json", "w") as file:
         json.dump(regression_history.history, file)
+    regression.evaluate(test, verbose=2)
 
     # Run HL-Gaussian
     hl_gaussian = HLGaussian(base_model(), borders, sigma)
@@ -113,6 +119,7 @@ def main(action_file, returns_file):
     hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, steps_per_epoch=train_steps, validation_steps=val_steps, validation_data=val, callbacks=[hlcb], verbose=2)
     with open(f"hlg.json", "w") as file:
         json.dump(hl_gaussian_history.history, file)
+    hl_gaussian.evaluate(test, verbose=2)
 
 
 if __name__ == "__main__":
