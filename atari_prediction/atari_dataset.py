@@ -1,4 +1,8 @@
-"""Class for atari prediction RL datasets."""
+"""Class for atari prediction RL datasets.
+
+The current one is RLAlternating which uses two Gym instances with the test set
+consisting of every k-th episode.
+"""
 
 import tensorflow as tf
 from experiment.dataset import Dataset
@@ -123,6 +127,7 @@ class RLDataset(Dataset):
         self.i = -1
 
     def get_test(self):
+        """Return a test dataset without shuffling."""
         spec = (tf.TensorSpec(shape=(4, 84, 84), dtype=tf.uint8), tf.TensorSpec(shape=(), dtype=tf.float32))
         ds = tf.data.Dataset.from_generator(self.test_gen, output_signature=spec)
         ds = ds.batch(self.batch_size).prefetch(self.prefetch)
@@ -148,16 +153,14 @@ class RLDataset(Dataset):
     
 
 class RLAdvanced(Dataset):
-    """A dataset containing observations and returns for an RL agent from an atari game.
+    """A dataset using two Gym instances with the test set at the beginning.
+    This allows validation in the middle of training to gauge model progress.
     
     Params:
         action_file - path to file containing the agent's actions
         returns_file - path to file containing the precomputed returns
         game - the name of the game
         kwargs - dataset superclass arguments (batch_size, buffer_size, prefetch)
-
-    NOTE: This dataset returns a function that alternates between returning training and testing generators.
-        For correct results, always alternate between training and testing iterations.
     """
 
     def __init__(self, action_file, returns_file, game=None, **kwargs) -> None:
@@ -199,10 +202,10 @@ class RLAdvanced(Dataset):
         return (data - min_val) / scale
 
     def test_gen(self, limit):
-        """Generate training samples for a number of runs.
+        """Generate testing samples for a number of runs.
         
         Params:
-            limit - the number of game iterations (runs) used for training
+            limit - the number of game iterations (runs) used for testing
 
         Yields: (obs, return)
             obs - the (4, 84, 84) image stack as a numpy array
@@ -229,8 +232,11 @@ class RLAdvanced(Dataset):
 
 
     def train_gen(self, start):
-        """Generate test samples until the end of the file.
+        """Generate train samples until the end of the file.
         
+        Params:
+            start - the index of the first episode to use for training
+
         Yields: (obs, return)
             obs - the (4, 84, 84) image stack as a numpy array
             return - the scaled return for the corresponding timestep
@@ -264,11 +270,11 @@ class RLAdvanced(Dataset):
         """Return a dataset that allows train/test split iteration.
         
         Params:
-            val_ratio - the proportion of samples to use in the test split
+            val_ratio - the proportion of episodes to use in the test split
         
-        Returns: (ds, ds)
-            ds - a generator dataset that alternates between producing train and test samples each time iteration starts
-                NOTE: Always alternate between training and validation when using this dataset!
+        Returns: a tuple (train, test)
+            train - the shuffled and batched train dataset
+            test - the unshuffled test dataset from the beginning of the actions
         """
         with open(self.file, "rb") as in_file:
             n = in_file.read().count(b'R')
@@ -280,17 +286,16 @@ class RLAdvanced(Dataset):
         test = test.repeat().batch(self.batch_size).prefetch(self.prefetch)
         return train, test
 
+
 class RLAlternating(Dataset):
-    """A dataset containing observations and returns for an RL agent from an atari game.
+    """A dataset where test samples are drawn from throughout the actions file.
+    Every k-th episode is used as test data where k is approximately 1 / val_ratio.
     
     Params:
         action_file - path to file containing the agent's actions
         returns_file - path to file containing the precomputed returns
         game - the name of the game
         kwargs - dataset superclass arguments (batch_size, buffer_size, prefetch)
-
-    NOTE: This dataset returns a function that alternates between returning training and testing generators.
-        For correct results, always alternate between training and testing iterations.
     """
 
     def __init__(self, action_file, returns_file, game=None, **kwargs) -> None:
@@ -332,10 +337,10 @@ class RLAlternating(Dataset):
         return (data - min_val) / scale
 
     def test_gen(self, cycle):
-        """Generate training samples for a number of runs.
+        """Generate test samples for a number of runs.
         
         Params:
-            limit - the number of game iterations (runs) used for training
+            cycle - the number of episodes between each test episode
 
         Yields: (obs, return)
             obs - the (4, 84, 84) image stack as a numpy array
@@ -361,8 +366,11 @@ class RLAlternating(Dataset):
 
 
     def train_gen(self, cycle):
-        """Generate test samples until the end of the file.
+        """Generate train samples until the end of the file.
         
+        Params:
+            cycle - the length of the cycle between each test episode
+
         Yields: (obs, return)
             obs - the (4, 84, 84) image stack as a numpy array
             return - the scaled return for the corresponding timestep
@@ -394,15 +402,12 @@ class RLAlternating(Dataset):
         """Return a dataset that allows train/test split iteration.
         
         Params:
-            val_ratio - the proportion of samples to use in the test split
+            val_ratio - the proportion of episodes to use in the test split
         
-        Returns: (ds, ds)
-            ds - a generator dataset that alternates between producing train and test samples each time iteration starts
-                NOTE: Always alternate between training and validation when using this dataset!
+        Returns: a tuple (train, test)
+            train - the shuffled and batched train dataset
+            test - the unshuffled test dataset spread throughout the actions
         """
-        # with open(self.file, "rb") as in_file:
-        #     n = in_file.read().count(b'R')
-        # test_n = n - int(n * (1 - val_ratio))
         cycle = int(1 / val_ratio)
         spec = (tf.TensorSpec(shape=(4, 84, 84), dtype=tf.uint8), tf.TensorSpec(shape=(), dtype=tf.float32))
         train = tf.data.Dataset.from_generator(lambda : self.train_gen(cycle), output_signature=spec)
@@ -412,6 +417,14 @@ class RLAlternating(Dataset):
         return train, test
     
     def get_train(self, val_ratio):
+        """Return an unshuffled train dataset used for prediction visualization.
+        
+        Params:
+            val_ratio - the proportion of episodes used in the test split
+
+        Returns: 
+            train - the unshuffled training dataset 
+        """
         cycle = int(1 / val_ratio)
         spec = (tf.TensorSpec(shape=(4, 84, 84), dtype=tf.uint8), tf.TensorSpec(shape=(), dtype=tf.float32))
         train = tf.data.Dataset.from_generator(lambda : self.train_gen(cycle), output_signature=spec)
