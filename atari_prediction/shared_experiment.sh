@@ -3,13 +3,14 @@
 #SBATCH --output=%x-%j.out
 #SBATCH --time=0-12:00:00
 #SBATCH --cpus-per-task=6
-#SBATCH --mem=24000M
+#SBATCH --mem=32000M
 #SBATCH --gres=gpu:1
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
 GAMES_FILE=games.txt
 BASE_DIR=~/scratch
+GPUS=$SLURM_GPUS
 
 POLICY_DIR=$SLURM_TMPDIR/data/policies
 DATA=$BASE_DIR/data/policies.zip
@@ -26,4 +27,4 @@ pip install AutoROM-0.6.1-py3-none-any.whl AutoROM.accept-rom-license-0.6.1.tar.
 mkdir $SLURM_TMPDIR/data
 unzip $DATA -d $SLURM_TMPDIR/data
 
-parallel -j 50% source run_game.sh {} < $GAMES_FILE
+parallel -j 84% 'CUDA_VISIBLE_DEVICES=$((({%} - 1) % $GPUS)) source run_game.sh {} &> {}.out' < $GAMES_FILE
