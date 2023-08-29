@@ -11,7 +11,7 @@ from tensorflow import keras
 from experiment.models import HLGaussian, Regression
 import sys
 import json
-from atari_prediction.atari_dataset import RLAlternating
+from atari_prediction.atari_dataset import RLAdvanced
 import numpy as np
 from atari_prediction.base_models import value_network
 from experiment.bins import get_bins
@@ -86,7 +86,7 @@ def main(action_file, returns_file):
     # Get dataset and HL bins
     keras.utils.set_random_seed(seed)
     borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio)
-    ds = RLAlternating(action_file, returns_file, buffer_size=buffer_size, batch_size=batch_size)
+    ds = RLAdvanced(action_file, returns_file, buffer_size=buffer_size, batch_size=batch_size)
     train, val = ds.get_split(val_ratio)
 
     # Prepare callbacks for saving predictions
