@@ -2,15 +2,13 @@
 #SBATCH --job-name=Parallel
 #SBATCH --output=%x-%j.out
 #SBATCH --time=1-00:00:00
-#SBATCH --nodes=1
-#SBATCH --exclusive
-#SBATCH --cpus-per-task=24
-#SBATCH --mem=128000M
-#SBATCH --gpus-per-node=p100:4
+#SBATCH --cpus-per-task=6
+#SBATCH --mem=32000M
+#SBATCH --gres=gpu:1
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-GAMES_FILE=games.txt
+GAMES_FILE=leftover_games.txt
 BASE_DIR=~/scratch
 
 POLICY_DIR=$SLURM_TMPDIR/data/policies
@@ -26,4 +24,4 @@ pip install AutoROM-0.6.1-py3-none-any.whl AutoROM.accept-rom-license-0.6.1.tar.
 mkdir $SLURM_TMPDIR/data
 unzip $DATA -d $SLURM_TMPDIR/data
 
-parallel 'CUDA_VISIBLE_DEVICES=$((({%} - 1) % 4)) source run_game.sh {} &> {}.out' < $GAMES_FILE
+parallel 'CUDA_VISIBLE_DEVICES=$((({%} - 1) % 1)) source run_game.sh {} &> {}.out' < $GAMES_FILE
