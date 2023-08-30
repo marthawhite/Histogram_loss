@@ -26,7 +26,7 @@ def main(base_model, loss):
     """
     datasets = ["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
     pred_len = 1
-    seq_len = 96
+    seq_len = 336
     epochs = 100
     sig_ratio = 2.
     pad_ratio = 3.
