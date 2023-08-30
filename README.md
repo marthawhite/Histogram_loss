@@ -6,7 +6,7 @@ This repository contains code for running experiments with distributional losses
  - [Age Estimation](https://paperswithcode.com/task/age-estimation) - Predicting the age of a person based on an image of their face.
  - [Time Series](https://paperswithcode.com/sota/time-series-forecasting-on-etth1-720) - Time series forecasting.
  - Atari Prediction - Predicting the return obtained by an RL agent for a given observation while playing an Atari game.
- - Replication - Recreating previous experimenatl results on popular regression datasets.
+ - Replication - Recreating previous experimental results on popular regression datasets.
 
 ## Team
  - Martha White
