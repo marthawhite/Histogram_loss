@@ -266,11 +266,35 @@ class RLAdvanced(Dataset):
         self.env.reset(seed=1)
         self.i = -1
 
-    def get_split(self, val_ratio, val_steps):
-        """Return a dataset that allows train/test split iteration.
+    def get_split(self, test_ratio, val_steps):
+        """Return a dataset that allows train/val split iteration.
+        
+        NOTE: The validation data is a subset of the test data. 
+        It is used to show training progression, not evaluate hyperparameters.
         
         Params:
-            val_ratio - the proportion of episodes to use in the test split
+            test_ratio - the proportion of episodes to use in the test split
+            val_steps - the number of batches to include in the validation set
+        
+        Returns: a tuple (train, val)
+            train - the shuffled and batched train dataset
+            val - the unshuffled validation dataset with val_steps batches
+        """
+        with open(self.file, "rb") as in_file:
+            n = in_file.read().count(b'R')
+        test_n = n - int(n * (1 - test_ratio))
+        spec = (tf.TensorSpec(shape=(4, 84, 84), dtype=tf.uint8), tf.TensorSpec(shape=(), dtype=tf.float32))
+        train = tf.data.Dataset.from_generator(lambda : self.train_gen(test_n), output_signature=spec)
+        train = train.shuffle(self.buf).batch(self.batch_size).prefetch(self.prefetch)
+        val = tf.data.Dataset.from_generator(lambda : self.test_gen(test_n), output_signature=spec)
+        val = val.take(val_steps).batch(self.batch_size).prefetch(self.prefetch)
+        return train, val
+    
+    def get_test(self, test_ratio):
+        """Return a dataset to evaluate the final model on.
+        
+        Params:
+            test_ratio - the proportion of episodes to use in the test split
         
         Returns: a tuple (train, test)
             train - the shuffled and batched train dataset
@@ -278,18 +302,7 @@ class RLAdvanced(Dataset):
         """
         with open(self.file, "rb") as in_file:
             n = in_file.read().count(b'R')
-        test_n = n - int(n * (1 - val_ratio))
-        spec = (tf.TensorSpec(shape=(4, 84, 84), dtype=tf.uint8), tf.TensorSpec(shape=(), dtype=tf.float32))
-        train = tf.data.Dataset.from_generator(lambda : self.train_gen(test_n), output_signature=spec)
-        train = train.shuffle(self.buf).batch(self.batch_size).prefetch(self.prefetch)
-        test = tf.data.Dataset.from_generator(lambda : self.test_gen(test_n), output_signature=spec)
-        test = test.take(val_steps).batch(self.batch_size).prefetch(self.prefetch)
-        return train, test
-    
-    def get_test(self, val_ratio):
-        with open(self.file, "rb") as in_file:
-            n = in_file.read().count(b'R')
-        test_n = n - int(n * (1 - val_ratio))
+        test_n = n - int(n * (1 - test_ratio))
         spec = (tf.TensorSpec(shape=(4, 84, 84), dtype=tf.uint8), tf.TensorSpec(shape=(), dtype=tf.float32))
         test = tf.data.Dataset.from_generator(lambda : self.test_gen(test_n), output_signature=spec)
         test = test.batch(self.batch_size).prefetch(self.prefetch)
