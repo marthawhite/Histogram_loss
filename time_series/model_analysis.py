@@ -10,7 +10,7 @@ Params:
 import tensorflow as tf
 from tensorflow import keras
 from experiment.models import HLGaussian, Regression
-from time_series.base_models import transformer, linear, lstm_encdec
+from time_series.base_models import transformer, linear, lstm_encdec, independent_dense, dependent_dense
 import json
 from experiment.bins import get_bins
 from time_series.datasets import get_time_series_dataset
@@ -63,9 +63,14 @@ def main(base_model, loss):
         
         if base_model == "transformer":
             base = transformer(shape, head_size, n_heads, features)
-        else:
+        elif base_model = "LSTM":
             base = lstm_encdec(width, layers, 0.5, shape)
-        # #base = linear(chans, seq_len)
+        elif base_model = "linear":
+            base = linear(chans, seq_len)
+        elif base_model = "independent_dense":
+            base = independent_dense(chans, seq_len)
+        else:
+            base = dependent_dense(chans, seq_len)
             
         if loss = "HL":
             hlg = HLGaussian(base, borders, sigma, out_shape=(pred_len,))    

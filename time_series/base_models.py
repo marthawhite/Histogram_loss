@@ -2,6 +2,8 @@
 
 from tensorflow import keras
 from keras import layers
+from experiment.multidense import MultiDense
+
 
 
 def transformer(input_shape, head_size, num_heads, feature_dims):
@@ -37,6 +39,52 @@ def transformer(input_shape, head_size, num_heads, feature_dims):
     x = layers.GlobalAveragePooling1D()(x)
     outputs = layers.Reshape((values, feature_dims))(x)
     return keras.Model(inputs, outputs)
+
+
+def independent_dense(chans, seq_len):
+    """Return a Keras model to form the base of a 3 independent dense layer model.
+    Permutes the input channels and timesteps, but does not modify the data.
+    
+    Takes input of the form:
+        (batchsize, timesteps, channels)
+    and produces output of the form
+        (batchsize, channels, timesteps)
+
+    Params:
+        channels - the number of channels
+        seq_len - the number of input timesteps
+    
+    Returns: a Keras model to use as the base
+    """
+    return keras.model.Sequential([
+        keras.layers.Reshape((seq_len, chans)),
+        keras.layers.Permute([2,1]),
+        MultiDense(shape=(seq_len,)),
+        MultiDense(shape=(seq_len,))
+    ])
+
+
+def dependent_dense(chans, seq_len):
+    """Return a Keras model to form the base of a 3 dense layer model.
+    Permutes the input channels and timesteps, but does not modify the data.
+    
+    Takes input of the form:
+        (batchsize, timesteps, channels)
+    and produces output of the form
+        (batchsize, channels, timesteps)
+
+    Params:
+        channels - the number of channels
+        seq_len - the number of input timesteps
+    
+    Returns: a Keras model to use as the base
+    """
+    return keras.model.Sequential({
+        keras.layers.Reshape((seq_len*chans)),
+        keras.layers.Dense(seq_len*chans),
+        keras.layers.Dense((seq_len*chans)),
+        keras.layers.Reshape((chans, seq_len))
+    })
 
 
 def linear(chans, seq_len):
