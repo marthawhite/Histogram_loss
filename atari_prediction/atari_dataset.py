@@ -266,7 +266,7 @@ class RLAdvanced(Dataset):
         self.env.reset(seed=1)
         self.i = -1
 
-    def get_split(self, val_ratio):
+    def get_split(self, val_ratio, val_steps):
         """Return a dataset that allows train/test split iteration.
         
         Params:
@@ -283,7 +283,7 @@ class RLAdvanced(Dataset):
         train = tf.data.Dataset.from_generator(lambda : self.train_gen(test_n), output_signature=spec)
         train = train.shuffle(self.buf).batch(self.batch_size).prefetch(self.prefetch)
         test = tf.data.Dataset.from_generator(lambda : self.test_gen(test_n), output_signature=spec)
-        test = test.repeat().batch(self.batch_size).prefetch(self.prefetch)
+        test = test.take(val_steps).batch(self.batch_size).prefetch(self.prefetch)
         return train, test
     
     def get_test(self, val_ratio):

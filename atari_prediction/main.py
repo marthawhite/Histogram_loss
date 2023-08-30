@@ -73,9 +73,8 @@ def main(action_file, returns_file):
     seed = 1
     epochs = 1
     val_ratio = 0.05
-    epoch_steps = 10000
-    train_steps = epoch_steps * (1 - val_ratio)
-    val_steps = epoch_steps * val_ratio
+    train_steps = 10000
+    val_steps = 500
     buffer_size = 1000
     batch_size = 32
     metrics = ["mse", "mae"]
@@ -85,17 +84,17 @@ def main(action_file, returns_file):
     # Compute the number of epoch_steps length training segments to use
     with open(action_file, "rb") as in_file:
         n = len(in_file.read())
-    n_epochs = n * epochs // (epoch_steps * batch_size)
+    n_epochs = n * (1 - val_ratio) * epochs // (train_steps * batch_size)
 
     # Get dataset and HL bins
     keras.utils.set_random_seed(seed)
     borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio)
     ds = RLAdvanced(action_file, returns_file, buffer_size=buffer_size, batch_size=batch_size)
-    train, val = ds.get_split(val_ratio)
+    train, val = ds.get_split(val_ratio, val_steps)
     test = ds.get_test(val_ratio)
 
     # Prepare callbacks for saving predictions
-    val_sample = val.take(saved_batches)
+    val_sample = test.take(saved_batches)
     hlcb = DataCallback("HL", val_sample)
     regcb = DataCallback("Reg", val_sample)
 
@@ -108,7 +107,7 @@ def main(action_file, returns_file):
     # Run Regression
     regression = Regression(base_model())
     regression.compile(optimizer=keras.optimizers.Adam(learning_rate), loss="mse", metrics=metrics)
-    regression_history = regression.fit(x=train, epochs=n_epochs, steps_per_epoch=train_steps, validation_steps=val_steps, validation_data=val, callbacks=[regcb], verbose=2)
+    regression_history = regression.fit(x=train, epochs=n_epochs, steps_per_epoch=train_steps, validation_data=val, callbacks=[regcb], verbose=2)
     reg_results = regression.evaluate(test, return_dict=True, verbose=2)
     with open("reg.json", "w") as file:
         json.dump(regression_history.history, file)
@@ -116,7 +115,7 @@ def main(action_file, returns_file):
     # Run HL-Gaussian
     hl_gaussian = HLGaussian(base_model(), borders, sigma)
     hl_gaussian.compile(optimizer=keras.optimizers.Adam(learning_rate), metrics=metrics)
-    hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, steps_per_epoch=train_steps, validation_steps=val_steps, validation_data=val, callbacks=[hlcb], verbose=2)
+    hl_gaussian_history = hl_gaussian.fit(x=train, epochs=n_epochs, steps_per_epoch=train_steps, validation_data=val, callbacks=[hlcb], verbose=2)
     hl_results = hl_gaussian.evaluate(test, return_dict=True, verbose=2)
     with open(f"hlg.json", "w") as file:
         json.dump(hl_gaussian_history.history, file)
@@ -129,7 +128,6 @@ def main(action_file, returns_file):
     with open("results.json", "w") as out_file:
         json.dump(results, out_file)
     
-
 
 if __name__ == "__main__":
     action_file = sys.argv[1]
