@@ -84,7 +84,7 @@ def main(action_file, returns_file):
     # Compute the number of epoch_steps length training segments to use
     with open(action_file, "rb") as in_file:
         n = len(in_file.read())
-    n_epochs = n * (1 - val_ratio) * epochs // (train_steps * batch_size)
+    n_epochs = int(n * (1 - val_ratio) * epochs // (train_steps * batch_size))
 
     # Get dataset and HL bins
     keras.utils.set_random_seed(seed)
@@ -120,6 +120,7 @@ def main(action_file, returns_file):
     with open(f"hlg.json", "w") as file:
         json.dump(hl_gaussian_history.history, file)
 
+    # Collect and save test results
     results = {}
     for k, v in reg_results.items():
         results[f"reg_{k}"] = v
