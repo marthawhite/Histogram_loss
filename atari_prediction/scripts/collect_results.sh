@@ -16,5 +16,5 @@ done
 
 rm *.tgz
 cd $SLURM_TMPDIR
-tar -xzf $OUT_TAR $DIR_NAME
+tar -czf $OUT_TAR $DIR_NAME
 cp $OUT_TAR $BASE_DIR/.
