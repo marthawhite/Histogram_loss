@@ -1,4 +1,4 @@
-﻿absl-py==1.4.0
+absl-py==1.4.0
 ale-py==0.8.1
 anyio==3.7.1
 argon2-cffi==21.3.0
