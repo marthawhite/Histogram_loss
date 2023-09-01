@@ -60,7 +60,9 @@ def independent_dense(chans, seq_len):
         keras.layers.Reshape((seq_len, chans)),
         keras.layers.Permute([2,1]),
         MultiDense(shape=(seq_len,)),
-        MultiDense(shape=(seq_len,))
+        keras.layers.ReLU(),
+        MultiDense(shape=(seq_len,)),
+        keras.layers.ReLU()
     ])
 
 
@@ -79,10 +81,10 @@ def dependent_dense(chans, seq_len):
     
     Returns: a Keras model to use as the base
     """
-    return keras.models.Sequential([
-        keras.layers.Reshape((seq_len*chans,)),
-        keras.layers.Dense(seq_len*chans),
-        keras.layers.Dense(seq_len*chans),
+    return keras.model.Sequential([
+        keras.layers.Reshape((seq_len*chans)),
+        keras.layers.Dense(seq_len*chans, activation="relu"),
+        keras.layers.Dense(seq_len*chans, activation="relu"),
         keras.layers.Reshape((chans, seq_len))
     ])
 
