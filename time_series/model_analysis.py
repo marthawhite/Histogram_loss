@@ -85,24 +85,11 @@ def main(base_model, loss):
             reg = Regression(base, out_shape=out_shape)    
             reg.compile(keras.optimizers.Adam(lr), "mse", metrics)
             hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test)
-            with open(f"Reg_{dataset}_{base_model}.json", "w") as file:
+            with open(f"L2_{dataset}_{base_model}.json", "w") as file:
                 json.dump(hist.history, file)
             predictions = reg.predict(test_inputs)
-            np.save(f"{dataset}_{base_model}_reg", predictions)
+            np.save(f"{dataset}_{base_model}_L2", predictions)
         
-
-        #base = transformer(shape, head_size, n_heads, features)
-        #base = linear(chans, seq_len)
-        #base = lstm_encdec(width, layers, 0.5, shape)
-
-        #reg = Regression(base, out_shape=(pred_len,))    
-        #reg.compile(keras.optimizers.Adam(lr), "mse", metrics)
-        #hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test)
-        #with open(f"Reg_transformer_{dataset}.json", "w") as file:
-        #    json.dump(hist.history, file)
-        #predictions = reg.predict(test_inputs)
-        #np.save(f"{dataset}_reg", predictions)
-
 
 if __name__ == "__main__":
     main(sys.argv[1], sys.argv[2])
