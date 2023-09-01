@@ -1,3 +1,8 @@
+"""Old Atari dataset. 
+
+NOTE: For datasets used for recent experiments, see atari_dataset.py
+"""
+
 import tensorflow as tf
 import numpy as np
 import gym

@@ -26,7 +26,7 @@ def main(base_model, loss):
     """
     datasets = ["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
     pred_len = 1
-    seq_len = 96
+    seq_len = 336
     epochs = 100
     sig_ratio = 2.
     pad_ratio = 3.
@@ -41,7 +41,7 @@ def main(base_model, loss):
     batch_size = 32
     drop = "date"
     metrics = ["mse", "mae"]
-    lr = 1e-3
+    lr = 1e-4
     input_target_offset = 10
 
     for dataset in datasets:
@@ -60,20 +60,21 @@ def main(base_model, loss):
         elements = np.array([element for element in test_targets.as_numpy_iterator()])
         np.save(f"{dataset}_targets", elements)
         
-        
+        out_shape = (pred_len,)
         if base_model == "transformer":
             base = transformer(shape, head_size, n_heads, features)
-        elif base_model = "LSTM":
+        elif base_model == "LSTM":
+            out_shape = (chans, pred_len)
             base = lstm_encdec(width, layers, 0.5, shape)
-        elif base_model = "linear":
+        elif base_model == "linear":
             base = linear(chans, seq_len)
-        elif base_model = "independent_dense":
+        elif base_model == "independent_dense":
             base = independent_dense(chans, seq_len)
         else:
             base = dependent_dense(chans, seq_len)
             
-        if loss = "HL":
-            hlg = HLGaussian(base, borders, sigma, out_shape=(pred_len,))    
+        if loss == "HL":
+            hlg = HLGaussian(base, borders, sigma, out_shape=out_shape)    
             hlg.compile(keras.optimizers.Adam(lr), None, metrics)
             hist = hlg.fit(train, epochs=epochs, verbose=2, validation_data=test)
             with open(f"HL_{dataset}_{base_model}.json", "w") as file:
@@ -81,7 +82,7 @@ def main(base_model, loss):
             predictions = hlg.predict(test_inputs)
             np.save(f"{dataset}_{base_model}_HL", predictions)
         else:
-            reg = Regression(base, out_shape=(pred_len,))    
+            reg = Regression(base, out_shape=out_shape)    
             reg.compile(keras.optimizers.Adam(lr), "mse", metrics)
             hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test)
             with open(f"Reg_{dataset}_{base_model}.json", "w") as file:

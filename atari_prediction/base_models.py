@@ -21,6 +21,27 @@ def value_network():
         ])
 
 
+def leaky_value_network():
+    """Small convolutional value network using LeakyReLU.
+    Based on the example from sample_test.py
+
+    Returns: a keras model that accepts stacked image inputs and outputs a feature layer.
+    """
+    return keras.models.Sequential([
+        layers.Permute((2, 3, 1)),
+        layers.Rescaling(1. / 255),
+        layers.Conv2D(32, 8, 4),
+        layers.LeakyReLU(),
+        layers.Conv2D(64, 4, 2),
+        layers.LeakyReLU(),
+        layers.Conv2D(64, 3, 1),
+        layers.LeakyReLU(),
+        layers.Flatten(),
+        layers.Dense(512),
+        layers.LeakyReLU()
+        ])
+
+
 def large_model(image_size = (84, 84), num_images=4, output_size=1, output_activation=None, dropout=0.5):
     """Larger convolutional neural network.
 

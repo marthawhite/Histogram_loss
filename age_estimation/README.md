@@ -9,6 +9,12 @@ We ran experiments with and without face alignment using points detected by [MTC
  - [UTKFace](https://susanqq.github.io/UTKFace/) - Consists of 20k+ aligned and cropped images from 0 - 116 years old ([Zhang *et at.* 2017](https://arxiv.org/pdf/1702.08423v2.pdf))
  - [MegaAge Asian]() - Contains 40k images of Asian faces from ages 0 - 70 ([Zhang *et al.* 2017](https://arxiv.org/pdf/1708.09687v2.pdf))
 
- ## Base Models
+## Base Models
   - Xception - 22.9 M parameters ([Chollet 2017](https://arxiv.org/pdf/1610.02357.pdf))
   - VGG16 - 138.4 M paramters ([Simonyan and Zisserman 2015](https://arxiv.org/pdf/1409.1556.pdf))
+
+## Instructions
+1. Setup your python environment using `requirements.txt`
+2. Copy one of the modules from the `main` directory into your project directory.
+3. Modify the script to work with your dataset path and experiment configuration.
+4. Run the module with python.
