@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=Analysis
 #SBATCH --output=%x-%A-%a.out
-#SBATCH --array=0-0
+#SBATCH --array=0-2
 #SBATCH --time=0-12:00:00
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8000M
@@ -9,7 +9,7 @@
 #SBATCH --mail-user=kluedema@ualberta.ca
 #SBATCH --mail-type=ALL
 
-MODELS=(dependent_dense)
+MODELS=(linear independent_dense dependent_dense)
 MODEL=${MODELS[$SLURM_ARRAY_TASK_ID]}
 
 PY_FILE=Histogram_loss/model_analysis.py
