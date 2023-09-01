@@ -81,8 +81,8 @@ def dependent_dense(chans, seq_len):
     
     Returns: a Keras model to use as the base
     """
-    return keras.model.Sequential([
-        keras.layers.Reshape((seq_len*chans)),
+    return keras.models.Sequential([
+        keras.layers.Reshape((seq_len*chans,)),
         keras.layers.Dense(seq_len*chans, activation="relu"),
         keras.layers.Dense(seq_len*chans, activation="relu"),
         keras.layers.Reshape((chans, seq_len))
