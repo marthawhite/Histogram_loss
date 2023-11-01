@@ -52,12 +52,12 @@ class MultiDense(keras.layers.Layer):
         self.w = self.add_weight(
             name="w",
             shape= mat_shape,
-            initializer="random_normal", 
+            initializer="lecun_normal", 
             trainable=True
         )
         self.b = self.add_weight(
             name="b",
-            initializer="random_normal",
+            initializer="lecun_normal",
             shape=bias_shape,
             trainable=True
         )

@@ -26,7 +26,7 @@ class Regression(keras.Model):
     def __init__(self, base, out_shape=()):
         super().__init__()
         self.base = base
-        self.reg = MultiDense(out_shape, individual=True)
+        self.reg = MultiDense(out_shape, individual=False)
 
     def call(self, inputs, training=None):
         """Perform regression on the features outputted by the base model.
