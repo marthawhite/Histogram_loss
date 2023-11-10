@@ -47,7 +47,7 @@ def get_ETT_split(data, filename, seq_len):
     return train, val, test
 
 
-def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_len=720, test_size=0.2, batch_size=64, chans=7, input_target_offset=0,eps=1e-08):
+def get_time_series_dataset(filename, drop=[], seq_len=720, batch_size=64, chans=7, input_target_offset=0,eps=1e-08,univariate=True):
     """Return the train/test split for a CSV time series dataset.
     Uses 12-4 month split to be comparable to standard 12-4-4 train-val-test for ETTh datasets.
     
@@ -82,22 +82,27 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     df = (df - mu) / scale    
     train, _, test = get_ETT_split(df, filename, seq_len)
 
-    inputs = train[:-(train_len)]
-    target = train[(seq_len - input_target_offset):]
-    dmin = tf.reduce_min(df, axis=0)
-    dmax = tf.reduce_max(df, axis=0)
-    x_train = keras.utils.timeseries_dataset_from_array(inputs, None, seq_len, batch_size=None)
-    y_train = keras.utils.timeseries_dataset_from_array(target, None, train_len+input_target_offset, batch_size=None).map(reshape(train_len+input_target_offset, chans))
-    ds_train = tf.data.Dataset.zip((x_train, y_train)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
-    inputs = test[:-(pred_len)]
-    targets = test[(seq_len - input_target_offset):]
+    train_inputs = train[:-(seq_len+input_target_offset)]
+    train_target = train[(seq_len+input_target_offset):]
+    
+    test_inputs = test[:-(seq_len+input_target_offset)]
+    test_targets = test[(seq_len+input_target_offset):]
+    
+    # if univarite prediction, predict oil temperature
+    if univariate:
+        dmin = tf.reduce_min(df[:,-1], axis=0)
+        dmax = tf.reduce_max(df[:,-1], axis=0)
+        x_train = keras.utils.timeseries_dataset_from_array(train_inputs, None, seq_len, batch_size=None)
+        y_train = keras.utils.timeseries_dataset_from_array(train_target[:,-1], None, 1, batch_size=None)
+        ds_train = tf.data.Dataset.zip((x_train, y_train)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
 
-    x = keras.utils.timeseries_dataset_from_array(inputs, None, seq_len, batch_size=None)
-    y = keras.utils.timeseries_dataset_from_array(targets, None, pred_len+input_target_offset, batch_size=None).map(reshape(pred_len+input_target_offset, chans))
-    ds_test = tf.data.Dataset.zip((x,y)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
-    print(len(ds_train))
-    return ds_train, ds_test, dmin, dmax
-
+        x_test = keras.utils.timeseries_dataset_from_array(test_inputs, None, seq_len, batch_size=None)
+        y_test = keras.utils.timeseries_dataset_from_array(test_targets[:,-1], None, 1, batch_size=None)
+        ds_test = tf.data.Dataset.zip((x_test,y_test)).batch(1).prefetch(tf.data.AUTOTUNE)
+        print(len(ds_train))
+        return ds_train, ds_test, dmin, dmax
+    else:
+        raise NotImplementedError("Multivariate not implemented yet")
 
 class TSDataset(Dataset):
     """A dataset of time-series data read from a CSV file.

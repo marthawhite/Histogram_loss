@@ -89,14 +89,14 @@ def dependent_dense(chans, seq_len):
     ])
 
 
-def linear(chans, seq_len):
+def linear(chans, seq_len,n_variates):
     """Return a Keras model to form the base of a linear model.
     Permutes the input channels and timesteps, but does not modify the data.
     
     Takes input of the form:
         (batchsize, timesteps, channels)
     and produces output of the form
-        (batchsize, channels, timesteps)
+        (batchsize, n_variates, timesteps)
 
     Params:
         channels - the number of channels
@@ -105,12 +105,13 @@ def linear(chans, seq_len):
     Returns: a Keras model to use as the base
     """
     return keras.models.Sequential([
-        keras.layers.Reshape((seq_len, chans)),
-        keras.layers.Permute([2, 1])
+        keras.layers.Reshape((seq_len*chans,)),
+        keras.layers.Dense(n_variates, activation="relu")
+        #keras.layers.Permute([2, 1])
     ])
 
 
-def lstm_encdec(width, n_layers, drop, input_shape):
+def lstm_encdec(width,n_variates, n_layers, drop, input_shape):
     """Return an LSTM encoder-decoder base model.
     
     Takes input of the form:
@@ -128,13 +129,13 @@ def lstm_encdec(width, n_layers, drop, input_shape):
     """
     inputs = keras.Input(input_shape)
     x = inputs
-    for i in range(n_layers):
-        x = layers.TimeDistributed(layers.Dense(width, activation="relu"))(x)
-        x = layers.TimeDistributed(layers.BatchNormalization())(x)
-        x = layers.TimeDistributed(layers.Dropout(drop))(x)
+    #for i in range(n_layers):
+    #    x = layers.TimeDistributed(layers.Dense(width, activation="relu"))(x)
+    #    x = layers.TimeDistributed(layers.BatchNormalization())(x)
+    #    x = layers.TimeDistributed(layers.Dropout(drop))(x)
     x = layers.LSTM(width)(x)
-    for i in range(n_layers):
-        x = layers.BatchNormalization()(x)
-        x = layers.Dropout(drop)(x)
-        x = layers.Dense(width, activation="relu")(x)
+    #for i in range(n_layers):
+    #    x = layers.BatchNormalization()(x)
+    #    x = layers.Dropout(drop)(x)
+    x = layers.Dense(n_variates)(x)
     return keras.Model(inputs, x)
