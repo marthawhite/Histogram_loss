@@ -79,31 +79,27 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, batch_size=64, chans
     mu = tf.reduce_mean(df, axis=0)
     sig = tf.math.reduce_std(df, axis=0)
     scale = sig + eps
-    df = (df - mu) / scale    
-    train, _, test = get_ETT_split(df, filename, seq_len)
-
-    train_inputs = train[:-(seq_len+input_target_offset)]
-    train_target = train[(seq_len+input_target_offset):]
+    df = (df - mu) / scale
+    df_inputs = df[:-(seq_len+input_target_offset)]
+    df_targets = df[(seq_len+input_target_offset):]
+    xs = keras.utils.timeseries_dataset_from_array(df_inputs, None, seq_len, batch_size=None)
+    ys = keras.utils.timeseries_dataset_from_array(df_targets[:,-1], None, 1, batch_size=None)
+    ds = tf.data.Dataset.zip((xs, ys))
     
-    test_inputs = test[:-(seq_len+input_target_offset)]
-    test_targets = test[(seq_len+input_target_offset):]
+    periods = 1
+    if filename[-6] == "m":
+        periods = 4
+    samples_per_month = 30 * 24 * periods  # 30 days
+    total_samples = samples_per_month * 24
+    train_len = 12 * samples_per_month  # 12 months
+    test_len = 4 * samples_per_month
     
-    # if univarite prediction, predict oil temperature
-    if univariate:
-        dmin = tf.reduce_min(df[:,-1], axis=0)
-        dmax = tf.reduce_max(df[:,-1], axis=0)
-        x_train = keras.utils.timeseries_dataset_from_array(train_inputs, None, seq_len, batch_size=None)
-        y_train = keras.utils.timeseries_dataset_from_array(train_target[:,-1], None, 1, batch_size=None)
-        ds_train = tf.data.Dataset.zip((x_train, y_train)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
-
-        x_test = keras.utils.timeseries_dataset_from_array(test_inputs, None, seq_len, batch_size=None)
-        y_test = keras.utils.timeseries_dataset_from_array(test_targets[:,-1], None, 1, batch_size=None)
-        ds_test = tf.data.Dataset.zip((x_test,y_test)).batch(1).prefetch(tf.data.AUTOTUNE)
-        print(len(ds_train))
-        return ds_train, ds_test, dmin, dmax
-    else:
-        raise NotImplementedError("Multivariate not implemented yet")
-
+    train,test = tf.keras.utils.split_dataset(ds, left_size=train_len/total_samples,right_size=test_len/total_samples,shuffle=True,seed=0)
+    train = train.batch(batch_size).prefetch(tf.data.AUTOTUNE)
+    test = test.batch(batch_size).prefetch(tf.data.AUTOTUNE)
+    dmin = tf.reduce_min(df[:,-1], axis=0)
+    dmax = tf.reduce_max(df[:,-1], axis=0)
+    return train, test, dmin, dmax
 class TSDataset(Dataset):
     """A dataset of time-series data read from a CSV file.
     

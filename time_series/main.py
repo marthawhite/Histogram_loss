@@ -35,10 +35,7 @@ def training(model,train,test,epochs,optimizer,pred_len,loss):
         for test_step,(x_batch_val, y_batch_val) in enumerate(test):
             test_pred = model(x_batch_val, training=False)
             mse_test_metric.update_state(y_batch_val, test_pred)
-            mae_test_metric.update_state(y_batch_val, test_pred)
-            if epoch == (epochs-1):
-                test_data = {'preds':test_pred.numpy().item(), 'labels':y_batch_val.numpy().item()}
-                wandb.log(test_data)
+            mae_test_metric.update_state(y_batch_val, test_pred)   
         test_mse_acc = mse_test_metric.result()
         test_mae_acc = mae_test_metric.result()
         mse_test_metric.reset_states()
@@ -47,6 +44,12 @@ def training(model,train,test,epochs,optimizer,pred_len,loss):
         wandb.log(res)
     wandb.run.summary["mse_test_loss"] = test_mse_acc.numpy().item()
     wandb.run.summary["mae_test_loss"] = test_mae_acc.numpy().item()
+    ### Log the predictions on one batch of the test data
+    for test_step,(x_batch_val, y_batch_val) in enumerate(test):
+            test_pred = model(x_batch_val, training=False)
+            for i in range(len(test_pred)):
+                wandb.log({"test_prediction":test_pred[i].numpy().item(),"test_target":y_batch_val[i].numpy().item()})
+            break
     return
     
 def main(base_model, loss):
@@ -85,14 +88,14 @@ def main(base_model, loss):
     """
     
     configs = {
-    "datasets" : ["ETTh2"],#["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
+    "datasets" : ["ETTh1", "ETTh2", "ETTm1", "ETTm2"],
     "pred_len" : 1,
     "seq_len" : 336,
-    "epochs" : 50,
+    "epochs" : 25,
     "sig_ratio" : 2.,
     "pad_ratio" : 3.,
     "n_bins" : 100,
-    "chans" : 1,
+    "chans" : 1, # the number of target prediction variables
     "input_channels":7,
     "head_size" : 512,
     "n_heads" : 8,
@@ -106,9 +109,10 @@ def main(base_model, loss):
     "input_target_offset" : 96,
     "base_model":base_model,
     "loss":loss,
-    "univariate":True,
+    "univariate":True, ## code is only doing univariate for now
     }
     for dataset in configs["datasets"]:
+        configs["dataset"] = dataset
         keras.utils.set_random_seed(1)
         data_path = f"{dataset}.csv"
         train, test, dmin, dmax = get_time_series_dataset(data_path, configs["drop"], configs["seq_len"], configs["batch_size"], configs["chans"], configs["input_target_offset"],configs["univariate"])
@@ -140,9 +144,9 @@ def main(base_model, loss):
             loss_model = HLGaussian(base, borders, sigma, out_shape=out_shape)    
         else:
             loss_model = Regression(base, out_shape=out_shape)    
-        wandb.init(config=configs, project="hl_loss")
+        wandb.init(config=configs, project="hl_loss_results")
         training(loss_model,train,test,configs["epochs"],optimizer,configs["pred_len"],mse) 
-
+        wandb.finish()
 if __name__ == "__main__":
     main(sys.argv[1], sys.argv[2])
-    
+   
