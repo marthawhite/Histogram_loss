@@ -5,8 +5,22 @@ from keras import layers
 from experiment.multidense import MultiDense
 
 
+def transformer_encoder(inputs, head_size, num_heads, ff_dim, dropout=0):
+    #Source: https://keras.io/examples/timeseries/timeseries_classification_transformer/
+    # Attention and Normalization
+    x = layers.MultiHeadAttention(
+        key_dim=head_size, num_heads=num_heads, dropout=dropout
+    )(inputs, inputs)
+    x = layers.LayerNormalization(epsilon=1e-6)(x)
+    res = x + inputs
 
-def transformer(input_shape, head_size, num_heads, feature_dims):
+    # Feed Forward Part
+    x = layers.Conv1D(filters=ff_dim, kernel_size=1, activation="relu")(res)
+    x = layers.Conv1D(filters=inputs.shape[-1], kernel_size=1)(x)
+    x = layers.LayerNormalization(epsilon=1e-6)(x)
+    return x + res
+
+def transformer(input_shape, n_variates,head_size, num_heads, feature_dims):
     """Return a Keras model implementing a transformer.
     Source: https://keras.io/examples/timeseries/timeseries_classification_transformer/
 
@@ -25,19 +39,15 @@ def transformer(input_shape, head_size, num_heads, feature_dims):
     
     Returns: a Keras model to use as the base
     """
-    values = input_shape[-1]
+    values = n_variates
     inputs = keras.Input(shape=input_shape)
-    res = inputs
+    x = inputs
     for i in range(5):
-        x = layers.MultiHeadAttention(key_dim=head_size, num_heads=num_heads)(res, res)
-        res = inputs + x 
-        x = layers.BatchNormalization()(res)
-        x = layers.Conv1D(filters=values, kernel_size=1)(x)
-        res = x + res
+        x = transformer_encoder(x, head_size, num_heads, feature_dims)
     # (batchsize, timesteps, values)
-    x = layers.Conv1D(filters=values*feature_dims, kernel_size=1)(res)
     x = layers.GlobalAveragePooling1D()(x)
-    outputs = layers.Reshape((values, feature_dims))(x)
+    #outputs = layers.Reshape((values, feature_dims))(x)
+    outputs = layers.Dense(n_variates)(x)
     return keras.Model(inputs, outputs)
 
 

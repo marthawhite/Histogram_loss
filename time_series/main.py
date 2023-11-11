@@ -125,7 +125,7 @@ def main(base_model, loss):
 
         out_shape = (configs["pred_len"],)
         if base_model == "transformer":
-            base = transformer(shape, configs["head_size"], configs["n_heads"], configs["features"])
+            base = transformer(shape, configs["chans"],configs["head_size"], configs["n_heads"], configs["features"])
         elif base_model == "LSTM":
             #out_shape = (configs["chans"], configs["pred_len"])
             base = lstm_encdec(configs["width"],configs["chans"],configs["layers"], 0.5, shape)
@@ -149,4 +149,3 @@ def main(base_model, loss):
         wandb.finish()
 if __name__ == "__main__":
     main(sys.argv[1], sys.argv[2])
-   
