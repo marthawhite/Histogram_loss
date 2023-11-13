@@ -97,9 +97,9 @@ def main(base_model, loss):
     "n_bins" : 100,
     "chans" : 1, # the number of target prediction variables
     "input_channels":7,
-    "head_size" : 512,
-    "n_heads" : 8,
-    "features" : 128,
+    "head_size" : 256,
+    "n_heads" : 3,
+    "features" : 64,
     "layers" : 1,
     "width" : 256,
     "test_ratio" : 0.25,

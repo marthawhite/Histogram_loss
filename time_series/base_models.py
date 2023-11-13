@@ -42,7 +42,7 @@ def transformer(input_shape, n_variates,head_size, num_heads, feature_dims):
     values = n_variates
     inputs = keras.Input(shape=input_shape)
     x = inputs
-    for i in range(5):
+    for i in range(3):
         x = transformer_encoder(x, head_size, num_heads, feature_dims)
     # (batchsize, timesteps, values)
     x = layers.GlobalAveragePooling1D()(x)
