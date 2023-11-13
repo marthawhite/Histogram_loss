@@ -14,8 +14,44 @@ from time_series.base_models import transformer, linear, lstm_encdec
 import json
 from experiment.bins import get_bins
 from time_series.datasets import get_time_series_dataset
+import wandb
 
-
+def training(model,train,test,epochs,optimizer,pred_len,loss):
+    mse_test_metric = keras.metrics.MeanSquaredError(name="mse")
+    mae_test_metric = keras.metrics.MeanAbsoluteError(name="mae")
+    wandb.define_metric("custom_step")
+    wandb.define_metric("mse_test_loss", step_metric="custom_step")
+    wandb.define_metric("mae_test_loss", step_metric="custom_step")
+    for epoch in range(epochs):
+        train.shuffle(len(train))
+        for step, (x_batch_train, y_batch_train) in enumerate(train):
+            with tf.GradientTape() as tape:
+                preds = model(x_batch_train, training=True)  
+                loss_value = loss(y_batch_train, preds)
+            grads = tape.gradient(loss_value, model.trainable_weights)
+            optimizer.apply_gradients(zip(grads, model.trainable_weights))
+            if step%100:
+                wandb.log({"training_loss":loss_value.numpy().item()})
+        for test_step,(x_batch_val, y_batch_val) in enumerate(test):
+            test_pred = model(x_batch_val, training=False)
+            mse_test_metric.update_state(y_batch_val, test_pred)
+            mae_test_metric.update_state(y_batch_val, test_pred)   
+        test_mse_acc = mse_test_metric.result()
+        test_mae_acc = mae_test_metric.result()
+        mse_test_metric.reset_states()
+        mae_test_metric.reset_states()
+        res = {'mse_test_loss':test_mse_acc.numpy().item(), 'mae_test_loss':test_mae_acc.numpy().item(),"custom_step":epoch}
+        wandb.log(res)
+    wandb.run.summary["mse_test_loss"] = test_mse_acc.numpy().item()
+    wandb.run.summary["mae_test_loss"] = test_mae_acc.numpy().item()
+    ### Log the predictions on one batch of the test data
+    for test_step,(x_batch_val, y_batch_val) in enumerate(test):
+            test_pred = model(x_batch_val, training=False)
+            for i in range(len(test_pred)):
+                wandb.log({"test_prediction":test_pred[i].numpy().item(),"test_target":y_batch_val[i].numpy().item()})
+            break
+    return
+    
 def main(base_model, loss):
     """Run the time series experiment.
     
@@ -50,64 +86,66 @@ def main(base_model, loss):
         
         
     """
-    datasets = ["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
-    pred_len = 336
-    seq_len = 336
-    epochs = 100
-    sig_ratio = 2.
-    pad_ratio = 3.
-    n_bins = 100
-    chans = 7
-    head_size = 512
-    n_heads = 8
-    features = 128
-    layers = 2
-    width = 512
-    test_ratio = 0.25
-    batch_size = 32
-    drop = "date"
-    metrics = ["mse", "mae"]
-    lr = 1e-3
-    input_target_offset = 0
-
-    for dataset in datasets:
+    
+    configs = {
+    "datasets" : ["ETTh1", "ETTh2", "ETTm1", "ETTm2"],
+    "pred_len" : 1,
+    "seq_len" : 336,
+    "epochs" : 25,
+    "sig_ratio" : 2.,
+    "pad_ratio" : 3.,
+    "n_bins" : 100,
+    "chans" : 1, # the number of target prediction variables
+    "input_channels":7,
+    "head_size" : 256,
+    "n_heads" : 3,
+    "features" : 64,
+    "layers" : 1,
+    "width" : 256,
+    "test_ratio" : 0.25,
+    "batch_size" : 32,
+    "drop" : "date",
+    "lr" : 0.0001,
+    "input_target_offset" : 96,
+    "base_model":base_model,
+    "loss":loss,
+    "univariate":True, ## code is only doing univariate for now
+    }
+    for dataset in configs["datasets"]:
+        configs["dataset"] = dataset
         keras.utils.set_random_seed(1)
         data_path = f"{dataset}.csv"
-        train, test, dmin, dmax = get_time_series_dataset(data_path, drop, seq_len, pred_len, pred_len, test_ratio, batch_size, chans, input_target_offset)
+        train, test, dmin, dmax = get_time_series_dataset(data_path, configs["drop"], configs["seq_len"], configs["batch_size"], configs["chans"], configs["input_target_offset"],configs["univariate"])
 
-        borders, sigma = get_bins(n_bins, pad_ratio, sig_ratio, dmin, dmax)
+        borders, sigma = get_bins(configs["n_bins"], configs["pad_ratio"], configs["sig_ratio"], dmin, dmax)
         borders = tf.expand_dims(borders, -1)
         sigma = tf.expand_dims(sigma, -1)
 
         shape = train.element_spec[0].shape[1:]
 
-        out_shape = (pred_len,)
+        out_shape = (configs["pred_len"],)
         if base_model == "transformer":
-            base = transformer(shape, head_size, n_heads, features)
+            base = transformer(shape, configs["chans"],configs["head_size"], configs["n_heads"], configs["features"])
         elif base_model == "LSTM":
-            out_shape = (chans, pred_len)
-            base = lstm_encdec(width, layers, 0.5, shape)
+            #out_shape = (configs["chans"], configs["pred_len"])
+            base = lstm_encdec(configs["width"],configs["chans"],configs["layers"], 0.5, shape)
         elif base_model == "linear":
-            base = linear(chans, seq_len)
+            base = linear(configs["input_channels"], configs["seq_len"],n_variates=configs["chans"])
         elif base_model == "independent_dense":
-            base = independent_dense(chans, seq_len)
+            base = independent_dense(configs["chans"], configs["seq_len"])
         else:
-            base = dependent_dense(chans, seq_len)
-            
-        if loss == "HL":
-            hlg = HLGaussian(base, borders, sigma, out_shape=out_shape)    
-            hlg.compile(keras.optimizers.Adam(lr), None, metrics)
-            hist = hlg.fit(train, epochs=epochs, verbose=2, validation_data=test)
-            with open(f"HL_{dataset}_{base_model}.json", "w") as file:
-                json.dump(hist.history, file)
-        else:
-            reg = Regression(base, out_shape=out_shape)    
-            reg.compile(keras.optimizers.Adam(lr), "mse", metrics)
-            hist = reg.fit(train, epochs=epochs, verbose=2, validation_data=test)
-            with open(f"L2_{dataset}_{base_model}.json", "w") as file:
-                json.dump(hist.history, file)
+            base = dependent_dense(configs["chans"], configs["seq_len"])
         
-
-
+        mse = tf.keras.losses.MeanSquaredError()
+        optimizer = keras.optimizers.Adam(configs["lr"])
+        
+        loss_model = None  
+        if loss == "HL":
+            loss_model = HLGaussian(base, borders, sigma, out_shape=out_shape)    
+        else:
+            loss_model = Regression(base, out_shape=out_shape)    
+        wandb.init(config=configs, project="hl_loss_results")
+        training(loss_model,train,test,configs["epochs"],optimizer,configs["pred_len"],mse) 
+        wandb.finish()
 if __name__ == "__main__":
     main(sys.argv[1], sys.argv[2])

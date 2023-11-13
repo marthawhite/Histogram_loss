@@ -8,3 +8,5 @@ Images/
 scratch/
 hypers/
 atari_prediction/policies/
+wandb/
+*.csv

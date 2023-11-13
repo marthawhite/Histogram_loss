@@ -47,7 +47,7 @@ def get_ETT_split(data, filename, seq_len):
     return train, val, test
 
 
-def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_len=720, test_size=0.2, batch_size=64, chans=7, input_target_offset=0):
+def get_time_series_dataset(filename, drop=[], seq_len=720, batch_size=64, chans=7, input_target_offset=0,eps=1e-08,univariate=True):
     """Return the train/test split for a CSV time series dataset.
     Uses 12-4 month split to be comparable to standard 12-4-4 train-val-test for ETTh datasets.
     
@@ -75,32 +75,31 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, train_len=20, pred_l
     df = pd.read_csv(filename)
     df = df.drop(drop, axis = 1)
     df = tf.convert_to_tensor(df, dtype=tf.float32)
-    
-    train, _, test = get_ETT_split(df, filename, seq_len)
 
-    mu = tf.reduce_mean(train, axis=0)
-    sig = tf.math.reduce_std(train, axis=0)
-    scale = tf.where(sig == 0, 1., sig)
-    train = (train - mu) / scale
-    test = (test - mu) / scale
+    mu = tf.reduce_mean(df, axis=0)
+    sig = tf.math.reduce_std(df, axis=0)
+    scale = sig + eps
     df = (df - mu) / scale
-
-    inputs = train[:-(train_len + input_target_offset)]
-    target = train[(seq_len + input_target_offset):]
-    dmin = tf.reduce_min(df, axis=0)
-    dmax = tf.reduce_max(df, axis=0)
-    x_train = keras.utils.timeseries_dataset_from_array(inputs, None, seq_len, batch_size=None)
-    y_train = keras.utils.timeseries_dataset_from_array(target, None, train_len, batch_size=None).map(reshape(pred_len, chans))
-    ds_train = tf.data.Dataset.zip((x_train, y_train)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
-    inputs = test[:-(pred_len + input_target_offset)]
-    targets = test[(seq_len + input_target_offset):]
-
-    x = keras.utils.timeseries_dataset_from_array(inputs, None, seq_len, batch_size=None)
-    y = keras.utils.timeseries_dataset_from_array(targets, None, pred_len, batch_size=None).map(reshape(pred_len, chans))
-    ds_test = tf.data.Dataset.zip((x,y)).batch(batch_size).prefetch(tf.data.AUTOTUNE)
-    return ds_train, ds_test, dmin, dmax
-
-
+    df_inputs = df[:-(seq_len+input_target_offset)]
+    df_targets = df[(seq_len+input_target_offset):]
+    xs = keras.utils.timeseries_dataset_from_array(df_inputs, None, seq_len, batch_size=None)
+    ys = keras.utils.timeseries_dataset_from_array(df_targets[:,-1], None, 1, batch_size=None)
+    ds = tf.data.Dataset.zip((xs, ys))
+    
+    periods = 1
+    if filename[-6] == "m":
+        periods = 4
+    samples_per_month = 30 * 24 * periods  # 30 days
+    total_samples = samples_per_month * 24
+    train_len = 12 * samples_per_month  # 12 months
+    test_len = 4 * samples_per_month
+    
+    train,test = tf.keras.utils.split_dataset(ds, left_size=train_len/total_samples,right_size=test_len/total_samples,shuffle=True,seed=0)
+    train = train.batch(batch_size).prefetch(tf.data.AUTOTUNE)
+    test = test.batch(batch_size).prefetch(tf.data.AUTOTUNE)
+    dmin = tf.reduce_min(df[:,-1], axis=0)
+    dmax = tf.reduce_max(df[:,-1], axis=0)
+    return train, test, dmin, dmax
 class TSDataset(Dataset):
     """A dataset of time-series data read from a CSV file.
     
