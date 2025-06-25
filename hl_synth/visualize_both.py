@@ -9,6 +9,7 @@ import fire
 import h5py
 import matplotlib.pyplot as plt
 from matplotlib.colors import hsv_to_rgb
+from sin_functions import RegressionVarDepth, HLVarDepth
 
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -78,7 +79,7 @@ def task_name_str(task_name):
     return f"Loss: {split[0]}, lr: {split[1]}, Freq: {split[2]}, Offset: {split[3]}"
 
 
-def main(Y_freq=10, Y_offset=0, hl_range=[-1.5, 1.5]):
+def main(Y_freq=10, Y_offset=0, hl_range=[-1.5, 1.5], depth=2, width=1024):
 
     X = torch.linspace(-np.pi, np.pi, 501)[:-1].unsqueeze(1).to(DEVICE)
     Y = torch.sin(Y_freq*X) + Y_offset
@@ -86,16 +87,16 @@ def main(Y_freq=10, Y_offset=0, hl_range=[-1.5, 1.5]):
     plt.clf()
     plt.plot(X[:, 0].cpu(), Y[:, 0].cpu(), 'o')
 
-    methods = [('l2', 1e-4), ('HL-Gauss', 1e-2)]
+    methods = [('l2', 1e-3), ('HL-Gauss', 1e-2)]
     for model_name, lr in methods:
-        task_name = f'{model_name}_{lr}_{Y_freq}_{Y_offset}_{hl_range[0]}_{hl_range[1]}_{0}'
+        task_name = f'{model_name}_{depth}_{width}_{lr}_{Y_freq}_{Y_offset}_{hl_range[0]}_{hl_range[1]}_{0}'
         print(task_name)
         if model_name == 'l2':
-            model = RegressionModel()
+            model = RegressionVarDepth(depth=depth, hidden_size=width)
             criterion = nn.MSELoss()
             color = hsv_to_rgb((.03, 1., 0.8))
         elif model_name == 'HL-Gauss':
-            model = HLGaussModel()
+            model = HLVarDepth(depth=depth, hidden_size=width)
             sigma = (hl_range[1] - hl_range[0])/100 * 2
             criterion = HLGaussLoss(hl_range[0], hl_range[1], 100, sigma)
             color = hsv_to_rgb((.3, 1., 0.8))
@@ -113,7 +114,7 @@ def main(Y_freq=10, Y_offset=0, hl_range=[-1.5, 1.5]):
 
         plt.plot(X_vis[:, 0].cpu(), Yhat_vis[:, 0].cpu().detach(), '-', linewidth=3, color=color)
     # plt.title(task_name_str(task_name))
-    plt.xticks([-np.pi, 0, np.pi], labels=['$-\pi$', '$0$', '$-\pi$'])
+    plt.xticks([-np.pi, 0, np.pi], labels=['$-\\pi$', '$0$', '$-\\pi$'])
     plt.tight_layout()
     plt.savefig(f'results/clean_vis_{Y_freq}_{Y_offset}.png', dpi=200)
 

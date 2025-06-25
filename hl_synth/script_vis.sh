@@ -1,0 +1,10 @@
+python sin_functions.py --model_name l2 --depth 2 --width 1024 --Y_freq 10 --Y_offset 0 --lr 0.1 --seed 0 --task_idx 1 
+python sin_functions.py --model_name l2 --depth 2 --width 1024 --Y_freq 10 --Y_offset 0 --lr 0.01 --seed 0 --task_idx 2 
+python sin_functions.py --model_name l2 --depth 2 --width 1024 --Y_freq 10 --Y_offset 0 --lr 0.001 --seed 0 --task_idx 3 
+python sin_functions.py --model_name l2 --depth 2 --width 1024 --Y_freq 10 --Y_offset 0 --lr 0.0001 --seed 0 --task_idx 4 
+python sin_functions.py --model_name l2 --depth 2 --width 1024 --Y_freq 10 --Y_offset 0 --lr 1e-05 --seed 0 --task_idx 5 
+python sin_functions.py --model_name HL-Gauss --depth 2 --width 1024 --Y_freq 10  --Y_offset 0 --lr 0.1 --seed 0 --task_idx 6
+python sin_functions.py --model_name HL-Gauss --depth 2 --width 1024 --Y_freq 10  --Y_offset 0 --lr 0.01 --seed 0 --task_idx 7
+python sin_functions.py --model_name HL-Gauss --depth 2 --width 1024 --Y_freq 10  --Y_offset 0 --lr 0.001 --seed 0 --task_idx 8
+python sin_functions.py --model_name HL-Gauss --depth 2 --width 1024 --Y_freq 10  --Y_offset 0 --lr 0.0001 --seed 0 --task_idx 9
+python sin_functions.py --model_name HL-Gauss --depth 2 --width 1024 --Y_freq 10  --Y_offset 0 --lr 1e-05 --seed 0 --task_idx 10

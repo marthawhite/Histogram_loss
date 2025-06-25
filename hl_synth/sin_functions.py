@@ -103,6 +103,7 @@ def task_name_str(task_name):
 def main(model_name='HL-Gauss', depth=2, width=1024, lr=1e-1, Y_freq=1., Y_offset=0., hl_range=[-1.5, 1.5], seed=0, delete=False, task_idx=1):
     print('TASK IDX:', task_idx)
     task_name = f'{model_name}_{depth}_{width}_{lr}_{Y_freq}_{Y_offset}_{hl_range[0]}_{hl_range[1]}_{seed}'
+    # task_name = f'{model_name}_{lr}_{Y_freq}_{Y_offset}_{hl_range[0]}_{hl_range[1]}_{seed}'
     print(task_name)
 
     path = Path('results/ckpt')
@@ -153,7 +154,8 @@ def main(model_name='HL-Gauss', depth=2, width=1024, lr=1e-1, Y_freq=1., Y_offse
 
     model = model.to(DEVICE)
 
-    optimizer = optim.SGD(model.parameters(), lr=lr)
+    # optimizer = optim.SGD(model.parameters(), lr=lr)
+    optimizer = optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.95))
 
     # Training loop
     num_epochs = 1001
@@ -228,8 +230,8 @@ def main(model_name='HL-Gauss', depth=2, width=1024, lr=1e-1, Y_freq=1., Y_offse
         for key, value in log.items():
             f.create_dataset(f"{task_name}/{key}", data=value)
 
-    # if seed == 0:
-    #     torch.save(model.state_dict(), f'results/ckpt/{task_name}.pt')
+    if seed == 0:
+        torch.save(model.state_dict(), f'results/ckpt/{task_name}.pt')
 
 
 if __name__ == '__main__':
