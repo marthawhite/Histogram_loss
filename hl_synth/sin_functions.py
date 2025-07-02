@@ -155,7 +155,7 @@ def main(model_name='HL-Gauss', depth=2, width=1024, lr=1e-1, Y_freq=1., Y_offse
     model = model.to(DEVICE)
 
     # optimizer = optim.SGD(model.parameters(), lr=lr)
-    optimizer = optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.95))
+    optimizer = optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.999))
 
     # Training loop
     num_epochs = 1001

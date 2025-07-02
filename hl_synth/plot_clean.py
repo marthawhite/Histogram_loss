@@ -17,6 +17,8 @@ def task_name_str(task_name):
 
 
 def main(Y_freq=10, Y_offset=0, plot_over='Y_freq'):
+    depth=2
+    width=1024
     
     f = h5py.File('results/sin_functions.hdf5', 'a')
     lrs = ['1e-05', '0.0001', '0.001', '0.01', '0.1']
@@ -35,7 +37,7 @@ def main(Y_freq=10, Y_offset=0, plot_over='Y_freq'):
             for lr in lrs:  # ['0.001']:
                 curves = []
                 for seed in seeds:
-                    task_name = f"HL-Gauss_{lr}_{Y_freq}_{Y_offset}_-1.5_1.5_{seed}"
+                    task_name = f"HL-Gauss_{depth}_{width}_{lr}_{Y_freq}_{Y_offset}_-1.5_1.5_{seed}"
                     curve = f[f"{task_name}/train_mse"][...]
                     curves.append(curve)
                 curve = np.array(curves).mean(axis=0)
@@ -46,7 +48,7 @@ def main(Y_freq=10, Y_offset=0, plot_over='Y_freq'):
             for lr in lrs:  # ['0.0001']:
                 curves = []
                 for seed in seeds:
-                    task_name = f"l2_{lr}_{Y_freq}_{Y_offset}_-1.5_1.5_{seed}"
+                    task_name = f"l2_{depth}_{width}_{lr}_{Y_freq}_{Y_offset}_-1.5_1.5_{seed}"
                     curve = f[f"{task_name}/train_mse"][...]
                     curves.append(curve)
                 curve = np.array(curves).mean(axis=0)

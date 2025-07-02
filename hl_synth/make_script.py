@@ -7,7 +7,7 @@ from itertools import product
 # lrs = [2**x for x in range(-12, 5)]
 # seeds = range(0, 5)
 
-Y_freqs = [10]
+Y_freqs = [1, 10, 20]
 Y_offsets = [0]
 
 depths = [2]
@@ -15,7 +15,7 @@ widths = [1024]
 
 lrs = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5]
 
-seeds = [0]
+seeds = range(5)
 
 
 task_idx = 0
