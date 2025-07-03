@@ -79,7 +79,7 @@ def task_name_str(task_name):
     return f"Loss: {split[0]}, lr: {split[1]}, Freq: {split[2]}, Offset: {split[3]}"
 
 
-def main(Y_freq=10, Y_offset=0, hl_range=[-1.5, 1.5], depth=2, width=1024):
+def main(Y_freq=10, Y_offset=0, hl_range=[-1.5, 1.5], depth=3, width=1024):
 
     X = torch.linspace(-np.pi, np.pi, 501)[:-1].unsqueeze(1).to(DEVICE)
     Y = torch.sin(Y_freq*X) + Y_offset
@@ -95,11 +95,13 @@ def main(Y_freq=10, Y_offset=0, hl_range=[-1.5, 1.5], depth=2, width=1024):
             model = RegressionVarDepth(depth=depth, hidden_size=width)
             criterion = nn.MSELoss()
             color = hsv_to_rgb((.03, 1., 0.8))
+            model_label = "$\\ell_2$"
         elif model_name == 'HL-Gauss':
             model = HLVarDepth(depth=depth, hidden_size=width)
             sigma = (hl_range[1] - hl_range[0])/100 * 2
             criterion = HLGaussLoss(hl_range[0], hl_range[1], 100, sigma)
             color = hsv_to_rgb((.3, 1., 0.8))
+            model_label = model_name
         else:
             raise NotImplementedError
 
@@ -112,9 +114,10 @@ def main(Y_freq=10, Y_offset=0, hl_range=[-1.5, 1.5], depth=2, width=1024):
         if model_name == 'HL-Gauss':
             Yhat_vis = criterion.transform_from_probs(F.softmax(Yhat_vis, dim=-1)).unsqueeze(1)
 
-        plt.plot(X_vis[:, 0].cpu(), Yhat_vis[:, 0].cpu().detach(), '-', linewidth=3, color=color)
+        plt.plot(X_vis[:, 0].cpu(), Yhat_vis[:, 0].cpu().detach(), '-', linewidth=3, color=color, label=model_label)
     # plt.title(task_name_str(task_name))
     plt.xticks([-np.pi, 0, np.pi], labels=['$-\\pi$', '$0$', '$-\\pi$'])
+    plt.legend(fontsize='small', framealpha=0.9)
     plt.tight_layout()
     plt.savefig(f'results/clean_vis_{Y_freq}_{Y_offset}.png', dpi=200)
 
