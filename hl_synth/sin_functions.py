@@ -100,8 +100,9 @@ def task_name_str(task_name):
     return f"Loss: {split[0]}, depth: {split[1]}, width: {split[2]}, lr: {split[3]}, Freq: {split[4]}, Offset: {split[5]}"
 
 
-def main(model_name='HL-Gauss', depth=2, width=1024, lr=1e-1, Y_freq=1., Y_offset=0., hl_range=[-1.5, 1.5], seed=0, delete=False, task_idx=1):
+def main(model_name='HL-Gauss', depth=2, width=1024, lr=1e-1, Y_freq=1., Y_offset=0., hl_high=1.5, seed=0, delete=False, task_idx=1):
     print('TASK IDX:', task_idx)
+    hl_range = [-1.5, hl_high]
     task_name = f'{model_name}_{depth}_{width}_{lr}_{Y_freq}_{Y_offset}_{hl_range[0]}_{hl_range[1]}_{seed}'
     # task_name = f'{model_name}_{lr}_{Y_freq}_{Y_offset}_{hl_range[0]}_{hl_range[1]}_{seed}'
     print(task_name)
@@ -118,9 +119,9 @@ def main(model_name='HL-Gauss', depth=2, width=1024, lr=1e-1, Y_freq=1., Y_offse
                 print('not found')
             return
 
-        # if task_name in f:
-        #     print('done already')
-        #     return
+        if task_name in f:
+            print('done already')
+            return
 
     np.random.seed(seed)
     random.seed(seed)
