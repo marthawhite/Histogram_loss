@@ -120,7 +120,7 @@ def main(Y_freq=10, Y_offset=0, hl_range=[-1.5, 1.5], depth=3, width=1024):
         plt.plot(X_vis[:, 0].cpu(), Yhat_vis[:, 0].cpu().detach(), '-', linewidth=3, color=color, label=model_label)
     # plt.title(task_name_str(task_name))
     plt.xticks([-np.pi, 0, np.pi], labels=['$-\\pi$', '$0$', '$-\\pi$'])
-    plt.legend(fontsize='small', framealpha=0.9)
+    # plt.legend(fontsize='small', framealpha=0.9)
     plt.gca().spines[['right', 'top']].set_visible(False)
 
     plt.tight_layout()
