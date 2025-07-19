@@ -13,7 +13,7 @@ We are using actions from the [Atari Prediction Benchmark](https://github.com/kh
  - Large Model - 4 blocks of 2-3 convolutional layers followed by pooling. Then 3 dense layers with optional dropout in between. Batch normalization after each convolutional or dense layer.
 
  ## Instructions
- 1. Setup your Python environment using `requirements.txt`
+ 1. Set up your Python 3.10 environment using `requirements.txt`
  2. Precompute the returns for each game you are interested in running by running
 
     ```
