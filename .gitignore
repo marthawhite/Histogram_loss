@@ -10,3 +10,4 @@ hypers/
 atari_prediction/policies/
 wandb/
 *.csv
+hl_synth/results
