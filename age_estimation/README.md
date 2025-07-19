@@ -14,7 +14,7 @@ We ran experiments with and without face alignment using points detected by [MTC
   - VGG16 - 138.4 M paramters ([Simonyan and Zisserman 2015](https://arxiv.org/pdf/1409.1556.pdf))
 
 ## Instructions
-1. Setup your python environment using `requirements.txt`
+1. Set up your Python 3.10 environment using `requirements.txt`
 2. Copy one of the modules from the `main` directory into your project directory.
 3. Modify the script to work with your dataset path and experiment configuration.
 4. Run the module with python.
