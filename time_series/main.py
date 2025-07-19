@@ -15,6 +15,7 @@ import json
 from experiment.bins import get_bins
 from time_series.datasets import get_time_series_dataset
 import wandb
+import sys
 
 def training(model,train,test,epochs,optimizer,pred_len,loss):
     mse_test_metric = keras.metrics.MeanSquaredError(name="mse")
