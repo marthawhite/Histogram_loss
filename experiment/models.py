@@ -24,7 +24,7 @@ class Regression(keras.Model):
     """
 
     def __init__(self, base, out_shape=()):
-        super().__init__()
+        super().__init__(name="Regression")
         self.base = base
         self.reg = MultiDense(out_shape, individual=False)
 
@@ -68,7 +68,8 @@ class HistModel(keras.Model):
         self.softmax = keras.layers.Softmax()
         self.transform = transform
         self.mean = HistMean(centers)
-        self.hist_loss = keras.metrics.Mean("loss")
+        # self.loss_fn = keras.losses.CategoricalCrossentropy()
+        # self.hist_loss = keras.metrics.Mean("loss")
 
     def call(self, inputs, training=None):
         """Perform regression on the inputs using the histogram loss model.
@@ -113,7 +114,9 @@ class HistModel(keras.Model):
 
         with tf.GradientTape() as tape:
             hist = self.get_hist(x, training=True)
-            loss = keras.losses.categorical_crossentropy(y_transformed, hist)
+            loss = self.compute_loss(y=y_transformed, y_pred=hist)
+            # loss = self.loss_fn(y_transformed, hist)
+            # loss = keras.losses.categorical_crossentropy(y_transformed, hist)
         
         trainable_vars = self.trainable_variables
         gradients = tape.gradient(loss, trainable_vars)
@@ -121,8 +124,13 @@ class HistModel(keras.Model):
         self.optimizer.apply_gradients(zip(gradients, trainable_vars))
 
         y_pred = self.mean(hist)
-        self.compiled_metrics.update_state(y, y_pred)
-        self.hist_loss.update_state(loss)
+        for metric in self.metrics:
+            if metric.name == "loss":
+                metric.update_state(loss)
+            else:
+                metric.update_state(y, y_pred)
+        # self.compiled_metrics.update_state(y, y_pred)
+        # self.hist_loss.update_state(loss)
 
         return {m.name: m.result() for m in self.metrics}
     
@@ -138,14 +146,21 @@ class HistModel(keras.Model):
         y_transformed = self.transform(y)
         hist = self.get_hist(x, training=False)
 
-        loss = keras.losses.categorical_crossentropy(y_transformed, hist)
-        self.hist_loss.update_state(loss)
+        # loss = self.loss_fn(y_transformed, hist)
+        # loss = keras.losses.categorical_crossentropy(y_transformed, hist)
+        loss = self.compute_loss(y=y_transformed, y_pred=hist)
+        # self.hist_loss.update_state(loss)
 
         y_pred = self.mean(hist)
-        self.compiled_metrics.update_state(y, y_pred)
+        for metric in self.metrics:
+            if metric.name == "loss":
+                metric.update_state(loss)
+            else:
+                metric.update_state(y, y_pred)
+        # self.compiled_metrics.update_state(y, y_pred)
         
         return {m.name: m.result() for m in self.metrics}
-    
+        
 
 class HLGaussian(HistModel):
     """Keras model using a histogram loss with a truncated Gaussian 
@@ -165,6 +180,76 @@ class HLGaussian(HistModel):
         centers = (borders[:-1] + borders[1:]) / 2
         transform = TruncGaussHistTransform(borders, sigma)
         super().__init__(base, centers, transform, "HL-Gaussian", **kwargs)
+
+
+
+class HistMSE(HistModel):
+
+    def __init__(self, base, borders, sigma, **kwargs):
+        centers = (borders[:-1] + borders[1:]) / 2
+        transform = TruncGaussHistTransform(borders, sigma)
+        super().__init__(base, centers, transform, "HistMSE", **kwargs)
+        # self.loss = keras.losses.MeanSquaredError()
+
+    def train_step(self, data):
+        """Update the model weights and metrics based on a single batch of data.
+        
+        Params:
+            data - a batch of data in the form (x, y)
+                typically a tf.data.Dataset where elements are a tuple of tensors
+
+        Returns: a dict containing the metric values computed on data
+        """
+        x, y = data
+
+        with tf.GradientTape() as tape:
+            hist = self.get_hist(x, training=True)
+            y_pred = self.mean(hist)
+            loss = self.compute_loss(y=y, y_pred=y_pred)
+            # loss = self.loss_fn(y, y_pred)
+            # loss = keras.losses.MSE(y, y_pred)
+        
+        trainable_vars = self.trainable_variables
+        gradients = tape.gradient(loss, trainable_vars)
+
+        self.optimizer.apply_gradients(zip(gradients, trainable_vars))
+
+        # self.compiled_metrics.update_state(y, y_pred)
+        for metric in self.metrics:
+            if metric.name == "loss":
+                metric.update_state(loss)
+            else:
+                metric.update_state(y, y_pred)
+        # self.hist_loss.update_state(loss)
+
+        return {m.name: m.result() for m in self.metrics}
+    
+    def test_step(self, data):
+        """Evaluate the data on a validation batch and compute the loss.
+        
+        Params:
+            data - a batch of data in the form (x, y)
+                typically a tf.data.Dataset where the elements are a tuple of tensors
+        """
+        x, y = data
+
+        hist = self.get_hist(x, training=False)
+        y_pred = self.mean(hist)
+
+        # loss = self.loss_fn(y, y_pred)
+        # loss = keras.losses.MSE(y, y_pred)
+        # self.hist_loss.update_state(loss)
+        loss = self.compute_loss(y=y, y_pred=y_pred)
+
+        for metric in self.metrics:
+            if metric.name == "loss":
+                metric.update_state(loss)
+            else:
+                metric.update_state(y, y_pred)
+        # self.compiled_metrics.update_state(y, y_pred)
+        
+        return {m.name: m.result() for m in self.metrics}
+
 
 
 class HLOneBin(HistModel):

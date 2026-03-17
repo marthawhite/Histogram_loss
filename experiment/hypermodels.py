@@ -2,7 +2,7 @@
 
 
 import keras_tuner as kt
-from experiment.models import Regression, HLGaussian, HLOneBin, HLUniform, HLProjected
+from experiment.models import Regression, HLGaussian, HLOneBin, HLUniform, HLProjected, HistMSE
 from tensorflow import keras
 import tensorflow as tf
 
@@ -58,14 +58,14 @@ class HyperRegression(HyperBase):
         metrics - the metrics to compile the model with
     """
 
-    def __init__(self, base, loss=None, metrics=None):
-        super().__init__("HyperReg", loss, metrics)
+    def __init__(self, base, loss=None, metrics=None, name="HyperReg"):
+        super().__init__(name, loss, metrics)
         self.base = base
 
     def get_model(self, hp):
         """Return a regression model."""
         dropout = hp.Choice("dropout", [0., 0.2, 0.5, 0.8], default=0.5)
-        return Regression(self.base(), dropout)
+        return Regression(self.base())
     
 
 class HyperHL(HyperBase):
@@ -79,7 +79,7 @@ class HyperHL(HyperBase):
     """
 
     def __init__(self, min_y, max_y, name="HyperHL", metrics=None):
-        super().__init__(name, None, metrics)
+        super().__init__(name, "CategoricalCrossentropy", metrics)
         self.y_min = min_y
         self.y_max = max_y
 
@@ -102,6 +102,38 @@ class HyperHL(HyperBase):
         new_max = self.y_max + padding * y_range
         bins = tf.linspace(new_min, new_max, n_bins + 1)
         return bins
+
+
+class HyperHistMSE(HyperHL):
+    """Histogram loss hypermodel that uses a truncated Gaussian distribution
+    for its targets.
+    
+    Params:
+        base - the base model
+        min_y - the minimum target value
+        max_y - the maximum target value
+        metrics - the metrics to compile the model with
+    """
+
+    def __init__(self, base, min_y, max_y, metrics=None):
+        super().__init__(min_y, max_y, "Hyper-HistMSE", metrics)
+        self.base = base
+        self.loss = "mse"
+
+    def get_model(self, hp):
+        """Return the HLGaussian model according to the hyperparameters.
+        
+        Params:
+            hp - the KerasTuner HyperParameter instance
+        """
+        sig_ratio = hp.Float("sig_ratio", default=1., min_value=0.5, max_value=2., step=2, sampling="log")
+        dropout = hp.Choice("dropout", [0., 0.2, 0.5, 0.8], default=0.5)
+
+        # Calculate sigma as a multiple of the bin width
+        bins = self.get_bins(hp)
+        bin_width = bins[1] - bins[0]
+        sigma = sig_ratio * bin_width
+        return HistMSE(self.base(), bins, sigma)
 
 
 class HyperHLGaussian(HyperHL):
@@ -132,7 +164,7 @@ class HyperHLGaussian(HyperHL):
         bins = self.get_bins(hp)
         bin_width = bins[1] - bins[0]
         sigma = sig_ratio * bin_width
-        return HLGaussian(self.base(), bins, sigma, dropout)
+        return HLGaussian(self.base(), bins, sigma)
     
 
 class HyperHLOneBin(HyperHL):
