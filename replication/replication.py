@@ -17,6 +17,7 @@ from experiment.hypermodels import *
 from experiment.preprocessing import *
 import keras_tuner as kt
 import json
+import numpy as np
 
 
 def mlp_base(input_width, hidden=4, dropout=0.05, int_dim=0.5):
@@ -70,7 +71,7 @@ def get_datasets(base_dir):
     ctscan.name = "ctscan"
     ctscan.epochs = 1000
 
-    bikeshare = CSVDataset(os.path.join(data_dir, "hour.csv"), "cnt", drop_cols="dteday", batch_size=256)
+    bikeshare = CSVDataset(os.path.join(data_dir, "hour.csv"), "cnt", drop=["dteday", "casual", "registered"], batch_size=256)
     bikeshare.bounds = (0., 1000.)
     bikeshare.name = "bike"
     bikeshare.epochs = 500
@@ -85,6 +86,7 @@ def get_datasets(base_dir):
     pole.name = "pole"
     pole.epochs = 500
 
+    # return [bikeshare]
     return [ctscan, bikeshare, songyear, pole]
 
 def get_models(dataset, scale=True):
@@ -101,7 +103,7 @@ def get_models(dataset, scale=True):
     else:
         y_min, y_max = dataset.bounds
     base = lambda : base_models(dataset)
-    metrics = ["mse", "mae"]
+    metrics = ["root_mean_squared_error", "mae"]
     hp = kt.HyperParameters()
     hp.Fixed("dropout", 0)
     hp.Fixed("padding", 0.125)
@@ -115,17 +117,22 @@ def get_models(dataset, scale=True):
     hyperl2 = HyperRegression(base, loss="mse", metrics=metrics, name="L2")
     l2 = hyperl2.build(hp)
 
-    hyperl1 = HyperRegression(base, loss="mae", metrics=metrics, name="L1")
-    l1 = hyperl1.build(hp)
+    hyperhistmse = HyperHistMSE(base, y_min, y_max, metrics=metrics)
+    histmse = hyperhistmse.build(hp)
 
-    hyperhl1 = HyperHLOneBin(base, y_min, y_max, metrics=metrics)
-    hl1 = hyperhl1.build(hp)
+    # hyperl1 = HyperRegression(base, loss="mae", metrics=metrics, name="L1")
+    # l1 = hyperl1.build(hp)
 
-    lin_base = lambda : keras.layers.Identity()
-    hyperlin = HyperRegression(lin_base, loss="mse", metrics=metrics, name="LinReg")
-    lin = hyperlin.build(hp)
+    # hyperhl1 = HyperHLOneBin(base, y_min, y_max, metrics=metrics)
+    # hl1 = hyperhl1.build(hp)
 
-    return [l1, l2, hlg, hl1, lin]
+    # lin_base = lambda : keras.layers.Identity()
+    # hyperlin = HyperRegression(lin_base, loss="mse", metrics=metrics, name="LinReg")
+    # lin = hyperlin.build(hp)
+
+    # return [l1, l2, hlg, hl1, lin]
+    return [l2, hlg, histmse]
+    # return [histmse]
 
 
 def run_model(model, epochs, train, test):
@@ -141,13 +148,16 @@ def run_model(model, epochs, train, test):
     """
     hist = model.fit(train, epochs=epochs, verbose=2)
     outputs = model.evaluate(test, return_dict=True, verbose=2)
+    if "compile_metrics" in outputs:
+        for k, v in outputs["compile_metrics"].items():
+            outputs[k] = v
     results = {
         "train_loss": hist.history["loss"][-1],
-        "train_mse": hist.history["mse"][-1],
+        "train_rmse": hist.history["root_mean_squared_error"][-1],
         "train_mae": hist.history["mae"][-1],
-        "test_loss": outputs["loss"],
-        "test_mse": outputs["mse"],
-        "test_mae": outputs["mae"]
+        "test_loss": float(outputs["loss"]),
+        "test_rmse": float(outputs["root_mean_squared_error"]),
+        "test_mae": float(outputs["mae"])
     }
     return results
 
@@ -193,10 +203,14 @@ def run_seed(dataset, seed, test_ratio, scale=True, norm=True):
     models = get_models(dataset)
     train, test = dataset.get_split(test_ratio, shuffle=True)
 
-    train, test = preprocess(train, test, dataset.bounds, scale, norm)
+    # train, test = preprocess(train, test, dataset.bounds, scale, norm)
+    train, test = preprocess(train, test, dataset.bounds, False, norm)
 
     for model in models:
+        print(dataset.name, seed, model.name)
         results[model.name] = run_model(model, dataset.epochs, train, test)
+        for k in results[model.name]:
+            results[model.name][k] *= (dataset.high - dataset.low)
     return results
 
 
