@@ -47,59 +47,100 @@ def get_ETT_split(data, filename, seq_len):
     return train, val, test
 
 
-def get_time_series_dataset(filename, drop=[], seq_len=720, batch_size=64, chans=7, input_target_offset=0,eps=1e-08,univariate=True):
-    """Return the train/test split for a CSV time series dataset.
-    Uses 12-4 month split to be comparable to standard 12-4-4 train-val-test for ETTh datasets.
-    
+def _make_windows(data, seq_len, input_target_offset, pred_len):
+    """Create aligned (input, target) sliding windows from a contiguous data block.
+
+    For window i:
+        x = data[i : i + seq_len]                                       (all channels)
+        y = data[i + seq_len + offset : i + seq_len + offset + pred_len] (last channel)
+
+    The data block must be at least seq_len + input_target_offset + pred_len rows long
+    to produce at least one window.
+
     Params:
-        filename - the name of the CSV file containing the data
-        drop - the names of the columns to drop
-            Note: All non-numeric data should be dropped
-        seq_len - the length of the input sequences
-        train_len - the length of the training target sequences
-        pred_len - the length of the prediction target sequences
-        test_size - the proportion of samples to use for testing
-            WARNING: NOT USED IN CURRENT IMPLEMENTATION
-        batch_size - the size of the data batches
-        chans - the number of channels (features) in the data
-        input_target_offset - the number of timesteps between the last input timestep and the first output timestep
+        data - a 2-D Tensor of shape (timesteps, channels), already normalised
+        seq_len - input window length
+        input_target_offset - gap between end of input and start of target
+        pred_len - number of target timesteps
 
-    Returns: ds_train, ds_test, dmin, dmax
-        ds_train - a tf.data.Dataset containing (x, y) tuples of inputs and targets for training
-        ds_test - a tf.data.Dataset containing (x, y) tuples of inputs and targets for testing
-        dmin - a Tensor with the minimum values for each feature in the training split
-        dmax - a Tensor with the maximum values for each feature in the training split
+    Returns: a tf.data.Dataset of (x, y) pairs (unbatched)
     """
-    
-    # test_size is the portion of the dataset to use as test data must be between 0 and 1
-    df = pd.read_csv(filename)
-    df = df.drop(drop, axis = 1)
-    df = tf.convert_to_tensor(df, dtype=tf.float32)
-
-    mu = tf.reduce_mean(df, axis=0)
-    sig = tf.math.reduce_std(df, axis=0)
-    scale = sig + eps
-    df = (df - mu) / scale
-    df_inputs = df[:-(seq_len+input_target_offset)]
-    df_targets = df[(seq_len+input_target_offset):]
+    total_window = seq_len + input_target_offset + pred_len
+    n_windows = tf.shape(data)[0] - total_window + 1
+    # inputs start at index 0; targets start at index seq_len + offset
+    df_inputs = data[:-(input_target_offset + pred_len)]
+    df_targets = data[(seq_len + input_target_offset):]
     xs = keras.utils.timeseries_dataset_from_array(df_inputs, None, seq_len, batch_size=None)
-    ys = keras.utils.timeseries_dataset_from_array(df_targets[:,-1], None, 1, batch_size=None)
-    ds = tf.data.Dataset.zip((xs, ys))
-    
+    ys = keras.utils.timeseries_dataset_from_array(df_targets[:, -1], None, pred_len, batch_size=None)
+    return tf.data.Dataset.zip((xs, ys))
+
+
+def get_time_series_dataset(filename, drop=[], seq_len=720, batch_size=64, chans=7,
+                            input_target_offset=0, eps=1e-08, univariate=True, pred_len=1):
+    """Return train/val/test datasets for an ETT CSV file.
+
+    Uses the standard 12-4-4 month split (Informer / LTSF-Linear convention).
+    Normalisation statistics and histogram bin ranges are computed from the
+    training split only to avoid data leakage.
+
+    Each split is backed up by seq_len + input_target_offset rows so that the
+    first sliding window can look back into the preceding period, following
+    the same convention used in Informer and LTSF-Linear.
+
+    Params:
+        filename - CSV file name (e.g. "ETTh1.csv")
+        drop - column name(s) to drop (e.g. "date")
+        seq_len - input window length
+        batch_size - batch size
+        chans - number of channels (features) in the data
+        input_target_offset - gap between end of input and start of target
+        eps - small constant for numerical stability in normalisation
+        univariate - whether to predict a single target variable
+        pred_len - number of future timesteps to predict
+
+    Returns: ds_train, ds_val, ds_test, dmin, dmax
+    """
+    df = pd.read_csv(filename)
+    df = df.drop(drop, axis=1)
+    data = tf.convert_to_tensor(df, dtype=tf.float32)
+
     periods = 1
     if filename[-6] == "m":
         periods = 4
     samples_per_month = 30 * 24 * periods  # 30 days
-    total_samples = samples_per_month * 24
-    train_len = 12 * samples_per_month  # 12 months
-    test_len = 4 * samples_per_month
-    
-    train,test = tf.keras.utils.split_dataset(ds, left_size=train_len/total_samples,right_size=test_len/total_samples,shuffle=True,seed=0)
-    train = train.batch(batch_size).prefetch(tf.data.AUTOTUNE)
-    test = test.batch(batch_size).prefetch(tf.data.AUTOTUNE)
-    dmin = tf.reduce_min(df[:,-1], axis=0)
-    dmax = tf.reduce_max(df[:,-1], axis=0)
-    return train, test, dmin, dmax
+    train_end = 12 * samples_per_month       # 12 months training
+    val_end = train_end + 4 * samples_per_month  # 4 months validation
+    test_end = val_end + 4 * samples_per_month   # 4 months test
+
+    train_raw = data[:train_end]
+    mu = tf.reduce_mean(train_raw, axis=0)
+    sig = tf.math.reduce_std(train_raw, axis=0)
+    scale = sig + eps
+    data = (data - mu) / scale
+
+    train_targets = data[:train_end, -1]
+    dmin = tf.reduce_min(train_targets)
+    dmax = tf.reduce_max(train_targets)
+
+    lookback = seq_len + input_target_offset
+
+    train_block = data[:train_end]
+    val_block = data[train_end - lookback : val_end]
+    test_block = data[val_end - lookback : test_end]
+
+    ds_train = _make_windows(train_block, seq_len, input_target_offset, pred_len)
+    ds_val = _make_windows(val_block, seq_len, input_target_offset, pred_len)
+    ds_test = _make_windows(test_block, seq_len, input_target_offset, pred_len)
+
+    # Shuffle training data only (within training set)
+    train_size = tf.data.experimental.cardinality(ds_train).numpy()
+    ds_train = ds_train.shuffle(train_size, seed=0)
+
+    ds_train = ds_train.batch(batch_size).prefetch(tf.data.AUTOTUNE)
+    ds_val = ds_val.batch(batch_size).prefetch(tf.data.AUTOTUNE)
+    ds_test = ds_test.batch(batch_size).prefetch(tf.data.AUTOTUNE)
+
+    return ds_train, ds_val, ds_test, dmin, dmax
 class TSDataset(Dataset):
     """A dataset of time-series data read from a CSV file.
     
