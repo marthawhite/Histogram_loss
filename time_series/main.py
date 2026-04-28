@@ -10,7 +10,7 @@ Params:
 import tensorflow as tf
 from tensorflow import keras
 from experiment.models import HLGaussian, Regression
-from time_series.base_models import transformer, transformer_large, linear, lstm_encdec, independent_dense, dependent_dense
+from time_series.base_models import transformer, transformer_large, linear, lstm_encdec
 import json
 from experiment.bins import get_bins
 from time_series.datasets import get_time_series_dataset
