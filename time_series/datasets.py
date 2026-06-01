@@ -76,7 +76,8 @@ def _make_windows(data, seq_len, input_target_offset, pred_len):
 
 
 def get_time_series_dataset(filename, drop=[], seq_len=720, batch_size=64, chans=7,
-                            input_target_offset=0, eps=1e-08, univariate=True, pred_len=1):
+                            input_target_offset=0, eps=1e-08, univariate=True, pred_len=1,
+                            shuffle_seed=0):
     """Return train/val/test datasets for an ETT CSV file.
 
     Uses the standard 12-4-4 month split (Informer / LTSF-Linear convention).
@@ -97,6 +98,8 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, batch_size=64, chans
         eps - small constant for numerical stability in normalisation
         univariate - whether to predict a single target variable
         pred_len - number of future timesteps to predict
+        shuffle_seed - seed for the training-data shuffle (vary per run for
+            independent multi-seed experiments)
 
     Returns: ds_train, ds_val, ds_test, dmin, dmax
     """
@@ -134,7 +137,7 @@ def get_time_series_dataset(filename, drop=[], seq_len=720, batch_size=64, chans
 
     # Shuffle training data only (within training set)
     train_size = tf.data.experimental.cardinality(ds_train).numpy()
-    ds_train = ds_train.shuffle(train_size, seed=0)
+    ds_train = ds_train.shuffle(train_size, seed=shuffle_seed)
 
     ds_train = ds_train.batch(batch_size).prefetch(tf.data.AUTOTUNE)
     ds_val = ds_val.batch(batch_size).prefetch(tf.data.AUTOTUNE)

@@ -158,3 +158,4 @@ websocket-client==1.6.1
 Werkzeug==2.3.6
 widgetsnbextension==4.0.8
 wrapt==1.14.1
+tyro

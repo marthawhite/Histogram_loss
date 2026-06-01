@@ -20,9 +20,8 @@ The Linear, DLinear, and NLinear models are based on the [LTSF-Linear](https://g
 # Instruction
 1. Set up your Python 3.10 environment using `requirements.txt`
 2. Copy `main.py` to the project (outer) directory
-3. (optional) Modify model hyperparameters or datasets to run on by modifying lines 53-71 of `main.py`. Discriptions of hyperparameters is available on lines 26-50 of `main.py`
-4. Run `main.py <base_model> <loss>` 
-    where `base_model` is one of: `transformer`, `LSTM`, `linear`, `independent_dense`, or `dependent_dense`. And `loss` is one of: `HL` or `L2`
-5. Collect training progress results in `{loss}_{dataset}_{base_model}.json`
+3. (optional) Override any hyperparameter on the command line — every field of the `Config` dataclass in `main.py` is a flag. Run `python main.py --help` to list them.
+4. Run `python main.py --base-model <base_model> --loss <loss> [--seed <seed>]`
+    where `base_model` is one of: `transformer`, `transformer_large`, `transformer_enc_dec`, `autoformer`, `LSTM`, `GRU`, `linear`, `independent_dense`, or `dependent_dense`; `loss` is `HL` or `L2`; and `seed` is an optional integer (default 1). Vary `--seed` for multi-seed runs, e.g. `python main.py --base-model LSTM --loss HL --seed 3`.
 
 Note that you can replace `main.py` with `model_analysis.py` in the above procedure to get the training progress results as well as the test set targets and model prediction after the last training epoch, as `{dataset}_targets.npy` and `{dataset}_{base_model}_{loss}.npy` respectively.

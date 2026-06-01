@@ -124,7 +124,14 @@ class HistModel(keras.Model):
         self.compiled_metrics.update_state(y, y_pred)
         self.hist_loss.update_state(loss)
 
-        return {m.name: m.result() for m in self.metrics}
+        logs = {}
+        for m in self.metrics:
+            result = m.result()
+            if isinstance(result, dict):
+                logs.update(result)
+            else:
+                logs[m.name] = result
+        return logs
     
     def test_step(self, data):
         """Evaluate the data on a validation batch and compute the loss.
@@ -144,7 +151,14 @@ class HistModel(keras.Model):
         y_pred = self.mean(hist)
         self.compiled_metrics.update_state(y, y_pred)
         
-        return {m.name: m.result() for m in self.metrics}
+        logs = {}
+        for m in self.metrics:
+            result = m.result()
+            if isinstance(result, dict):
+                logs.update(result)
+            else:
+                logs[m.name] = result
+        return logs
     
 
 class HLGaussian(HistModel):
